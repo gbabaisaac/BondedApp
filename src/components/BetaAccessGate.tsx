@@ -69,7 +69,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 p-4 pb-24">
       <Card className="max-w-md w-full">
         <CardContent className="pt-6">
           {/* Logo */}

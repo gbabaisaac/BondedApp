@@ -139,7 +139,7 @@ export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: 
   // Intro screen
   if (!started) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 py-8 pb-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -239,7 +239,7 @@ export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: 
   // Generating Bond Print
   if (isGenerating) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 py-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 py-8 pb-24 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -268,7 +268,7 @@ export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: 
   const progress = (currentQuestion.questionNumber / currentQuestion.totalQuestions) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 py-8 pb-24">
       <motion.div
         key={currentQuestion.questionNumber}
         initial={{ opacity: 0, x: 20 }}

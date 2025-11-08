@@ -30,30 +30,57 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Ensure scrollable content has proper padding on mobile */
+/* Comprehensive mobile scrolling fixes */
 @media (max-width: 768px) {
   /* Ensure touch scrolling works smoothly on all scrollable elements */
   * {
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Prevent horizontal overflow */
+  /* Prevent horizontal overflow on all elements */
   * {
     max-width: 100%;
     box-sizing: border-box;
   }
   
-  /* Fix for mobile viewport height issues */
+  /* Fix for mobile viewport height issues - convert fixed heights to min-heights */
   .h-screen {
-    min-height: 100vh;
-    min-height: 100dvh;
-    height: auto;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    height: auto !important;
   }
   
-  /* Ensure min-h-screen allows content to grow */
+  /* Ensure min-h-screen allows content to grow and scroll */
   .min-h-screen {
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+  }
+  
+  /* Force all overflow-hidden to allow vertical scrolling on mobile */
+  [class*="overflow-hidden"]:not([class*="overflow-x-hidden"]) {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Ensure flex containers with flex-1 can scroll */
+  .flex-1 {
+    min-height: 0 !important;
+  }
+  
+  /* Add bottom padding to all min-h-screen containers to prevent content cutoff */
+  .min-h-screen:not([class*="pb-"]) {
+    padding-bottom: 4rem !important;
+  }
+  
+  /* Ensure all content containers can scroll - but only if they don't already have overflow set */
+  div[class*="min-h-screen"]:not([class*="overflow"]) {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Ensure fixed bottom elements don't cover content */
+  [class*="fixed"][class*="bottom"] {
+    z-index: 50;
   }
   
   /* Add safe area padding for mobile devices */
@@ -64,6 +91,11 @@ body {
   /* Ensure all containers can scroll if content overflows */
   [class*="overflow"] {
     -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Prevent content from being cut off by ensuring proper scrolling */
+  div[class*="min-h-screen"] > * {
+    min-height: auto;
   }
 }
 

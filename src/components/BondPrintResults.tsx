@@ -42,7 +42,7 @@ export function BondPrintResults({ bondPrint, onContinue }: BondPrintResultsProp
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 pb-24">
       {/* Top Close Button */}
       <div className="max-w-3xl mx-auto pt-4 flex justify-end">
         <Button

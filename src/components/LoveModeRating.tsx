@@ -152,7 +152,7 @@ export function LoveModeRating({ userProfile, accessToken, onRatingComplete }: L
   const currentProfile = profiles[currentIndex];
 
   return (
-    <div className="h-full bg-white overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-white overflow-y-auto overflow-x-hidden flex flex-col pb-24">
       {/* Minimal Header */}
       <div className="bg-white px-4 py-3 flex items-center justify-between border-b">
         <button 
@@ -406,6 +406,8 @@ export function LoveModeRating({ userProfile, accessToken, onRatingComplete }: L
           </div>
         </div>
       </div>
+      {/* Bottom padding for mobile */}
+      <div className="h-4 md:hidden" />
     </div>
   );
 }

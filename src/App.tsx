@@ -148,7 +148,7 @@ export default function App() {
   return (
     <Suspense fallback={<LoadingScreen />}>
       <BetaAccessGate onAccessGranted={() => console.log('Beta access granted')}>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 overflow-x-hidden">
           {appState === 'loading' && <LoadingScreen />}
           <Suspense fallback={<LoadingScreen />}>
             {appState === 'auth' && <AuthFlow onAuthSuccess={handleAuthSuccess} />}

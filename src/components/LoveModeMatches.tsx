@@ -43,7 +43,7 @@ export function LoveModeMatches({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50 pb-24">
       {/* Header */}
       <div className="bg-white border-b px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">

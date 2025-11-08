@@ -184,7 +184,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] max-h-[90dvh] overflow-y-auto overflow-x-hidden">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-3xl">
           <div className="flex items-center gap-2">

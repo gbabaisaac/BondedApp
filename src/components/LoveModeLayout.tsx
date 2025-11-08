@@ -9,9 +9,9 @@ interface LoveModeLayoutProps {
 
 export function LoveModeLayout({ children, activeTab, onTabChange }: LoveModeLayoutProps) {
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {children}
       </div>
 

@@ -128,7 +128,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-4">
         {/* Image with tap zones for navigation */}
         <div 
           className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden"

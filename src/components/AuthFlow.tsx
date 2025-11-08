@@ -145,7 +145,7 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
   };
 
   return (
-    <div className="min-h-screen p-4 py-8">
+    <div className="min-h-screen p-4 py-8 pb-24">
       <div className="w-full max-w-md mx-auto space-y-4">
 
         <Card className="w-full">
