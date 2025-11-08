@@ -120,6 +120,8 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
       style={{
         height: '100vh',
         height: '100dvh',
+        maxHeight: '100dvh',
+        overflow: 'hidden',
       }}
     >
       {/* Header */}
@@ -136,11 +138,10 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
       {/* Scrollable Content */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden"
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
         }}
       >
         {/* Image with tap zones for navigation */}
@@ -330,10 +331,11 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         </div>
       </div>
 
-      {/* Action Buttons - Fixed at bottom */}
+      {/* Action Buttons - Fixed at bottom - NO flex-1, stays at natural height */}
       <div
-        className="flex-shrink-0 bg-white border-t border-gray-200 px-4 py-4 safe-bottom"
+        className="flex-shrink-0 bg-white border-t border-gray-200 px-4 py-4"
         style={{
+          paddingTop: '1rem',
           paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
         }}
       >

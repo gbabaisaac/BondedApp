@@ -108,13 +108,21 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
         }
       );
 
-      if (!response.ok) throw new Error('Failed to load connections');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to load connections:', response.status, errorText);
+        throw new Error(`Failed to load connections: ${response.status}`);
+      }
 
       const data = await response.json();
-      setConnections(data);
+      // Ensure data is an array
+      const connectionsArray = Array.isArray(data) ? data : (data.connections || data.data || []);
+      setConnections(connectionsArray);
     } catch (error) {
       console.error('Load connections error:', error);
       toast.error('Failed to load connections');
+      // Set empty array on error to prevent crashes
+      setConnections([]);
     }
   };
 
@@ -194,9 +202,12 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
     return (
       <ProfileDetailView
         profile={selectedProfile}
-        userProfile={userProfile}
         accessToken={accessToken}
         onClose={() => setSelectedProfile(null)}
+        onNext={() => {}} // Not used in connections view
+        onPrev={() => {}} // Not used in connections view
+        hasNext={false}
+        hasPrev={false}
       />
     );
   }
@@ -416,30 +427,43 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                   </Card>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
-                    {connections.map((connection) => (
-                      <Card 
-                        key={connection.id} 
-                        className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => setSelectedProfile(connection)}
-                      >
-                        <CardContent className="p-0">
-                          <div className="h-32 bg-gradient-to-br from-indigo-500 to-purple-500 relative">
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <Avatar className="w-20 h-20 border-4 border-white">
-                                <AvatarImage src={connection.profilePicture} />
-                                <AvatarFallback className="text-xl bg-white text-indigo-600">
-                                  {getInitials(connection.name)}
-                                </AvatarFallback>
-                              </Avatar>
+                    {connections.map((connection) => {
+                      // Ensure connection has required fields
+                      if (!connection || !connection.id) {
+                        console.warn('Invalid connection data:', connection);
+                        return null;
+                      }
+                      
+                      return (
+                        <Card 
+                          key={connection.id} 
+                          className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => {
+                            // Ensure profile has required fields before setting
+                            if (connection.name) {
+                              setSelectedProfile(connection);
+                            }
+                          }}
+                        >
+                          <CardContent className="p-0">
+                            <div className="h-32 bg-gradient-to-br from-indigo-500 to-purple-500 relative">
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Avatar className="w-20 h-20 border-4 border-white">
+                                  <AvatarImage src={connection.profilePicture || connection.imageUrl} />
+                                  <AvatarFallback className="text-xl bg-white text-indigo-600">
+                                    {getInitials(connection.name || 'U')}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
                             </div>
-                          </div>
-                          <div className="p-3 text-center">
-                            <h3 className="font-medium text-sm mb-1">{connection.name}</h3>
-                            <p className="text-xs text-gray-600">{connection.major}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            <div className="p-3 text-center">
+                              <h3 className="font-medium text-sm mb-1">{connection.name || 'Unknown'}</h3>
+                              <p className="text-xs text-gray-600">{connection.major || ''}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </>
