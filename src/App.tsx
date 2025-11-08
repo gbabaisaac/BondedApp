@@ -1,5 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { LoadingScreen } from './components/LoadingScreen';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { getSupabaseClient } from './utils/supabase/client';
 import { projectId, publicAnonKey } from './utils/supabase/info';
 
@@ -146,9 +147,10 @@ export default function App() {
   };
 
   return (
-    <Suspense fallback={<LoadingScreen />}>
-      <BetaAccessGate onAccessGranted={() => console.log('Beta access granted')}>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 overflow-x-hidden">
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingScreen />}>
+        <BetaAccessGate onAccessGranted={() => console.log('Beta access granted')}>
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 overflow-x-hidden">
           {appState === 'loading' && <LoadingScreen />}
           <Suspense fallback={<LoadingScreen />}>
             {appState === 'auth' && <AuthFlow onAuthSuccess={handleAuthSuccess} />}
@@ -186,5 +188,6 @@ export default function App() {
         </div>
       </BetaAccessGate>
     </Suspense>
+    </ErrorBoundary>
   );
 }

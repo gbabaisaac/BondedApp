@@ -55,16 +55,18 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       if (!response.ok) throw new Error('Failed to load chats');
 
       const data = await response.json();
-      setChats(data);
+      setChats(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Load chats error:', error);
+      toast.error('Failed to load chats');
+      setChats([]);
     } finally {
       setLoading(false);
     }
   };
 
   const loadMessages = async () => {
-    if (!selectedChat) return;
+    if (!selectedChat?.chatId) return;
 
     try {
       const response = await fetch(
@@ -79,14 +81,16 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       if (!response.ok) throw new Error('Failed to load messages');
 
       const data = await response.json();
-      setMessages(data);
+      setMessages(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Load messages error:', error);
+      toast.error('Failed to load messages');
+      setMessages([]);
     }
   };
 
   const sendMessage = async () => {
-    if (!messageText.trim() || sending) return;
+    if (!messageText.trim() || sending || !selectedChat?.chatId) return;
 
     setSending(true);
     try {
@@ -107,7 +111,7 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       if (!response.ok) throw new Error('Failed to send message');
 
       setMessageText('');
-      loadMessages();
+      await loadMessages();
     } catch (error) {
       console.error('Send message error:', error);
       toast.error('Failed to send message');
@@ -164,38 +168,45 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
             </div>
           ) : (
             <div className="divide-y">
-              {chats.map((chat) => (
-                <div
-                  key={chat.chatId}
-                  onClick={() => setSelectedChat(chat)}
-                  className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3"
-                >
-                  <Avatar className="w-14 h-14">
-                    <AvatarImage src={chat.otherUser?.profilePicture} />
-                    <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
-                      {getInitials(chat.otherUser?.name || 'U')}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between mb-1">
-                      <h3 className="font-medium">{chat.otherUser?.name}</h3>
-                      {chat.lastMessage && (
-                        <span className="text-xs text-gray-500">Just now</span>
+              {chats.map((chat) => {
+                if (!chat?.chatId || !chat?.otherUser) {
+                  console.warn('Invalid chat data:', chat);
+                  return null;
+                }
+
+                return (
+                  <div
+                    key={chat.chatId}
+                    onClick={() => setSelectedChat(chat)}
+                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3"
+                  >
+                    <Avatar className="w-14 h-14">
+                      <AvatarImage src={chat.otherUser?.profilePicture} />
+                      <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
+                        {getInitials(chat.otherUser?.name || 'User')}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between mb-1">
+                        <h3 className="font-medium">{chat.otherUser?.name || 'Unknown'}</h3>
+                        {chat.lastMessage && (
+                          <span className="text-xs text-gray-500">Just now</span>
+                        )}
+                      </div>
+                      {chat.lastMessage ? (
+                        <p className="text-sm text-gray-600 truncate">
+                          {chat.lastMessage}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">
+                          Start a conversation
+                        </p>
                       )}
                     </div>
-                    {chat.lastMessage ? (
-                      <p className="text-sm text-gray-600 truncate">
-                        {chat.lastMessage}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-gray-400 italic">
-                        Start a conversation
-                      </p>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -203,33 +214,46 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
     );
   }
 
+  // Safety check
+  if (!selectedChat?.otherUser) {
+    console.error('Invalid selected chat:', selectedChat);
+    setSelectedChat(null);
+    return null;
+  }
+
   // Chat View
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Chat Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
+      <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
         <button
           onClick={() => setSelectedChat(null)}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors -ml-2"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        
+
         <Avatar className="w-10 h-10">
           <AvatarImage src={selectedChat.otherUser?.profilePicture} />
           <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
-            {getInitials(selectedChat.otherUser?.name || 'U')}
+            {getInitials(selectedChat.otherUser?.name || 'User')}
           </AvatarFallback>
         </Avatar>
-        
+
         <div className="flex-1 min-w-0">
-          <h2 className="font-medium">{selectedChat.otherUser?.name}</h2>
-          <p className="text-xs text-gray-600">{selectedChat.otherUser?.major}</p>
+          <h2 className="font-medium">{selectedChat.otherUser?.name || 'Unknown'}</h2>
+          <p className="text-xs text-gray-600">{selectedChat.otherUser?.major || ''}</p>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain'
+        }}
+      >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -295,7 +319,13 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       </div>
 
       {/* Message Input */}
-      <div className="bg-white border-t px-4 py-3">
+      <div
+        className="bg-white border-t px-4 flex-shrink-0"
+        style={{
+          paddingTop: '0.75rem',
+          paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'
+        }}
+      >
         <div className="flex gap-2">
           <Input
             value={messageText}

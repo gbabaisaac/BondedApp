@@ -70,14 +70,32 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken }: 
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div
+      className="h-full flex flex-col bg-white"
+      style={{
+        height: '100%',
+        position: 'relative'
+      }}
+    >
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))'
+        }}
+      >
         {children}
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-bottom">
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}
+      >
         <div className="flex items-center justify-around h-16 px-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;

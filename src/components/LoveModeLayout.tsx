@@ -9,14 +9,32 @@ interface LoveModeLayoutProps {
 
 export function LoveModeLayout({ children, activeTab, onTabChange }: LoveModeLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
+    <div
+      className="h-full flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-red-50"
+      style={{
+        height: '100%',
+        position: 'relative'
+      }}
+    >
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))'
+        }}
+      >
         {children}
       </div>
 
       {/* Bottom Navigation */}
-      <div className="bg-white border-t">
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t z-50"
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}
+      >
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-around py-2">
             <button

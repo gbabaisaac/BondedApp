@@ -33,9 +33,16 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
 
   // Friend Mode uses the standard layout
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      className="fixed inset-0 flex flex-col bg-white"
+      style={{
+        height: '100vh',
+        height: '100dvh',
+        overflow: 'hidden'
+      }}
+    >
       <ModeToggle mode={mode} onChange={setMode} />
-      <div className="flex-1 overflow-x-hidden">
+      <div className="flex-1 overflow-hidden">
         <MobileLayout activeTab={currentView} onTabChange={setCurrentView} accessToken={accessToken}>
           {currentView === 'discover' && (
             <InstagramGrid userProfile={userProfile} accessToken={accessToken} />

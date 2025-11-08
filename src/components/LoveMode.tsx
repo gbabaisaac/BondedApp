@@ -226,7 +226,13 @@ export function LoveMode({ userProfile, accessToken, onExit }: LoveModeProps) {
   // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
+      <div
+        className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-red-50"
+        style={{
+          height: '100vh',
+          height: '100dvh'
+        }}
+      >
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading Love Mode...</p>
@@ -249,9 +255,16 @@ export function LoveMode({ userProfile, accessToken, onExit }: LoveModeProps) {
 
   // Main Love Mode with navigation
   return (
-    <div className="min-h-screen flex flex-col">
+    <div
+      className="fixed inset-0 flex flex-col"
+      style={{
+        height: '100vh',
+        height: '100dvh',
+        overflow: 'hidden'
+      }}
+    >
       <LoveModeHeader onBack={onExit} />
-      <div className="flex-1 overflow-x-hidden">
+      <div className="flex-1 overflow-hidden">
         <LoveModeLayout activeTab={currentTab} onTabChange={handleTabChange}>
           {currentView === 'rating' && (
             <LoveModeRating
