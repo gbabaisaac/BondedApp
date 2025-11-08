@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { LoadingScreen } from './components/LoadingScreen';
-import { AuthFlow } from './components/AuthFlow';
-import { ProfileSetup } from './components/ProfileSetup';
-import { MainApp } from './components/MainApp';
-import { DebugPanel } from './components/DebugPanel';
-import { BondPrintQuiz } from './components/BondPrintQuiz';
-import { BondPrintResults } from './components/BondPrintResults';
-import { BetaAccessGate } from './components/BetaAccessGate';
-import { Toaster } from './components/ui/sonner';
 import { getSupabaseClient } from './utils/supabase/client';
 import { projectId, publicAnonKey } from './utils/supabase/info';
+
+// Lazy load heavy components
+const AuthFlow = lazy(() => import('./components/AuthFlow').then(module => ({ default: module.AuthFlow })));
+const ProfileSetup = lazy(() => import('./components/ProfileSetup').then(module => ({ default: module.ProfileSetup })));
+const MainApp = lazy(() => import('./components/MainApp').then(module => ({ default: module.MainApp })));
+const BondPrintQuiz = lazy(() => import('./components/BondPrintQuiz').then(module => ({ default: module.BondPrintQuiz })));
+const BondPrintResults = lazy(() => import('./components/BondPrintResults').then(module => ({ default: module.BondPrintResults })));
+const BetaAccessGate = lazy(() => import('./components/BetaAccessGate').then(module => ({ default: module.BetaAccessGate })));
+const Toaster = lazy(() => import('./components/ui/sonner').then(module => ({ default: module.Toaster })));
 
 const supabase = getSupabaseClient();
 
@@ -145,39 +146,45 @@ export default function App() {
   };
 
   return (
-    <BetaAccessGate onAccessGranted={() => console.log('Beta access granted')}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-        {appState === 'loading' && <LoadingScreen />}
-        {appState === 'auth' && <AuthFlow onAuthSuccess={handleAuthSuccess} />}
-        {appState === 'profile-setup' && (
-          <ProfileSetup
-            accessToken={accessToken!}
-            onComplete={handleProfileComplete}
-          />
-        )}
-        {appState === 'bond-print-quiz' && userProfile && (
-          <BondPrintQuiz
-            userProfile={userProfile}
-            accessToken={accessToken!}
-            onComplete={handleBondPrintComplete}
-            onSkip={handleSkipBondPrint}
-          />
-        )}
-        {appState === 'bond-print-results' && bondPrintData && (
-          <BondPrintResults
-            bondPrint={bondPrintData}
-            onContinue={handleBondPrintResultsContinue}
-          />
-        )}
-        {appState === 'main' && userProfile && (
-          <MainApp
-            userProfile={userProfile}
-            accessToken={accessToken!}
-            onLogout={handleLogout}
-          />
-        )}
-        <Toaster />
-      </div>
-    </BetaAccessGate>
+    <Suspense fallback={<LoadingScreen />}>
+      <BetaAccessGate onAccessGranted={() => console.log('Beta access granted')}>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+          {appState === 'loading' && <LoadingScreen />}
+          <Suspense fallback={<LoadingScreen />}>
+            {appState === 'auth' && <AuthFlow onAuthSuccess={handleAuthSuccess} />}
+            {appState === 'profile-setup' && (
+              <ProfileSetup
+                accessToken={accessToken!}
+                onComplete={handleProfileComplete}
+              />
+            )}
+            {appState === 'bond-print-quiz' && userProfile && (
+              <BondPrintQuiz
+                userProfile={userProfile}
+                accessToken={accessToken!}
+                onComplete={handleBondPrintComplete}
+                onSkip={handleSkipBondPrint}
+              />
+            )}
+            {appState === 'bond-print-results' && bondPrintData && (
+              <BondPrintResults
+                bondPrint={bondPrintData}
+                onContinue={handleBondPrintResultsContinue}
+              />
+            )}
+            {appState === 'main' && userProfile && (
+              <MainApp
+                userProfile={userProfile}
+                accessToken={accessToken!}
+                onLogout={handleLogout}
+              />
+            )}
+          </Suspense>
+          <Suspense fallback={null}>
+            <Toaster />
+          </Suspense>
+        </div>
+      </BetaAccessGate>
+    </Suspense>
   );
 }
