@@ -161,12 +161,22 @@ export function LoveModeOnboarding({ onActivate, onCancel }: LoveModeOnboardingP
   const Icon = currentStep.icon;
 
   return (
-    <div className="h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50 flex items-center justify-center p-4 overflow-y-auto" style={{ height: '100dvh' }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg my-auto"
-      >
+    <div
+      className="fixed inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-red-50 overflow-y-auto p-4"
+      style={{
+        height: '100vh',
+        height: '100dvh',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain',
+        touchAction: 'pan-y'
+      }}
+    >
+      <div className="min-h-full flex items-center justify-center py-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-lg"
+        >
         <Card className="shadow-2xl">
           <CardContent className="pt-8 pb-6 px-6">
             {/* Progress Dots */}
@@ -250,7 +260,8 @@ export function LoveModeOnboarding({ onActivate, onCancel }: LoveModeOnboardingP
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
