@@ -1,0 +1,117 @@
+// Start Love Print Quiz
+app.post("/make-server-2516be19/love-print/start", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { userProfile } = await c.req.json();
+
+    // Get first question (tries Gemini, falls back to preset)
+    const result = await getFirstQuestion(userProfile);
+
+    // Initialize quiz session
+    const quizSession = {
+      userId,
+      startedAt: new Date().toISOString(),
+      currentQuestion: 1,
+      answers: [],
+      userProfile,
+      usedGemini: result.usedGemini,
+    };
+
+    await kv.set(`quiz:${userId}`, quizSession);
+
+    return c.json({
+      questionNumber: 1,
+      totalQuestions: 8,
+      question: result.question.question,
+      options: result.question.options,
+    });
+  } catch (error: any) {
+    console.error('Love Print quiz start error:', error);
+    return c.json({ error: error.message || 'Failed to start quiz' }, 500);
+  }
+});
+
+// Submit answer and get next question
+app.post("/make-server-2516be19/love-print/answer", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { answer, questionText } = await c.req.json();
+
+    // Get quiz session
+    const quizSession = await kv.get(`quiz:${userId}`);
+    if (!quizSession) {
+      return c.json({ error: 'Quiz session not found' }, 404);
+    }
+
+    // Store answer
+    quizSession.answers.push({
+      question: questionText,
+      answer,
+      timestamp: new Date().toISOString(),
+    });
+    quizSession.currentQuestion += 1;
+
+    await kv.set(`quiz:${userId}`, quizSession);
+
+    // If we have enough answers (8+), generate Love Print
+    if (quizSession.answers.length >= 8) {
+      return c.json({ completed: true });
+    }
+
+    // Get next question (tries Gemini, falls back to preset)
+    const questionData = await getNextQuestion(quizSession);
+
+    return c.json({
+      questionNumber: quizSession.currentQuestion,
+      totalQuestions: 8,
+      question: questionData.question,
+      options: questionData.options,
+    });
+  } catch (error: any) {
+    console.error('Love Print answer error:', error);
+    return c.json({ error: error.message || 'Failed to process answer' }, 500);
+  }
+});
+
+// Generate final Love Print from quiz answers
+app.post("/make-server-2516be19/love-print/generate", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // Get quiz session
+    const quizSession = await kv.get(`quiz:${userId}`);
+    if (!quizSession || quizSession.answers.length < 6) {
+      return c.json({ error: 'Not enough quiz answers' }, 400);
+    }
+
+    // Generate Love Print (tries Gemini, falls back to algorithm)
+    const lovePrint = await generateLovePrint(quizSession);
+
+    // Store in user profile
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile) {
+      userProfile.lovePrint = lovePrint;
+      userProfile.hasCompletedLovePrint = true;
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    // Clean up quiz session
+    await kv.del(`quiz:${userId}`);
+
+    return c.json({ lovePrint });
+  } catch (error: any) {
+    console.error('Love Print generation error:', error);
+    return c.json({ error: error.message || 'Failed to generate Love Print' }, 500);
+  }
+});
