@@ -116,7 +116,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
   return (
     <div
-      className="fixed inset-0 bg-white z-50 flex flex-col"
+      className="fixed inset-0 bg-white z-[100] flex flex-col"
       style={{
         height: '100vh',
         height: '100dvh',
@@ -332,7 +332,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
       {/* Action Buttons - Fixed at bottom */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[60] px-4 py-4 safe-bottom"
+        className="flex-shrink-0 bg-white border-t border-gray-200 px-4 py-4 safe-bottom"
         style={{
           paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
         }}
