@@ -140,7 +140,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))',
+          paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
         }}
       >
         {/* Image with tap zones for navigation */}
@@ -330,20 +330,19 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Fixed at bottom */}
       <div
-        className={`${theme.components.navigation.bottom} px-4`}
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[60] px-4 py-4 safe-bottom"
         style={{
-          paddingTop: '1rem',
-          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+          paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
         }}
       >
-        <div className={`flex ${theme.spacing.gap.sm} ${theme.layout.maxWidth} mx-auto`}>
+        <div className="flex gap-3 max-w-2xl mx-auto">
           <Button
             variant="outline"
             size="lg"
             onClick={handleLike}
-            className={`flex-1 ${theme.spacing.gap.sm} font-semibold ${
+            className={`flex-1 gap-2 font-semibold ${
               liked ? 'bg-red-50 border-red-400 text-red-600 hover:bg-red-100' : 'hover:border-gray-400'
             }`}
           >
@@ -353,7 +352,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           <Button
             size="lg"
             onClick={() => setShowSoftIntro(true)}
-            className={`flex-1 ${theme.spacing.gap.sm} bg-gradient-to-r ${theme.colors.primary.gradient} hover:from-indigo-700 hover:to-purple-700 font-semibold`}
+            className="flex-1 gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold"
           >
             <Sparkles className="w-5 h-5" />
             Soft Intro
