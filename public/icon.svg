@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <rect width="512" height="512" rx="128" fill="url(#gradient)"/>
+
+  <!-- Bond/Link icon - two connected circles with a heart -->
+  <circle cx="200" cy="200" r="80" fill="white" opacity="0.9"/>
+  <circle cx="312" cy="312" r="80" fill="white" opacity="0.9"/>
+
+  <!-- Connection line -->
+  <line x1="256" y1="256" x2="256" y2="256" stroke="white" stroke-width="16" opacity="0.9"/>
+
+  <!-- Heart in the center -->
+  <path d="M256 280 C256 280, 220 244, 220 220 C220 200, 235 190, 256 205 C277 190, 292 200, 292 220 C292 244, 256 280, 256 280Z" fill="#EC4899" stroke="white" stroke-width="4"/>
+
+  <!-- Letter B -->
+  <text x="256" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="200" font-weight="800" fill="white" text-anchor="middle">B</text>
+
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

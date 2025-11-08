@@ -320,9 +320,9 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex flex-col pb-4">
+    <div className="h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex flex-col" style={{ height: '100dvh' }}>
       {/* Header with Progress */}
-      <div className="bg-white border-b px-4 py-4">
+      <div className="bg-white border-b px-4 py-4 flex-shrink-0">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl">Create Your Profile</h2>
@@ -333,7 +333,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 min-h-0">
         <div className="max-w-2xl mx-auto">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
@@ -728,7 +728,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
       </div>
 
       {/* Navigation Buttons */}
-      <div className="bg-white border-t px-4 py-4">
+      <div className="bg-white border-t px-4 py-4 flex-shrink-0 safe-bottom">
         <div className="max-w-2xl mx-auto flex gap-3">
           {step > 1 && (
             <Button

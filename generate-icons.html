@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Bonded App Icons</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .icon-preview {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            border-radius: 20px;
+        }
+        button {
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bonded App Icon Generator</h1>
+    <p>This page generates PNG icons for your PWA. Click the buttons below to download each size.</p>
+
+    <div id="previews"></div>
+
+    <script>
+        const sizes = [192, 512];
+        const previewsDiv = document.getElementById('previews');
+
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#6366f1');
+            gradient.addColorStop(1, '#ec4899');
+
+            // Draw rounded rectangle background
+            const radius = size * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw "B" letter
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.5}px system-ui, -apple-system, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('B', size / 2, size / 2);
+
+            // Draw heart accent
+            const heartSize = size * 0.12;
+            const heartX = size * 0.7;
+            const heartY = size * 0.3;
+
+            ctx.fillStyle = '#ec4899';
+            ctx.beginPath();
+            const topCurveHeight = heartSize * 0.3;
+            ctx.moveTo(heartX, heartY + topCurveHeight);
+            // Left curve
+            ctx.bezierCurveTo(
+                heartX, heartY,
+                heartX - heartSize / 2, heartY,
+                heartX - heartSize / 2, heartY + topCurveHeight
+            );
+            ctx.bezierCurveTo(
+                heartX - heartSize / 2, heartY + (heartSize + topCurveHeight) / 2,
+                heartX, heartY + (heartSize + topCurveHeight) / 1.2,
+                heartX, heartY + heartSize
+            );
+            // Right curve
+            ctx.bezierCurveTo(
+                heartX, heartY + (heartSize + topCurveHeight) / 1.2,
+                heartX + heartSize / 2, heartY + (heartSize + topCurveHeight) / 2,
+                heartX + heartSize / 2, heartY + topCurveHeight
+            );
+            ctx.bezierCurveTo(
+                heartX + heartSize / 2, heartY,
+                heartX, heartY,
+                heartX, heartY + topCurveHeight
+            );
+            ctx.closePath();
+            ctx.fill();
+
+            // Create preview
+            const preview = document.createElement('div');
+            preview.className = 'icon-preview';
+
+            const previewCanvas = document.createElement('canvas');
+            previewCanvas.width = 200;
+            previewCanvas.height = 200;
+            const previewCtx = previewCanvas.getContext('2d');
+            previewCtx.drawImage(canvas, 0, 0, 200, 200);
+
+            const downloadBtn = document.createElement('button');
+            downloadBtn.textContent = `Download ${size}x${size}`;
+            downloadBtn.onclick = () => {
+                const link = document.createElement('a');
+                link.download = `icon-${size}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+
+            preview.appendChild(previewCanvas);
+            preview.appendChild(document.createElement('br'));
+            preview.appendChild(downloadBtn);
+            previewsDiv.appendChild(preview);
+        });
+
+        // Add download all button
+        const downloadAllBtn = document.createElement('button');
+        downloadAllBtn.textContent = 'Download All Icons';
+        downloadAllBtn.style.display = 'block';
+        downloadAllBtn.style.margin = '20px auto';
+        downloadAllBtn.onclick = () => {
+            document.querySelectorAll('button').forEach((btn, idx) => {
+                if (btn !== downloadAllBtn) {
+                    setTimeout(() => btn.click(), idx * 500);
+                }
+            });
+        };
+        document.body.appendChild(downloadAllBtn);
+
+        // Instructions
+        const instructions = document.createElement('div');
+        instructions.style.marginTop = '30px';
+        instructions.style.padding = '20px';
+        instructions.style.background = '#f5f5f5';
+        instructions.style.borderRadius = '8px';
+        instructions.innerHTML = `
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click "Download All Icons" or download each size individually</li>
+                <li>Save the downloaded PNG files to the <code>public/</code> folder in your project</li>
+                <li>The icons should be named: <code>icon-192.png</code> and <code>icon-512.png</code></li>
+                <li>Rebuild your app with <code>npm run build</code></li>
+            </ol>
+            <p><strong>Note:</strong> For production, consider creating custom icons with professional design tools like Figma or Adobe Illustrator.</p>
+        `;
+        document.body.appendChild(instructions);
+    </script>
+</body>
+</html>

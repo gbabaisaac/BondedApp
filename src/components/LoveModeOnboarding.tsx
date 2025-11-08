@@ -161,11 +161,11 @@ export function LoveModeOnboarding({ onActivate, onCancel }: LoveModeOnboardingP
   const Icon = currentStep.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50 flex items-center justify-center p-4">
+    <div className="h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50 flex items-center justify-center p-4 overflow-y-auto" style={{ height: '100dvh' }}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg"
+        className="w-full max-w-lg my-auto"
       >
         <Card className="shadow-2xl">
           <CardContent className="pt-8 pb-6 px-6">
