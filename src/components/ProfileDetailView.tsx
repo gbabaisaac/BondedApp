@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { SoftIntroFlow } from './SoftIntroFlow';
 import { projectId } from '../utils/supabase/info';
+import { theme } from '../utils/theme';
 
 interface Profile {
   id: string;
@@ -114,21 +115,34 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+    <div
+      className="fixed inset-0 bg-white z-50 flex flex-col"
+      style={{
+        height: '100vh',
+        height: '100dvh',
+      }}
+    >
       {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <button onClick={onClose} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
+      <div className={`${theme.components.navigation.header} px-4 py-4 flex items-center justify-between flex-shrink-0`}>
+        <button onClick={onClose} className={`p-2 -ml-2 hover:bg-gray-100 rounded-full ${theme.transition.default}`}>
           <X className="w-6 h-6" />
         </button>
         <div className="flex-1 text-center">
-          <h3 className="font-medium">{profile.name}, {profile.age}</h3>
-          <p className="text-xs text-gray-500">{profile.school}</p>
+          <h3 className="font-semibold text-lg">{profile.name}, {profile.age}</h3>
+          <p className="text-sm text-gray-500">{profile.school}</p>
         </div>
         <div className="w-10" /> {/* Spacer for centering */}
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-4">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))',
+        }}
+      >
         {/* Image with tap zones for navigation */}
         <div 
           className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden"
@@ -317,24 +331,34 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
       </div>
 
       {/* Action Buttons */}
-      <div className="border-t bg-white p-4 flex gap-3">
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={handleLike}
-          className={`flex-1 gap-2 ${liked ? 'bg-red-50 border-red-300 text-red-600' : ''}`}
-        >
-          <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
-          {liked ? 'Liked' : 'Like'}
-        </Button>
-        <Button
-          size="lg"
-          onClick={() => setShowSoftIntro(true)}
-          className="flex-1 gap-2 bg-indigo-600 hover:bg-indigo-700"
-        >
-          <Sparkles className="w-5 h-5" />
-          Soft Intro
-        </Button>
+      <div
+        className={`${theme.components.navigation.bottom} px-4`}
+        style={{
+          paddingTop: '1rem',
+          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
+      >
+        <div className={`flex ${theme.spacing.gap.sm} ${theme.layout.maxWidth} mx-auto`}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleLike}
+            className={`flex-1 ${theme.spacing.gap.sm} font-semibold ${
+              liked ? 'bg-red-50 border-red-400 text-red-600 hover:bg-red-100' : 'hover:border-gray-400'
+            }`}
+          >
+            <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
+            {liked ? 'Liked' : 'Like'}
+          </Button>
+          <Button
+            size="lg"
+            onClick={() => setShowSoftIntro(true)}
+            className={`flex-1 ${theme.spacing.gap.sm} bg-gradient-to-r ${theme.colors.primary.gradient} hover:from-indigo-700 hover:to-purple-700 font-semibold`}
+          >
+            <Sparkles className="w-5 h-5" />
+            Soft Intro
+          </Button>
+        </div>
       </div>
 
       {/* Soft Intro Flow */}

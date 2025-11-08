@@ -7,6 +7,7 @@ import { Heart, X, MapPin, GraduationCap, Briefcase, Sparkles, Info, ArrowLeft, 
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
+import { theme } from '../utils/theme';
 
 interface LoveModeRatingProps {
   userProfile: any;
@@ -152,26 +153,32 @@ export function LoveModeRating({ userProfile, accessToken, onRatingComplete }: L
   const currentProfile = profiles[currentIndex];
 
   return (
-    <div className="min-h-screen bg-white overflow-y-auto overflow-x-hidden flex flex-col pb-24">
+    <div
+      className="fixed inset-0 bg-white flex flex-col"
+      style={{
+        height: '100vh',
+        height: '100dvh',
+      }}
+    >
       {/* Minimal Header */}
-      <div className="bg-white px-4 py-3 flex items-center justify-between border-b">
-        <button 
+      <div className={`${theme.components.navigation.header} px-4 py-4 flex items-center justify-between flex-shrink-0`}>
+        <button
           onClick={onRatingComplete}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors -ml-2"
+          className={`p-2 hover:bg-gray-100 rounded-full ${theme.transition.default} -ml-2`}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h3 className="font-medium">Rate Profiles</h3>
-        <span className="text-sm text-gray-500">
+        <h3 className="font-semibold text-lg">Rate Profiles</h3>
+        <span className="text-sm text-gray-600 font-medium">
           {currentIndex + 1} / {profiles.length}
         </span>
       </div>
 
       {/* Progress Bar */}
-      <div className="px-4 py-2">
-        <div className="h-1 bg-gray-200 rounded-full overflow-hidden max-w-2xl mx-auto">
+      <div className="px-4 py-2 flex-shrink-0">
+        <div className={`h-1 bg-gray-200 rounded-full overflow-hidden ${theme.layout.maxWidth} mx-auto`}>
           <motion.div
-            className="h-full bg-gradient-to-r from-pink-500 to-rose-500"
+            className={`h-full bg-gradient-to-r ${theme.colors.love.gradient}`}
             initial={{ width: 0 }}
             animate={{ width: `${((currentIndex + 1) / profiles.length) * 100}%` }}
             transition={{ duration: 0.3 }}
@@ -180,17 +187,22 @@ export function LoveModeRating({ userProfile, accessToken, onRatingComplete }: L
       </div>
 
       {/* Info Banner */}
-      <div className="bg-pink-50 px-4 py-2 border-b border-pink-100">
-        <div className="max-w-2xl mx-auto flex items-start gap-2">
+      <div className="bg-pink-50 px-4 py-2 border-b border-pink-100 flex-shrink-0">
+        <div className={`${theme.layout.maxWidth} mx-auto flex items-start ${theme.spacing.gap.sm}`}>
           <Info className="w-4 h-4 text-pink-600 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-pink-900">
-            Rate honestly 1-10. Link's AI uses your ratings to create meaningful matches.
+          <p className="text-xs text-pink-900 font-medium">
+            Rate honestly 1-10. Bonded's AI uses your ratings to create meaningful matches.
           </p>
         </div>
       </div>
 
       {/* Main Card - Tinder Style */}
-      <div className="flex-1 overflow-hidden">
+      <div
+        className="flex-1 overflow-hidden"
+        style={{
+          minHeight: 0,
+        }}
+      >
         <div className="h-full max-w-2xl mx-auto px-4 py-4 flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div
@@ -353,11 +365,17 @@ export function LoveModeRating({ userProfile, accessToken, onRatingComplete }: L
       </div>
 
       {/* Rating Interface - Bottom Fixed */}
-      <div className="bg-white border-t px-4 py-4 safe-bottom">
-        <div className="max-w-2xl mx-auto space-y-3">
+      <div
+        className={`${theme.components.navigation.bottom} px-4`}
+        style={{
+          paddingTop: '1rem',
+          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        }}
+      >
+        <div className={`${theme.layout.maxWidth} mx-auto space-y-3`}>
           <div className="text-center">
-            <p className="text-sm font-medium">Rate this person</p>
-            <p className="text-xs text-gray-500 mt-0.5">1 = Not interested • 10 = Very interested</p>
+            <p className="text-sm font-semibold">Rate this person</p>
+            <p className="text-xs text-gray-600 mt-0.5">1 = Not interested • 10 = Very interested</p>
           </div>
 
           {/* Rating Buttons */}
@@ -387,27 +405,25 @@ export function LoveModeRating({ userProfile, accessToken, onRatingComplete }: L
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-1">
+          <div className={`flex ${theme.spacing.gap.sm} pt-1`}>
             <Button
               variant="outline"
               onClick={handleSkip}
               disabled={submitting}
-              className="flex-1 h-12 border-gray-300"
+              className="flex-1 h-12 border-gray-300 font-semibold"
             >
               Skip
             </Button>
             <Button
               onClick={() => selectedRating && submitRating(selectedRating)}
               disabled={!selectedRating || submitting}
-              className="flex-1 h-12 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-sm"
+              className={`flex-1 h-12 bg-gradient-to-r ${theme.colors.love.gradient} hover:from-pink-600 hover:to-red-600 text-white shadow-sm font-semibold`}
             >
               {submitting ? 'Submitting...' : 'Submit Rating'}
             </Button>
           </div>
         </div>
       </div>
-      {/* Bottom padding for mobile */}
-      <div className="h-4 md:hidden" />
     </div>
   );
 }
