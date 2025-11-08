@@ -16,6 +16,7 @@ export default defineConfig({
     sourcemap: false,
     minify: 'esbuild',
     cssMinify: true,
+    cssCodeSplit: false, // Disable CSS code splitting to ensure all CSS is in one file
     rollupOptions: {
       output: {
         manualChunks: {
