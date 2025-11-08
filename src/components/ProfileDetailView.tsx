@@ -3,7 +3,7 @@ import { X, ChevronLeft, ChevronRight, Heart, Sparkles, Instagram, Send } from '
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { SoftIntroFlow } from './SoftIntroFlow';
 import { projectId } from '../utils/supabase/info';
 

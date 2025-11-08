@@ -8,7 +8,7 @@ import { LoveModeChat } from './LoveModeChat';
 import { LoveModeProfile } from './LoveModeProfile';
 import { LovePrintQuiz } from './LovePrintQuiz';
 import { projectId } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface LoveModeProps {
   userProfile: any;

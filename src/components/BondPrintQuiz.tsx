@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
 import { projectId } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface BondPrintQuizProps {
   userProfile: any;

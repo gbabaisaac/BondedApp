@@ -5,7 +5,7 @@ import { Badge } from './ui/badge';
 import { DailyLoveQuestion } from './DailyLoveQuestion';
 import { Heart, Sparkles, MessageCircle, RefreshCw, Lock, Star, ArrowRight, Mic, Eye } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import { loveStageIcons } from '../utils/design-system';
 

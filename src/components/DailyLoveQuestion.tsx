@@ -5,7 +5,7 @@ import { Badge } from './ui/badge';
 import { Sparkles, X, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { projectId } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface DailyLoveQuestionProps {
   accessToken: string;

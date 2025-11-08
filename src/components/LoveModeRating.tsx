@@ -5,7 +5,7 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Heart, X, MapPin, GraduationCap, Briefcase, Sparkles, Info, ArrowLeft, ChevronDown } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface LoveModeRatingProps {

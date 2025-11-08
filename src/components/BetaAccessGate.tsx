@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Lock, Sparkles } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { projectId } from '../utils/supabase/info';
 
 interface BetaAccessGateProps {

@@ -16,7 +16,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ProfileDetailView } from './ProfileDetailView';
 import { ConnectionCardSkeleton } from './LoadingSkeletons';
 
