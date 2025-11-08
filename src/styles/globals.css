@@ -1,9 +1,16 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Mobile optimizations */
-html, body, #root {
+html, body {
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 body {
@@ -15,6 +22,19 @@ body {
 /* Safe area for iOS notch and home indicator */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Ensure scrollable content has proper padding on mobile */
+@media (max-width: 768px) {
+  /* Ensure touch scrolling works smoothly on all scrollable elements */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Add safe area padding for mobile devices */
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }
 
 :root {
