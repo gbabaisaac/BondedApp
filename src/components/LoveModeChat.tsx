@@ -220,14 +220,14 @@ export function LoveModeChat({ relationship, userProfile, accessToken, onBack }:
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-screen">
         <Heart className="w-12 h-12 text-pink-500 animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3">
         <div className="flex items-center gap-3">

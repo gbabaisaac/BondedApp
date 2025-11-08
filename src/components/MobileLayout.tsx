@@ -70,9 +70,9 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken }: 
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
         {children}
       </div>
 
