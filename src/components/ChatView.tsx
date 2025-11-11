@@ -8,7 +8,9 @@ import {
   ArrowLeft, 
   Send,
   RefreshCw,
-  Smile
+  Smile,
+  Check,
+  CheckCheck
 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
@@ -26,6 +28,9 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [readReceiptsEnabled, setReadReceiptsEnabled] = useState(true);
 
   useEffect(() => {
     loadChats();
@@ -36,10 +41,23 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
   useEffect(() => {
     if (selectedChat) {
       loadMessages();
-      const interval = setInterval(loadMessages, 3000); // Poll every 3 seconds
-      return () => clearInterval(interval);
+      checkTypingStatus();
+      markMessagesAsRead(); // Mark messages as read when opening chat
+      const messageInterval = setInterval(loadMessages, 3000); // Poll every 3 seconds
+      const typingInterval = setInterval(checkTypingStatus, 1000); // Check typing every second
+      return () => {
+        clearInterval(messageInterval);
+        clearInterval(typingInterval);
+      };
     }
   }, [selectedChat]);
+
+  // Load user settings for read receipts
+  useEffect(() => {
+    if (userProfile?.settings?.readReceipts !== undefined) {
+      setReadReceiptsEnabled(userProfile.settings.readReceipts);
+    }
+  }, [userProfile]);
 
   const loadChats = async () => {
     try {
@@ -89,8 +107,102 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
     }
   };
 
+  const markMessagesAsRead = async () => {
+    if (!selectedChat?.chatId) return;
+    
+    try {
+      await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chat/${selectedChat.chatId}/read`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({}),
+        }
+      );
+    } catch (error) {
+      // Silently fail - not critical
+    }
+  };
+
+  const checkTypingStatus = async () => {
+    if (!selectedChat?.chatId) return;
+    
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chat/${selectedChat.chatId}/typing`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsTyping(data.typing || false);
+      }
+    } catch (error) {
+      // Silently fail - typing indicator is not critical
+    }
+  };
+
+  const handleTyping = () => {
+    if (!selectedChat?.chatId) return;
+    
+    // Send typing start
+    fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chat/${selectedChat.chatId}/typing/start`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      }
+    ).catch(() => {}); // Silently fail
+    
+    // Clear existing timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+    
+    // Set timeout to stop typing after 2 seconds of inactivity
+    const timeout = setTimeout(() => {
+      fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chat/${selectedChat.chatId}/typing/stop`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      ).catch(() => {}); // Silently fail
+    }, 2000);
+    
+    setTypingTimeout(timeout);
+  };
+
   const sendMessage = async () => {
     if (!messageText.trim() || sending || !selectedChat?.chatId) return;
+
+    // Stop typing indicator
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+      setTypingTimeout(null);
+    }
+    if (selectedChat?.chatId) {
+      fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chat/${selectedChat.chatId}/typing/stop`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      ).catch(() => {}); // Silently fail
+    }
 
     setSending(true);
     try {
@@ -190,12 +302,21 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline justify-between mb-1">
                         <h3 className="font-medium">{chat.otherUser?.name || 'Unknown'}</h3>
-                        {chat.lastMessage && (
-                          <span className="text-xs text-gray-500">Just now</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {chat.unreadCount > 0 && (
+                            <span className="bg-indigo-600 text-white text-xs font-medium rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                              {chat.unreadCount}
+                            </span>
+                          )}
+                          {chat.lastMessage && (
+                            <span className="text-xs text-gray-500">
+                              {formatTime(chat.lastMessageTimestamp || new Date().toISOString())}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {chat.lastMessage ? (
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className={`text-sm truncate ${chat.unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
                           {chat.lastMessage}
                         </p>
                       ) : (
@@ -306,15 +427,43 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                   >
                     <p className="text-sm leading-relaxed">{message.content}</p>
                   </div>
-                  {showAvatar && (
-                    <span className="text-xs text-gray-500 mt-1 px-2">
+                  <div className={`flex items-center gap-1 mt-1 px-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-xs text-gray-500">
                       {formatTime(message.timestamp)}
                     </span>
-                  )}
+                    {isMe && readReceiptsEnabled && (
+                      <div className="flex items-center">
+                        {message.readBy && message.readBy.length > 0 && message.readBy.includes(selectedChat.otherUser?.id) ? (
+                          <CheckCheck className="w-3.5 h-3.5 text-indigo-400" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5 text-gray-400" />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })
+        )}
+        
+        {/* Typing Indicator */}
+        {isTyping && (
+          <div className="flex items-center gap-2 px-4 py-2">
+            <Avatar className="w-6 h-6">
+              <AvatarImage src={selectedChat.otherUser?.profilePicture} />
+              <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white text-xs">
+                {getInitials(selectedChat.otherUser?.name || 'U')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="bg-gray-100 rounded-2xl px-4 py-2">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -329,7 +478,10 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
         <div className="flex gap-2">
           <Input
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
+            onChange={(e) => {
+              setMessageText(e.target.value);
+              handleTyping();
+            }}
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             placeholder={`Message ${selectedChat.otherUser?.name}...`}
             className="flex-1"

@@ -29,6 +29,8 @@ import { ProfileSetup } from './ProfileSetup';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import { projectId } from '../utils/supabase/info';
+import { toast } from 'sonner';
 
 interface MyProfileProps {
   userProfile: any;
@@ -46,6 +48,7 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
     showOnlineStatus: true,
     allowMessages: true,
     notifications: true,
+    readReceipts: userProfile?.settings?.readReceipts !== undefined ? userProfile.settings.readReceipts : true,
   });
 
   const getInitials = (name: string) => {
@@ -189,6 +192,50 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
                   onCheckedChange={(checked) =>
                     setSettings({ ...settings, allowMessages: checked })
                   }
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <Label htmlFor="read-receipts" className="text-sm font-medium">
+                    Read Receipts
+                  </Label>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Let others know when you've read their messages
+                  </p>
+                </div>
+                <Switch
+                  id="read-receipts"
+                  checked={settings.readReceipts}
+                  onCheckedChange={async (checked) => {
+                    setSettings({ ...settings, readReceipts: checked });
+                    // Save to backend
+                    try {
+                      const response = await fetch(
+                        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/profile`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`,
+                          },
+                          body: JSON.stringify({
+                            ...userProfile,
+                            settings: {
+                              ...userProfile?.settings,
+                              readReceipts: checked,
+                            },
+                          }),
+                        }
+                      );
+                      if (!response.ok) throw new Error('Failed to save settings');
+                    } catch (error) {
+                      console.error('Save settings error:', error);
+                      toast.error('Failed to save settings');
+                    }
+                  }}
                 />
               </div>
             </CardContent>

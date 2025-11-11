@@ -116,7 +116,15 @@ app.get("/health", (c) => {
 // Signup endpoint
 app.post("/signup", async (c) => {
   try {
-    const { email, password, name, school } = await c.req.json();
+    console.log('[SIGNUP] Request received');
+    console.log('[SIGNUP] Method:', c.req.method);
+    console.log('[SIGNUP] Path:', c.req.path);
+    console.log('[SIGNUP] URL:', c.req.url);
+    
+    const body = await c.req.json();
+    console.log('[SIGNUP] Body received:', { email: body.email, name: body.name, school: body.school, hasPassword: !!body.password });
+    
+    const { email, password, name, school } = body;
 
     if (!email || !password || !name || !school) {
       return c.json({ error: 'Missing required fields' }, 400);
@@ -218,6 +226,10 @@ app.post("/profile", async (c) => {
         personal: undefined,
       },
       additionalInfo: profileData.additionalInfo || undefined,
+      settings: {
+        readReceipts: profileData.settings?.readReceipts !== undefined ? profileData.settings.readReceipts : true, // Default to enabled
+        ...profileData.settings,
+      },
       // Note: classSchedule will be added in a future update for study partner matching
       updatedAt: new Date().toISOString(),
     };
@@ -1359,14 +1371,21 @@ app.get("/chats", async (c) => {
       const otherUserId = chat.participants.find((id: string) => id !== userId);
       const otherUser = await kv.get(`user:${otherUserId}`);
 
-      // Get last message
+      // Get last message and unread count
       const messages = await kv.get(`chat:${chatId}:messages`) || [];
       const lastMessage = messages.length > 0 ? messages[messages.length - 1].content : null;
+      
+      // Count unread messages (messages from other user that haven't been read by current user)
+      const unreadCount = messages.filter((msg: any) => 
+        msg.senderId !== userId && (!msg.readBy || !msg.readBy.includes(userId))
+      ).length;
 
       chats.push({
         chatId,
         otherUser,
         lastMessage,
+        unreadCount,
+        lastMessageTimestamp: messages.length > 0 ? messages[messages.length - 1].timestamp : null,
       });
     }
 
@@ -1393,6 +1412,26 @@ app.get("/chat/:chatId/messages", async (c) => {
     }
 
     const messages = await kv.get(`chat:${chatId}:messages`) || [];
+    
+    // Mark all messages from other users as read when loading
+    let updated = false;
+    const updatedMessages = messages.map((msg: any) => {
+      if (msg.senderId !== userId && (!msg.readBy || !msg.readBy.includes(userId))) {
+        updated = true;
+        return {
+          ...msg,
+          readBy: [...(msg.readBy || []), userId],
+          readAt: msg.readAt || new Date().toISOString(),
+        };
+      }
+      return msg;
+    });
+    
+    if (updated) {
+      await kv.set(`chat:${chatId}:messages`, updatedMessages);
+      return c.json(updatedMessages);
+    }
+    
     return c.json(messages);
   } catch (error: any) {
     console.error('Messages fetch error:', error);
@@ -1422,6 +1461,8 @@ app.post("/chat/:chatId/message", async (c) => {
       senderId: userId,
       content,
       timestamp: new Date().toISOString(),
+      readBy: [], // Track who has read this message
+      readAt: null, // Timestamp when first read
     };
 
     messages.push(newMessage);
@@ -1430,6 +1471,127 @@ app.post("/chat/:chatId/message", async (c) => {
     return c.json(newMessage);
   } catch (error: any) {
     console.error('Message send error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Mark messages as read
+app.post("/chat/:chatId/read", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const chatId = c.req.param('chatId');
+    const { messageIds } = await c.req.json(); // Optional: specific message IDs, or mark all as read
+
+    const chat = await kv.get(`chat:${chatId}`);
+    if (!chat || !chat.participants.includes(userId)) {
+      return c.json({ error: 'Unauthorized access to chat' }, 403);
+    }
+
+    const messages = await kv.get(`chat:${chatId}:messages`) || [];
+    let updated = false;
+    
+    const updatedMessages = messages.map((msg: any) => {
+      // If specific message IDs provided, only mark those; otherwise mark all from other user
+      if (messageIds && !messageIds.includes(msg.id)) {
+        return msg;
+      }
+      
+      // Mark messages from other users as read
+      if (msg.senderId !== userId && (!msg.readBy || !msg.readBy.includes(userId))) {
+        updated = true;
+        return {
+          ...msg,
+          readBy: [...(msg.readBy || []), userId],
+          readAt: msg.readAt || new Date().toISOString(),
+        };
+      }
+      return msg;
+    });
+
+    if (updated) {
+      await kv.set(`chat:${chatId}:messages`, updatedMessages);
+    }
+
+    return c.json({ success: true, unreadCount: 0 });
+  } catch (error: any) {
+    console.error('Mark read error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Typing indicator - start typing
+app.post("/chat/:chatId/typing/start", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const chatId = c.req.param('chatId');
+    const chat = await kv.get(`chat:${chatId}`);
+    if (!chat || !chat.participants.includes(userId)) {
+      return c.json({ error: 'Unauthorized access to chat' }, 403);
+    }
+
+    // Store typing status (expires after 3 seconds)
+    await kv.set(`chat:${chatId}:typing:${userId}`, {
+      userId,
+      timestamp: new Date().toISOString(),
+    }, 3); // 3 second TTL
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Typing start error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Typing indicator - stop typing
+app.post("/chat/:chatId/typing/stop", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const chatId = c.req.param('chatId');
+    await kv.delete(`chat:${chatId}:typing:${userId}`);
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Typing stop error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get typing status for a chat
+app.get("/chat/:chatId/typing", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const chatId = c.req.param('chatId');
+    const chat = await kv.get(`chat:${chatId}`);
+    if (!chat || !chat.participants.includes(userId)) {
+      return c.json({ error: 'Unauthorized access to chat' }, 403);
+    }
+
+    // Get typing status for other participants
+    const otherUserId = chat.participants.find((id: string) => id !== userId);
+    if (!otherUserId) {
+      return c.json({ typing: false });
+    }
+
+    const typingStatus = await kv.get(`chat:${chatId}:typing:${otherUserId}`);
+    return c.json({ typing: !!typingStatus, userId: typingStatus?.userId });
+  } catch (error: any) {
+    console.error('Get typing error:', error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -2871,4 +3033,67 @@ app.post("/love-mode/request-reveal", async (c) => {
   }
 });
 
-Deno.serve(app.fetch);
+// Catch-all route for debugging unmatched routes (must be last)
+app.all("*", (c) => {
+  const path = c.req.path;
+  const method = c.req.method;
+  console.log(`[CATCH-ALL] ${method} ${path} - Route not found`);
+  return c.json({ 
+    error: 'Route not found', 
+    path,
+    method,
+    message: `No handler found for ${method} ${path}`,
+    availableRoutes: ['POST /signup', 'GET /health', 'GET /user-info', 'POST /profile', 'GET /profile/:userId']
+  }, 404);
+});
+
+// Export handler for Supabase Edge Functions
+Deno.serve(async (req: Request) => {
+  try {
+    const url = new URL(req.url);
+    const pathname = url.pathname;
+    console.log(`[EDGE-FUNCTION] ${req.method} ${pathname}`);
+    console.log(`[EDGE-FUNCTION] Full URL: ${req.url}`);
+    
+    // Supabase is NOT stripping the function name - it's passing the full path
+    // So /make-server-2516be19/signup needs to become /signup
+    console.log(`[EDGE-FUNCTION] Original pathname: ${pathname}`);
+    
+    // Strip the function name from the path
+    let cleanPath = pathname;
+    if (pathname.startsWith('/make-server-2516be19/')) {
+      cleanPath = pathname.replace('/make-server-2516be19', '');
+      console.log(`[EDGE-FUNCTION] Cleaned path: ${cleanPath}`);
+    } else if (pathname.startsWith('/make-server-2516be19')) {
+      // Handle case where path is exactly /make-server-2516be19
+      cleanPath = '/';
+      console.log(`[EDGE-FUNCTION] Cleaned path: ${cleanPath}`);
+    } else if (pathname.startsWith('/functions/v1/make-server-2516be19/')) {
+      cleanPath = pathname.replace('/functions/v1/make-server-2516be19', '');
+      console.log(`[EDGE-FUNCTION] Cleaned path: ${cleanPath}`);
+    } else if (pathname.startsWith('/functions/v1/make-server-2516be19')) {
+      cleanPath = '/';
+      console.log(`[EDGE-FUNCTION] Cleaned path: ${cleanPath}`);
+    }
+    
+    // Always create a new request with the cleaned path
+    // Preserve query parameters from the original URL
+    const cleanUrl = new URL(cleanPath, url.origin);
+    cleanUrl.search = url.search; // Preserve query parameters
+    console.log(`[EDGE-FUNCTION] Cleaned URL with query: ${cleanUrl.pathname}${cleanUrl.search}`);
+    
+    const cleanReq = new Request(cleanUrl, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+    });
+    console.log(`[EDGE-FUNCTION] Forwarding to Hono with path: ${cleanPath}${cleanUrl.search}`);
+    return await app.fetch(cleanReq);
+  } catch (error: any) {
+    console.error('[EDGE-FUNCTION] Unhandled error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', message: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+});
