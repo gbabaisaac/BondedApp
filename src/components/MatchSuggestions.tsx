@@ -224,7 +224,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
             variant={activeTab === 'pending' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('pending')}
-            className={activeTab === 'pending' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
+            className={activeTab === 'pending' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
           >
             <UserCheck className="w-4 h-4 mr-2" />
             Pending
@@ -236,7 +236,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
             variant={activeTab === 'sent' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('sent')}
-            className={activeTab === 'sent' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
+            className={activeTab === 'sent' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
           >
             <Send className="w-4 h-4 mr-2" />
             Sent
@@ -245,7 +245,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
             variant={activeTab === 'connections' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('connections')}
-            className={activeTab === 'connections' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
+            className={activeTab === 'connections' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
           >
             <Users className="w-4 h-4 mr-2" />
             Friends
@@ -284,14 +284,14 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                             onClick={() => setSelectedProfile(intro.senderProfile)}
                           >
                             <AvatarImage src={intro.senderProfile?.profilePicture} />
-                            <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
+                            <AvatarFallback className="bg-gradient-to-br from-[#2E7B91] to-[#25658A] text-white">
                               {getInitials(intro.senderProfile?.name || 'U')}
                             </AvatarFallback>
                           </Avatar>
                           
                           <div className="flex-1 min-w-0">
                             <h3 
-                              className="font-medium mb-1 cursor-pointer hover:text-indigo-600"
+                              className="font-medium mb-1 cursor-pointer hover:text-[#2E7B91]"
                               onClick={() => setSelectedProfile(intro.senderProfile)}
                             >
                               {intro.senderProfile?.name}
@@ -301,10 +301,10 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                             </p>
                             
                             {intro.analysis && (
-                              <div className="bg-purple-50 rounded-lg p-3 mb-3">
+                              <div className="bg-[#2E7B9115] rounded-2xl p-3 mb-3">
                                 <div className="flex items-start gap-2">
-                                  <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                                  <p className="text-xs text-purple-900 leading-relaxed">
+                                  <Sparkles className="w-4 h-4 text-[#2E7B91] flex-shrink-0 mt-0.5" />
+                                  <p className="text-xs text-[#1E4F74] leading-relaxed">
                                     {typeof intro.analysis === 'string' 
                                       ? intro.analysis 
                                       : intro.analysis?.analysis || intro.analysis?.recommendation || 'You have a great match!'}
@@ -318,7 +318,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                                 size="sm"
                                 onClick={() => handleAccept(intro.id)}
                                 disabled={processing === intro.id}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl"
                               >
                                 <CheckCircle2 className="w-4 h-4 mr-1" />
                                 Accept
@@ -366,7 +366,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                             onClick={() => setSelectedProfile(intro.receiverProfile)}
                           >
                             <AvatarImage src={intro.receiverProfile?.profilePicture} />
-                            <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
+                            <AvatarFallback className="bg-gradient-to-br from-[#2E7B91] to-[#25658A] text-white">
                               {getInitials(intro.receiverProfile?.name || 'U')}
                             </AvatarFallback>
                           </Avatar>
@@ -421,7 +421,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                       </p>
                       <Button 
                         onClick={() => setActiveTab('pending')}
-                        className="bg-indigo-600 hover:bg-indigo-700"
+                        className="bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl"
                       >
                         Check Pending Requests
                       </Button>
@@ -448,11 +448,11 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                           }}
                         >
                           <CardContent className="p-0">
-                            <div className="h-32 bg-gradient-to-br from-indigo-500 to-purple-500 relative">
+                            <div className="h-32 bg-gradient-to-br from-[#2E7B91] to-[#25658A] relative">
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <Avatar className="w-20 h-20 border-4 border-white">
                                   <AvatarImage src={connection.profilePicture || connection.imageUrl} />
-                                  <AvatarFallback className="text-xl bg-white text-indigo-600">
+                                  <AvatarFallback className="text-xl bg-white text-[#2E7B91]">
                                     {getInitials(connection.name || 'U')}
                                   </AvatarFallback>
                                 </Avatar>

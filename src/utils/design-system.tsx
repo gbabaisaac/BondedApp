@@ -60,39 +60,53 @@ import {
   LucideIcon
 } from 'lucide-react';
 
-// Brand Colors
+// Brand Colors - Bonded Design System
 export const colors = {
-  // Primary brand color (indigo)
+  // Primary brand colors (Teal Blue palette)
   primary: {
-    50: '#eef2ff',
-    100: '#e0e7ff',
-    200: '#c7d2fe',
-    300: '#a5b4fc',
-    400: '#818cf8',
-    500: '#6366f1', // Main
-    600: '#4f46e5',
-    700: '#4338ca',
-    800: '#3730a3',
-    900: '#312e81',
+    50: '#E8F4F8',
+    100: '#D1E9F1',
+    200: '#A3D3E3',
+    300: '#75BDD5',
+    400: '#47A7C7',
+    500: '#2E7B91', // Teal Blue - Main
+    600: '#25658A', // Ocean Blue
+    700: '#1E4F74', // Royal Navy
+    800: '#132E54', // Midnight Indigo
+    900: '#0E0E1A', // Deep Navy
   },
   
-  // Love Mode (pink)
+  // Love Mode (Peach & Lavender)
   love: {
-    50: '#fdf2f8',
-    100: '#fce7f3',
-    200: '#fbcfe8',
-    300: '#f9a8d4',
-    400: '#f472b6',
-    500: '#ec4899', // Main
-    600: '#db2777',
-    700: '#be185d',
-    800: '#9d174d',
-    900: '#831843',
+    50: '#FFF5F8',
+    100: '#FFEBF1',
+    200: '#FFD7E3',
+    300: '#FFC3D5',
+    400: '#FFAFC7',
+    500: '#FFB3C6', // Peach Glow - Main
+    600: '#B69CFF', // Lavender Mist
+    700: '#9D7AFF',
+    800: '#8458FF',
+    900: '#6B36FF',
   },
   
-  // Friend Mode (indigo - same as primary)
+  // Friend Mode (Teal - same as primary)
   friend: {
-    500: '#6366f1',
+    500: '#2E7B91', // Teal Blue
+    600: '#25658A', // Ocean Blue
+  },
+  
+  // Accent Colors
+  accent: {
+    lavender: '#B69CFF', // Lavender Mist
+    peach: '#FFB3C6', // Peach Glow
+  },
+  
+  // Neutrals
+  neutral: {
+    cream: '#F9F6F3', // Soft Cream
+    cloud: '#EAEAEA', // Cloud Gray
+    navy: '#0E0E1A', // Deep Navy (dark mode)
   },
   
   // Success (green)
@@ -190,16 +204,29 @@ export const statusIcons = {
   warning: AlertCircle,
 };
 
-// Common gradients
+// Common gradients - Bonded Design System
 export const gradients = {
-  primary: 'from-indigo-600 to-indigo-700',
-  love: 'from-pink-600 to-rose-600',
+  // Primary gradients (Teal Blue palette)
+  primary: 'from-[#2E7B91] to-[#25658A]',
+  primaryFull: 'from-[#2E7B91] via-[#25658A] to-[#1E4F74]',
+  primaryDeep: 'from-[#25658A] to-[#1E4F74]',
+  
+  // Love Mode gradients (Peach & Lavender)
+  love: 'from-[#FFB3C6] to-[#B69CFF]',
+  loveSoft: 'from-[#FFB3C650] via-[#B69CFF50] to-[#2E7B9150]',
+  
+  // Friend Mode (Teal)
+  friend: 'from-[#2E7B91] to-[#25658A]',
+  friendSoft: 'from-[#2E7B9150] to-[#25658A50]',
+  
+  // Success & Warning (keep existing)
   success: 'from-emerald-600 to-green-600',
   warning: 'from-amber-500 to-orange-500',
   
   // Soft backgrounds
-  primarySoft: 'from-indigo-50 to-purple-50',
-  loveSoft: 'from-pink-50 to-rose-50',
+  primarySoft: 'from-[#2E7B9150] to-[#25658A50]',
+  loveSoft: 'from-[#FFB3C650] to-[#B69CFF50]',
+  background: 'from-[#F9F6F3] to-[#EAEAEA]',
 };
 
 // Shadow styles

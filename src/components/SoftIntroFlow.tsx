@@ -161,7 +161,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-3xl">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600" />
+            <Sparkles className="w-5 h-5 text-[#2E7B91]" />
             <h2 className="text-lg">Soft Intro</h2>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
@@ -183,7 +183,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                   <button
                     key={option.value}
                     onClick={() => handleReasonSelect(option.value)}
-                    className="w-full text-left p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all"
+                    className="w-full text-left p-4 border-2 border-[#EAEAEA] rounded-2xl hover:border-[#2E7B91] hover:bg-[#2E7B9115] transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div>
@@ -201,18 +201,18 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
             <div className="space-y-6">
               {generating ? (
                 <div className="text-center py-8">
-                  <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-4 animate-pulse" />
+                  <Sparkles className="w-12 h-12 text-[#2E7B91] mx-auto mb-4 animate-pulse" />
                   <p className="text-lg font-medium text-gray-900 mb-2">Analyzing compatibility...</p>
                   <p className="text-sm text-gray-600">Our AI is finding what makes you a great match!</p>
                 </div>
               ) : aiAnalysis ? (
                 <>
                   {/* AI Thinking Animation */}
-                  <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
-                    <Sparkles className="w-6 h-6 text-purple-600" />
+                  <div className="flex items-center gap-3 p-4 bg-[#2E7B9115] rounded-2xl">
+                    <Sparkles className="w-6 h-6 text-[#2E7B91]" />
                     <div className="flex-1">
-                      <p className="font-medium text-purple-900">AI Analysis Complete</p>
-                      <p className="text-sm text-purple-700">Here's what I found...</p>
+                      <p className="font-medium text-[#1E4F74]">AI Analysis Complete</p>
+                      <p className="text-sm text-[#25658A]">Here's what I found...</p>
                     </div>
                   </div>
 
@@ -222,11 +222,11 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                     <div className="flex items-center gap-3">
                       <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
                         <div 
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-1000"
+                          className="bg-gradient-to-r from-[#2E7B91] to-[#B69CFF] h-full rounded-full transition-all duration-1000"
                           style={{ width: `${aiAnalysis.score}%` }}
                         />
                       </div>
-                      <Badge className="bg-purple-100 text-purple-700">{aiAnalysis.compatibility} Match ({aiAnalysis.score}%)</Badge>
+                      <Badge className="bg-[#2E7B9120] text-[#1E4F74]">{aiAnalysis.compatibility} Match ({aiAnalysis.score}%)</Badge>
                     </div>
                   </div>
 
@@ -236,7 +236,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                 <div className="space-y-2">
                   {aiAnalysis.similarities.map((similarity, idx) => (
                     <div key={idx} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5 flex-shrink-0" />
+                      <div className="w-2 h-2 bg-[#2E7B91] rounded-full mt-1.5 flex-shrink-0" />
                       <p className="text-sm text-gray-700">{similarity}</p>
                     </div>
                   ))}
@@ -244,12 +244,12 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
               </div>
 
               {/* AI Recommendation */}
-              <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
-                <h3 className="text-sm text-purple-900 mb-2 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
+              <div className="p-4 bg-gradient-to-br from-[#2E7B9115] to-[#B69CFF15] rounded-2xl border border-[#2E7B9140]">
+                <h3 className="text-sm text-[#1E4F74] mb-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#2E7B91]" />
                   AI Recommendation
                 </h3>
-                <p className="text-sm text-gray-700">{aiAnalysis.recommendation}</p>
+                <p className="text-sm text-[#1E4F74]">{aiAnalysis.recommendation}</p>
               </div>
 
               {/* Actions */}
@@ -264,7 +264,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                 <Button
                   onClick={handleSendIntro}
                   disabled={sending}
-                  className="flex-1 gap-2 bg-purple-600 hover:bg-purple-700"
+                  className="flex-1 gap-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl"
                 >
                   <Send className="w-4 h-4" />
                   {sending ? 'Sending...' : 'Send Intro'}

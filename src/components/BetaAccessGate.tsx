@@ -84,8 +84,8 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F9F6F3] to-[#EAEAEA]">
+        <p className="text-[#1E4F74]">Loading...</p>
       </div>
     );
   }
@@ -95,16 +95,16 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 p-4 pb-24">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F9F6F3] to-[#EAEAEA] p-4 pb-24">
       <Card className="max-w-md w-full">
         <CardContent className="pt-6">
           {/* Logo */}
-          <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center mx-auto mb-6">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl text-center mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl text-center mb-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
             bonded
           </h1>
           <p className="text-center text-gray-600 mb-6">
@@ -112,12 +112,12 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
           </p>
 
           {/* Beta Notice */}
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+          <div className="bg-[#2E7B9115] border border-[#2E7B9140] rounded-2xl p-4 mb-6">
             <div className="flex items-start gap-3">
-              <Lock className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+              <Lock className="w-5 h-5 text-[#2E7B91] mt-0.5 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-indigo-900 mb-1">Closed Beta</h3>
-                <p className="text-sm text-indigo-700">
+                <h3 className="font-semibold text-[#1E4F74] mb-1">Closed Beta</h3>
+                <p className="text-sm text-[#25658A]">
                   bonded is currently in private beta. Enter your .edu email to check if you have access.
                 </p>
               </div>
@@ -142,7 +142,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
 
             <Button 
               onClick={checkAccess}
-              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              className="w-full bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl"
               size="lg"
             >
               Check Access

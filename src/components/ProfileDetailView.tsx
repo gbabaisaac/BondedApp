@@ -220,25 +220,25 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
           {/* Compatibility Analysis */}
           {compatibility && (
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-200">
+            <div className="bg-gradient-to-br from-[#2E7B9115] to-[#25658A15] rounded-2xl p-4 border border-[#2E7B9140]">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-medium">Compatibility</h3>
+                <Sparkles className="w-5 h-5 text-[#2E7B91]" />
+                <h3 className="font-medium text-[#1E4F74]">Compatibility</h3>
               </div>
               <div className="space-y-3">
                 {compatibility.score && (
                   <div>
-                    <p className="text-sm font-medium text-indigo-700">
+                    <p className="text-sm font-medium text-[#25658A]">
                       {compatibility.score}% Match
                     </p>
                   </div>
                 )}
                 {compatibility.commonInterests && compatibility.commonInterests.length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">You both enjoy:</p>
+                    <p className="text-xs text-[#64748b] mb-1">You both enjoy:</p>
                     <div className="flex flex-wrap gap-1">
                       {compatibility.commonInterests.map((interest: string) => (
-                        <Badge key={interest} className="text-xs bg-indigo-100 text-indigo-700">
+                        <Badge key={interest} className="text-xs bg-[#2E7B9120] text-[#1E4F74]">
                           {interest}
                         </Badge>
                       ))}
@@ -260,7 +260,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
               <h3 className="text-sm text-gray-500 mb-2">Looking For</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.lookingFor.map((item) => (
-                  <Badge key={item} className="bg-indigo-100 text-indigo-700">
+                  <Badge key={item} className="bg-[#2E7B9120] text-[#1E4F74]">
                     {item}
                   </Badge>
                 ))}
@@ -327,7 +327,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
                     href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-indigo-600 hover:underline"
+                    className="flex items-center gap-2 text-[#2E7B91] hover:text-[#25658A] hover:underline"
                   >
                     <Instagram className="w-4 h-4" />
                     {profile.instagram}
@@ -378,7 +378,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
               }
               setShowSoftIntro(true);
             }}
-            className="flex-1 gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold h-12 shadow-lg text-base"
+            className="flex-1 gap-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white font-semibold h-12 shadow-lg text-base rounded-2xl"
           >
             <Sparkles className="w-5 h-5" />
             Soft Intro

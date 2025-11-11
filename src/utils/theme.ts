@@ -4,31 +4,46 @@
  */
 
 export const theme = {
-  // Brand Colors
+  // Brand Colors - Bonded Design System
   colors: {
+    // Primary Palette
     primary: {
-      main: '#6366f1', // Indigo
-      light: '#818cf8',
-      dark: '#4f46e5',
-      gradient: 'from-indigo-600 to-purple-600',
+      main: '#2E7B91', // Teal Blue - Primary brand color
+      light: '#25658A', // Ocean Blue
+      dark: '#1E4F74', // Royal Navy
+      darkest: '#132E54', // Midnight Indigo
+      gradient: 'linear-gradient(120deg, #2E7B91, #25658A, #1E4F74, #132E54)',
+      gradientTailwind: 'from-[#2E7B91] via-[#25658A] to-[#1E4F74]',
     },
+    // Accent Colors
+    accent: {
+      lavender: '#B69CFF', // Lavender Mist
+      peach: '#FFB3C6', // Peach Glow
+    },
+    // Neutrals
+    neutral: {
+      cream: '#F9F6F3', // Soft Cream
+      cloud: '#EAEAEA', // Cloud Gray
+      navy: '#0E0E1A', // Deep Navy (dark mode)
+    },
+    // Legacy support (mapped to new colors)
     secondary: {
-      main: '#ec4899', // Pink
-      light: '#f472b6',
-      dark: '#db2777',
+      main: '#25658A', // Ocean Blue
+      light: '#2E7B91',
+      dark: '#1E4F74',
     },
     love: {
-      gradient: 'from-pink-500 to-red-500',
-      gradientAlt: 'from-pink-50 via-purple-50 to-red-50',
+      gradient: 'from-[#FFB3C6] to-[#B69CFF]', // Peach to Lavender
+      gradientAlt: 'from-[#FFB3C650] via-[#B69CFF50] to-[#2E7B9150]',
     },
     friend: {
-      gradient: 'from-purple-600 to-pink-600',
-      gradientAlt: 'from-purple-50 to-pink-50',
+      gradient: 'from-[#2E7B91] to-[#25658A]', // Teal to Ocean
+      gradientAlt: 'from-[#2E7B9150] to-[#25658A50]',
     },
     background: {
-      main: 'from-blue-50 to-purple-50',
-      love: 'from-pink-50 via-purple-50 to-red-50',
-      friend: 'from-purple-50 to-pink-50',
+      main: 'from-[#F9F6F3] to-[#EAEAEA]', // Cream to Cloud
+      love: 'from-[#FFB3C650] via-[#B69CFF50] to-[#2E7B9150]',
+      friend: 'from-[#2E7B9150] to-[#25658A50]',
     },
     text: {
       primary: 'text-gray-900',
@@ -58,43 +73,45 @@ export const theme = {
     },
   },
 
-  // Typography
+  // Typography - Satoshi font family (Inter/Helvetica Neue fallback)
   typography: {
-    h1: 'text-3xl font-bold',
-    h2: 'text-2xl font-semibold',
+    fontFamily: 'Satoshi, Inter, "Helvetica Neue", sans-serif',
+    logo: 'font-bold lowercase tracking-wide', // Lowercase for brand text
+    h1: 'text-3xl font-bold lowercase tracking-wide',
+    h2: 'text-2xl font-semibold lowercase tracking-wide',
     h3: 'text-xl font-semibold',
     h4: 'text-lg font-medium',
-    body: 'text-base',
-    small: 'text-sm',
-    tiny: 'text-xs',
+    body: 'text-base font-normal',
+    small: 'text-sm font-normal',
+    tiny: 'text-xs font-normal',
   },
 
   // Components
   components: {
     button: {
-      primary: 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white',
-      love: 'bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white',
-      secondary: 'bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700',
-      ghost: 'hover:bg-gray-100 text-gray-700',
+      primary: 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl shadow-md',
+      love: 'bg-gradient-to-r from-[#FFB3C6] to-[#B69CFF] hover:from-[#FFB3C6] hover:to-[#B69CFF] text-white rounded-2xl shadow-md',
+      secondary: 'bg-white border-2 border-[#EAEAEA] hover:border-[#2E7B91] text-[#1E4F74] rounded-2xl',
+      ghost: 'hover:bg-[#F9F6F3] text-[#1E4F74] rounded-2xl',
     },
     card: {
-      default: 'bg-white rounded-xl border border-gray-200 shadow-sm',
-      elevated: 'bg-white rounded-xl shadow-lg border-0',
-      interactive: 'bg-white rounded-xl border-2 border-gray-200 hover:border-indigo-500 transition-all cursor-pointer',
+      default: 'bg-white rounded-2xl border border-[#EAEAEA] shadow-sm',
+      elevated: 'bg-white rounded-2xl shadow-lg border-0',
+      interactive: 'bg-white rounded-2xl border-2 border-[#EAEAEA] hover:border-[#2E7B91] transition-all cursor-pointer',
     },
     input: {
-      default: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500',
+      default: 'w-full px-4 py-3 border border-[#EAEAEA] rounded-2xl focus:ring-2 focus:ring-[#2E7B91] focus:border-[#2E7B91] bg-[#F9F6F3]',
     },
     navigation: {
-      header: 'bg-white border-b border-gray-200',
-      bottom: 'fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50',
+      header: 'bg-white border-b border-[#EAEAEA]',
+      bottom: 'fixed bottom-0 left-0 right-0 bg-white border-t border-[#EAEAEA] z-50',
       tab: {
-        active: 'text-indigo-600',
-        inactive: 'text-gray-400 hover:text-gray-600',
+        active: 'text-[#2E7B91]',
+        inactive: 'text-[#64748b] hover:text-[#1E4F74]',
       },
     },
     avatar: {
-      default: 'bg-gradient-to-br from-indigo-400 to-purple-400 text-white',
+      default: 'bg-gradient-to-br from-[#2E7B91] to-[#25658A] text-white',
     },
   },
 
@@ -104,12 +121,13 @@ export const theme = {
     container: 'max-w-7xl mx-auto px-4',
   },
 
-  // Shadows
+  // Shadows - Subtle and soft
   shadow: {
     sm: 'shadow-sm',
     md: 'shadow-md',
     lg: 'shadow-lg',
     xl: 'shadow-xl',
+    glow: 'shadow-[0_0_20px_rgba(46,123,145,0.15)]', // Subtle teal glow for AI elements
   },
 
   // Transitions
@@ -121,7 +139,7 @@ export const theme = {
 
 // Helper function to get button classes
 export const getButtonClass = (variant: 'primary' | 'love' | 'secondary' | 'ghost' = 'primary') => {
-  return `${theme.components.button[variant]} ${theme.transition.default} px-6 py-3 rounded-lg font-medium`;
+  return `${theme.components.button[variant]} ${theme.transition.default} px-6 py-3 font-medium`;
 };
 
 // Helper function to get card classes

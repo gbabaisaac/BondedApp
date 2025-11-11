@@ -92,50 +92,73 @@ body {
   }
 }
 
+/* Bonded Typography - Satoshi font family */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+/* Apply font family globally */
+* {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+}
+
+/* Note: To use Satoshi font, add it to public/fonts and import here */
+
 :root {
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+  --font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  --background: #F9F6F3; /* Soft Cream */
+  --foreground: #1E4F74; /* Royal Navy */
   --card: #ffffff;
-  --card-foreground: #0a0a0a;
+  --card-foreground: #1E4F74;
   --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-  --primary: #6366f1;
+  --popover-foreground: #1E4F74;
+  --primary: #2E7B91; /* Teal Blue */
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
+  --secondary: #25658A; /* Ocean Blue */
+  --secondary-foreground: #ffffff;
+  --muted: #EAEAEA; /* Cloud Gray */
   --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
+  --accent: #B69CFF; /* Lavender Mist */
+  --accent-foreground: #1E4F74;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
+  --border: #EAEAEA; /* Cloud Gray */
   --input: transparent;
-  --input-background: #f8fafc;
-  --switch-background: #cbd5e1;
+  --input-background: #F9F6F3; /* Soft Cream */
+  --switch-background: #EAEAEA;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #6366f1;
-  --chart-1: #6366f1;
-  --chart-2: #8b5cf6;
-  --chart-3: #ec4899;
-  --chart-4: #f59e0b;
-  --chart-5: #10b981;
-  --radius: 0.75rem;
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #0a0a0a;
-  --sidebar-primary: #6366f1;
+  --font-weight-bold: 700;
+  --ring: #2E7B91; /* Teal Blue */
+  --chart-1: #2E7B91;
+  --chart-2: #25658A;
+  --chart-3: #B69CFF;
+  --chart-4: #FFB3C6;
+  --chart-5: #1E4F74;
+  --radius: 1rem; /* 16px - rounded corners */
+  --sidebar: #F9F6F3;
+  --sidebar-foreground: #1E4F74;
+  --sidebar-primary: #2E7B91;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #6366f1;
+  --sidebar-accent: #EAEAEA;
+  --sidebar-accent-foreground: #1E4F74;
+  --sidebar-border: #EAEAEA;
+  --sidebar-ring: #2E7B91;
   
-  /* Brand Colors for Bonded */
-  --brand-primary: #6366f1;
-  --brand-love: #ec4899;
-  --brand-friend: #6366f1;
+  /* Bonded Brand Colors */
+  --brand-teal: #2E7B91; /* Primary */
+  --brand-ocean: #25658A; /* Secondary */
+  --brand-navy: #1E4F74; /* Dark */
+  --brand-midnight: #132E54; /* Darkest */
+  --brand-lavender: #B69CFF; /* Accent */
+  --brand-peach: #FFB3C6; /* Accent */
+  --brand-cream: #F9F6F3; /* Neutral */
+  --brand-cloud: #EAEAEA; /* Neutral */
+  --brand-deep-navy: #0E0E1A; /* Dark mode */
+  
+  /* Legacy support */
+  --brand-primary: #2E7B91;
+  --brand-love: #FFB3C6;
+  --brand-friend: #2E7B91;
   --brand-success: #10b981;
   --brand-warning: #f59e0b;
 }

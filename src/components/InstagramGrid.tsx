@@ -187,7 +187,7 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="sticky top-0 bg-white border-b px-4 py-4 z-10">
-          <h1 className="text-2xl text-center bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
+          <h1 className="text-2xl text-center bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent mb-3 lowercase font-bold tracking-wide">
             bonded
           </h1>
         </div>
@@ -200,7 +200,7 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="sticky top-0 bg-white border-b px-4 py-4 z-10">
-        <h1 className="text-2xl text-center bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
+        <h1 className="text-2xl text-center bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent mb-3 lowercase font-bold tracking-wide">
           bonded
         </h1>
         
@@ -211,12 +211,12 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
             placeholder="Search students..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 px-3 py-2 border border-[#EAEAEA] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2E7B91] bg-[#F9F6F3]"
           />
           <select
             value={filterLookingFor}
             onChange={(e) => setFilterLookingFor(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-2 border border-[#EAEAEA] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2E7B91] bg-[#F9F6F3]"
           >
             <option value="All">All</option>
             <option value="Friends">Friends</option>
@@ -229,7 +229,7 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
       {/* Stats Bar */}
       <div className="bg-white border-b px-4 py-3 flex justify-around text-center">
         <div>
-          <p className="font-semibold text-indigo-600">{filteredProfiles.length}</p>
+          <p className="font-semibold text-[#2E7B91]">{filteredProfiles.length}</p>
           <p className="text-xs text-gray-600">Students</p>
         </div>
         <div>
@@ -253,11 +253,11 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
             <button
               key={profile.id}
               onClick={() => handleProfileClick(index)}
-              className={`relative overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-md active:scale-95 transition-all ${
+              className={`relative overflow-hidden bg-white rounded-2xl shadow-sm hover:shadow-md active:scale-95 transition-all ${
                 isHighMatch 
-                  ? 'ring-2 ring-purple-500 ring-offset-2' 
+                  ? 'ring-2 ring-[#2E7B91] ring-offset-2' 
                   : isMediumMatch 
-                  ? 'ring-1 ring-purple-300'
+                  ? 'ring-1 ring-[#25658A]'
                   : ''
               }`}
             >
@@ -265,8 +265,8 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
               {bondPrintScore && bondPrintScore >= 50 && (
                 <div className={`absolute top-2 right-2 z-10 ${
                   isHighMatch 
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600' 
-                    : 'bg-purple-500'
+                    ? 'bg-gradient-to-r from-[#2E7B91] to-[#B69CFF]' 
+                    : 'bg-[#25658A]'
                 } text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1`}>
                   <Sparkles className="w-3 h-3" />
                   {bondPrintScore}% Match

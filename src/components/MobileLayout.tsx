@@ -106,11 +106,11 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken }: 
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-                  isActive ? 'text-indigo-600' : 'text-gray-400'
+                  isActive ? 'text-[#2E7B91]' : 'text-[#64748b]'
                 }`}
               >
                 <div className="relative">
-                  <Icon className={`w-6 h-6 ${isActive ? 'fill-indigo-600' : ''}`} />
+                  <Icon className={`w-6 h-6 ${isActive ? 'fill-[#2E7B91]' : ''}`} />
                   {tab.badge > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                       {tab.badge > 9 ? '9+' : tab.badge}
