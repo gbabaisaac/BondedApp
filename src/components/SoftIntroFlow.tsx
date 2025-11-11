@@ -77,6 +77,12 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
       );
 
       if (!response.ok) {
+        // Handle 404 specifically (function not deployed)
+        if (response.status === 404) {
+          console.error('Endpoint not found - Edge Function may need to be deployed');
+          throw new Error('Service temporarily unavailable. Please try again in a moment.');
+        }
+        
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('API error response:', errorData);
         

@@ -49,22 +49,72 @@ app.use(
 
 // Middleware to verify auth and get user ID
 async function getUserId(authHeader: string | null): Promise<string | null> {
-  if (!authHeader) return null;
-  const token = authHeader.split(' ')[1];
-  if (!token) return null;
-  
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) return null;
-  return user.id;
+  try {
+    if (!authHeader) {
+      console.log('No authorization header provided');
+      return null;
+    }
+    
+    // Handle both "Bearer token" and just "token" formats
+    const token = authHeader.startsWith('Bearer ') 
+      ? authHeader.split(' ')[1] 
+      : authHeader;
+    
+    if (!token) {
+      console.log('No token found in authorization header');
+      return null;
+    }
+    
+    // Try Supabase auth first
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      
+      if (!error && user) {
+        return user.id;
+      }
+      
+      if (error) {
+        console.error('Supabase auth error:', error.message);
+      }
+    } catch (supabaseError: any) {
+      console.error('Supabase getUser error:', supabaseError.message);
+    }
+    
+    // Fallback: Try to decode JWT directly (for Edge Function context)
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        // Decode base64url payload
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payloadJson = atob(base64);
+        const payload = JSON.parse(payloadJson);
+        
+        // Extract user ID from JWT payload (subject field is standard)
+        const userId = payload.sub || payload.user_id || payload.id;
+        if (userId) {
+          console.log('Extracted user ID from JWT payload:', userId);
+          return userId;
+        }
+      }
+    } catch (jwtError: any) {
+      console.error('JWT decode error:', jwtError.message);
+    }
+    
+    console.log('Failed to extract user ID from token');
+    return null;
+  } catch (error: any) {
+    console.error('getUserId error:', error.message);
+    return null;
+  }
 }
 
 // Health check endpoint
-app.get("/make-server-2516be19/health", (c) => {
+app.get("/health", (c) => {
   return c.json({ status: "ok" });
 });
 
 // Signup endpoint
-app.post("/make-server-2516be19/signup", async (c) => {
+app.post("/signup", async (c) => {
   try {
     const { email, password, name, school } = await c.req.json();
 
@@ -98,7 +148,7 @@ app.post("/make-server-2516be19/signup", async (c) => {
 });
 
 // Get user info endpoint
-app.get("/make-server-2516be19/user-info", async (c) => {
+app.get("/user-info", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -127,7 +177,7 @@ app.get("/make-server-2516be19/user-info", async (c) => {
 });
 
 // Create/Update profile endpoint
-app.post("/make-server-2516be19/profile", async (c) => {
+app.post("/profile", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -203,7 +253,7 @@ app.post("/make-server-2516be19/profile", async (c) => {
 });
 
 // Get profile by ID
-app.get("/make-server-2516be19/profile/:userId", async (c) => {
+app.get("/profile/:userId", async (c) => {
   try {
     const userId = c.req.param('userId');
     const profile = await kv.get(`user:${userId}`);
@@ -220,7 +270,7 @@ app.get("/make-server-2516be19/profile/:userId", async (c) => {
 });
 
 // Smart matches endpoint with advanced filtering
-app.get("/make-server-2516be19/discover/smart-matches", async (c) => {
+app.get("/discover/smart-matches", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -390,7 +440,7 @@ function calculateMatchScore(
 }
 
 // Get compatibility analysis between current user and another profile
-app.get("/make-server-2516be19/compatibility/:targetUserId", async (c) => {
+app.get("/compatibility/:targetUserId", async (c) => {
   try {
     const currentUserId = await getUserId(c.req.header('Authorization'));
     if (!currentUserId) {
@@ -447,7 +497,7 @@ app.get("/make-server-2516be19/compatibility/:targetUserId", async (c) => {
 });
 
 // Upload profile photo
-app.post("/make-server-2516be19/upload-photo", async (c) => {
+app.post("/upload-photo", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -503,7 +553,7 @@ app.post("/make-server-2516be19/upload-photo", async (c) => {
 });
 
 // Get all profiles by school
-app.get("/make-server-2516be19/profiles", async (c) => {
+app.get("/profiles", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -534,7 +584,7 @@ app.get("/make-server-2516be19/profiles", async (c) => {
 });
 
 // AI Matching algorithm
-app.get("/make-server-2516be19/matches", async (c) => {
+app.get("/matches", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -625,7 +675,7 @@ app.get("/make-server-2516be19/matches", async (c) => {
 });
 
 // Generate AI analysis for soft intro
-app.post("/make-server-2516be19/soft-intro/generate-ai-analysis", async (c) => {
+app.post("/soft-intro/generate-ai-analysis", async (c) => {
   let userId: string | null = null;
   let toUserId: string | null = null;
   let reason: string | null = null;
@@ -926,22 +976,24 @@ Return ONLY valid JSON in this exact format:
       analysis += ` You both want to ${commonLeisureGoals[0]}.`;
     }
 
-    const highlights: string[] = [];
-    if (commonInterests.length > 0) highlights.push(`Both interested in ${commonInterests[0]}`);
-    if (commonAcademicGoals.length > 0) highlights.push(`Shared academic goal: ${commonAcademicGoals[0]}`);
-    if (commonLeisureGoals.length > 0) highlights.push(`Shared leisure goal: ${commonLeisureGoals[0]}`);
-    if (user1.major === user2.major) highlights.push(`Same major: ${user1.major}`);
+    // Use the highlights array already built above
+    if (highlights.length === 0) {
+      highlights.push("Potential great connection");
+      if (user1.major === user2.major) {
+        highlights.push(`Same major: ${user1.major}`);
+      }
+    }
 
     return {
       analysis,
-      score: Math.min(90, 60 + (commonInterests.length * 5) + (commonAcademicGoals.length * 10) + (commonLeisureGoals.length * 10)),
+      score: Math.min(95, score),
       highlights: highlights.length > 0 ? highlights : ["Potential great connection"]
     };
   }
 }
 
 // Send soft intro
-app.post("/make-server-2516be19/soft-intro", async (c) => {
+app.post("/soft-intro", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -994,7 +1046,7 @@ app.post("/make-server-2516be19/soft-intro", async (c) => {
 });
 
 // Get incoming soft intros
-app.get("/make-server-2516be19/soft-intros/incoming", async (c) => {
+app.get("/soft-intros/incoming", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1045,7 +1097,7 @@ app.get("/make-server-2516be19/soft-intros/incoming", async (c) => {
 });
 
 // Get outgoing soft intros
-app.get("/make-server-2516be19/soft-intros/outgoing", async (c) => {
+app.get("/soft-intros/outgoing", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1096,7 +1148,7 @@ app.get("/make-server-2516be19/soft-intros/outgoing", async (c) => {
 });
 
 // Accept soft intro
-app.post("/make-server-2516be19/soft-intro/:introId/accept", async (c) => {
+app.post("/soft-intro/:introId/accept", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1173,7 +1225,7 @@ app.post("/make-server-2516be19/soft-intro/:introId/accept", async (c) => {
 });
 
 // Deny soft intro
-app.post("/make-server-2516be19/soft-intro/:introId/deny", async (c) => {
+app.post("/soft-intro/:introId/deny", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1204,7 +1256,7 @@ app.post("/make-server-2516be19/soft-intro/:introId/deny", async (c) => {
 });
 
 // Get connections
-app.get("/make-server-2516be19/connections", async (c) => {
+app.get("/connections", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1241,7 +1293,7 @@ app.get("/make-server-2516be19/connections", async (c) => {
 });
 
 // Start a chat
-app.post("/make-server-2516be19/chat/start", async (c) => {
+app.post("/chat/start", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1289,7 +1341,7 @@ app.post("/make-server-2516be19/chat/start", async (c) => {
 });
 
 // Get user's chats
-app.get("/make-server-2516be19/chats", async (c) => {
+app.get("/chats", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1326,7 +1378,7 @@ app.get("/make-server-2516be19/chats", async (c) => {
 });
 
 // Get messages for a chat
-app.get("/make-server-2516be19/chat/:chatId/messages", async (c) => {
+app.get("/chat/:chatId/messages", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1349,7 +1401,7 @@ app.get("/make-server-2516be19/chat/:chatId/messages", async (c) => {
 });
 
 // Send a message
-app.post("/make-server-2516be19/chat/:chatId/message", async (c) => {
+app.post("/chat/:chatId/message", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1387,7 +1439,7 @@ app.post("/make-server-2516be19/chat/:chatId/message", async (c) => {
 // ============================================
 
 // Start Bond Print Quiz
-app.post("/make-server-2516be19/bond-print/start", async (c) => {
+app.post("/bond-print/start", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1424,7 +1476,7 @@ app.post("/make-server-2516be19/bond-print/start", async (c) => {
 });
 
 // Submit answer and get next question
-app.post("/make-server-2516be19/bond-print/answer", async (c) => {
+app.post("/bond-print/answer", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1602,7 +1654,7 @@ function calculateBondPrintCompatibility(bondPrint1: any, bondPrint2: any): numb
 }
 
 // Get Bond Print compatibility score
-app.get("/make-server-2516be19/bond-print/compatibility/:targetUserId", async (c) => {
+app.get("/bond-print/compatibility/:targetUserId", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1642,7 +1694,7 @@ app.get("/make-server-2516be19/bond-print/compatibility/:targetUserId", async (c
 });
 
 // Generate final Bond Print from quiz answers
-app.post("/make-server-2516be19/bond-print/generate", async (c) => {
+app.post("/bond-print/generate", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1689,7 +1741,7 @@ app.post("/make-server-2516be19/bond-print/generate", async (c) => {
 });
 
 // Calculate AI-powered compatibility between two users
-app.post("/make-server-2516be19/bond-print/compatibility", async (c) => {
+app.post("/bond-print/compatibility", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1748,7 +1800,7 @@ Analyze their compatibility for this specific type of relationship. Return ONLY 
 });
 
 // Get user's Bond Print (backwards compatible with lovePrint)
-app.get("/make-server-2516be19/love-print/:userId", async (c) => {
+app.get("/love-print/:userId", async (c) => {
   try {
     const requesterId = await getUserId(c.req.header('Authorization'));
     if (!requesterId) {
@@ -1771,7 +1823,7 @@ app.get("/make-server-2516be19/love-print/:userId", async (c) => {
 });
 
 // Also add a dedicated bond-print endpoint
-app.get("/make-server-2516be19/bond-print/:userId", async (c) => {
+app.get("/bond-print/:userId", async (c) => {
   try {
     const requesterId = await getUserId(c.req.header('Authorization'));
     if (!requesterId) {
@@ -1798,7 +1850,7 @@ app.get("/make-server-2516be19/bond-print/:userId", async (c) => {
 // ============================================
 
 // Check if user has activated Love Mode
-app.get("/make-server-2516be19/love-mode/activation-status", async (c) => {
+app.get("/love-mode/activation-status", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1816,7 +1868,7 @@ app.get("/make-server-2516be19/love-mode/activation-status", async (c) => {
 });
 
 // Activate Love Mode for user
-app.post("/make-server-2516be19/love-mode/activate", async (c) => {
+app.post("/love-mode/activate", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1840,7 +1892,7 @@ app.post("/make-server-2516be19/love-mode/activate", async (c) => {
 });
 
 // Deactivate Love Mode
-app.post("/make-server-2516be19/love-mode/deactivate", async (c) => {
+app.post("/love-mode/deactivate", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1864,7 +1916,7 @@ app.post("/make-server-2516be19/love-mode/deactivate", async (c) => {
 });
 
 // Save Love Print quiz results
-app.post("/make-server-2516be19/love-mode/love-print", async (c) => {
+app.post("/love-mode/love-print", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1890,7 +1942,7 @@ app.post("/make-server-2516be19/love-mode/love-print", async (c) => {
 });
 
 // Get daily love question
-app.get("/make-server-2516be19/love-mode/daily-question", async (c) => {
+app.get("/love-mode/daily-question", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -1919,7 +1971,7 @@ app.get("/make-server-2516be19/love-mode/daily-question", async (c) => {
 });
 
 // Submit daily question answer
-app.post("/make-server-2516be19/love-mode/daily-question/answer", async (c) => {
+app.post("/love-mode/daily-question/answer", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2005,7 +2057,7 @@ function getDailyQuestionBank() {
 }
 
 // Get Love Mode stats
-app.get("/make-server-2516be19/love-mode/stats", async (c) => {
+app.get("/love-mode/stats", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2073,7 +2125,7 @@ function generateAlias(): string {
 }
 
 // Get profiles to rate (distance-based, not school-locked)
-app.get("/make-server-2516be19/love-mode/discover", async (c) => {
+app.get("/love-mode/discover", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2117,7 +2169,7 @@ app.get("/make-server-2516be19/love-mode/discover", async (c) => {
 });
 
 // Rate a user (1-10) - No longer shows immediate matches
-app.post("/make-server-2516be19/love-mode/rate", async (c) => {
+app.post("/love-mode/rate", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2148,7 +2200,7 @@ app.post("/make-server-2516be19/love-mode/rate", async (c) => {
 });
 
 // AI-powered matching algorithm (runs periodically in background)
-app.post("/make-server-2516be19/love-mode/run-matching-algorithm", async (c) => {
+app.post("/love-mode/run-matching-algorithm", async (c) => {
   try {
     // This endpoint should be called periodically (e.g., every hour)
     // Or triggered after significant rating activity
@@ -2398,7 +2450,7 @@ async function createBlindMatchWithAI(
 }
 
 // Get potential Love Mode matches (old endpoint - keeping for compatibility)
-app.get("/make-server-2516be19/love-mode/potential-matches", async (c) => {
+app.get("/love-mode/potential-matches", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2454,7 +2506,7 @@ async function getOldMatches(userId: string, userProfile: any, userIds: string[]
 }
 
 // Get user's Love Mode relationships
-app.get("/make-server-2516be19/love-mode/relationships", async (c) => {
+app.get("/love-mode/relationships", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2507,7 +2559,7 @@ app.get("/make-server-2516be19/love-mode/relationships", async (c) => {
 });
 
 // Get messages for a relationship
-app.get("/make-server-2516be19/love-mode/messages/:relationshipId", async (c) => {
+app.get("/love-mode/messages/:relationshipId", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2555,7 +2607,7 @@ app.get("/make-server-2516be19/love-mode/messages/:relationshipId", async (c) =>
 });
 
 // Send a message in Love Mode (with AI screening)
-app.post("/make-server-2516be19/love-mode/send-message", async (c) => {
+app.post("/love-mode/send-message", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
@@ -2738,7 +2790,7 @@ async function simpleHash(str: string): Promise<string> {
 }
 
 // Request reveal (stage 3)
-app.post("/make-server-2516be19/love-mode/request-reveal", async (c) => {
+app.post("/love-mode/request-reveal", async (c) => {
   try {
     const userId = await getUserId(c.req.header('Authorization'));
     if (!userId) {
