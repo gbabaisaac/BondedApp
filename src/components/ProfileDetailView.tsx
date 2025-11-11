@@ -399,10 +399,11 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
               }
               setShowSoftIntro(true);
             }}
-            className="flex-1 gap-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white font-semibold h-12 shadow-lg text-base rounded-2xl"
+            className="flex-1 gap-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] !text-white font-semibold h-12 shadow-lg text-base rounded-2xl"
+            style={{ color: '#ffffff' }}
           >
-            <Sparkles className="w-5 h-5" />
-            Soft Intro
+            <Sparkles className="w-5 h-5 text-white" />
+            <span className="text-white">Soft Intro</span>
           </Button>
         </div>
       </div>
