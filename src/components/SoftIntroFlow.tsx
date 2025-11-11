@@ -77,10 +77,30 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
       );
 
       if (!response.ok) {
-        throw new Error('Failed to generate AI analysis');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('API error response:', errorData);
+        
+        // If the response includes analysis data despite error status, use it
+        if (errorData.analysis && errorData.score) {
+          const compatibility = errorData.score >= 85 ? 'Excellent' : errorData.score >= 70 ? 'Great' : 'Good';
+          return {
+            similarities: errorData.highlights || [],
+            compatibility,
+            recommendation: errorData.analysis,
+            score: errorData.score,
+          };
+        }
+        
+        throw new Error(errorData.error || 'Failed to generate AI analysis');
       }
 
       const data = await response.json();
+      
+      // Check if we have valid data
+      if (!data || (!data.analysis && !data.score)) {
+        console.warn('Invalid response data, using fallback');
+        throw new Error('Invalid response format');
+      }
       
       // Convert API response to component format
       const compatibility = data.score >= 85 ? 'Excellent' : data.score >= 70 ? 'Great' : 'Good';
@@ -91,16 +111,21 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
         recommendation: data.analysis || "You seem like a great match!",
         score: data.score || 75,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI analysis error:', error);
-      toast.error('Failed to generate analysis. Using basic match.');
+      console.error('Error details:', error.message);
+      
+      // Don't show error toast if we have fallback data
+      if (!error.message?.includes('fallback')) {
+        toast.error('Using basic compatibility analysis');
+      }
       
       // Fallback to basic analysis
       return {
-        similarities: ['Shared interests', 'Similar goals'],
+        similarities: ['Potential for meaningful connection'],
         compatibility: 'Good',
         recommendation: `You and ${profile.name.split(' ')[0]} seem like a great match!`,
-        score: 75,
+        score: 70,
       };
     } finally {
       setGenerating(false);

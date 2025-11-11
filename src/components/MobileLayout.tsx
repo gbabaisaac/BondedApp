@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from 'react';
-import { Home, Users, MessageCircle, User, BookOpen, LayoutGrid } from 'lucide-react';
+import { Home, Users, MessageCircle, User } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 
 interface MobileLayoutProps {
@@ -64,12 +64,10 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
   };
 
   const tabs = [
-    { id: 'discover' as const, icon: Home, label: 'Discover', badge: 0, comingSoon: false },
-    { id: 'matches' as const, icon: Users, label: 'Connections', badge: pendingCount, comingSoon: false },
-    { id: 'classes' as const, icon: BookOpen, label: 'Classes', badge: 0, comingSoon: true },
-    { id: 'feed' as const, icon: LayoutGrid, label: 'Feed', badge: 0, comingSoon: true },
-    { id: 'messages' as const, icon: MessageCircle, label: 'Messages', badge: unreadCount, comingSoon: false },
-    { id: 'profile' as const, icon: User, label: 'Profile', badge: 0, comingSoon: false },
+    { id: 'discover' as const, icon: Home, label: 'Discover', badge: 0 },
+    { id: 'matches' as const, icon: Users, label: 'Connections', badge: pendingCount },
+    { id: 'messages' as const, icon: MessageCircle, label: 'Messages', badge: unreadCount },
+    { id: 'profile' as const, icon: User, label: 'Profile', badge: 0 },
   ];
 
   return (
@@ -100,35 +98,28 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
             paddingBottom: 'env(safe-area-inset-bottom)'
           }}
         >
-          <div className="flex items-center justify-around h-16 px-1">
+          <div className="flex items-center justify-around h-16 px-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
-              const isActive = activeTab === tab.id && !tab.comingSoon;
+              const isActive = activeTab === tab.id;
               
               return (
                 <button
                   key={tab.id}
-                  onClick={() => !tab.comingSoon && onTabChange(tab.id as any)}
-                  disabled={tab.comingSoon}
+                  onClick={() => onTabChange(tab.id)}
                   className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-                    tab.comingSoon 
-                      ? 'text-[#9CA3AF] cursor-not-allowed opacity-60' 
-                      : isActive 
-                        ? 'text-[#2E7B91]' 
-                        : 'text-[#64748b]'
+                    isActive ? 'text-[#2E7B91]' : 'text-[#64748b]'
                   }`}
                 >
                   <div className="relative">
-                    <Icon className={`w-5 h-5 ${isActive ? 'fill-[#2E7B91]' : ''}`} />
-                    {tab.badge > 0 && !tab.comingSoon && (
+                    <Icon className={`w-6 h-6 ${isActive ? 'fill-[#2E7B91]' : ''}`} />
+                    {tab.badge > 0 && (
                       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                         {tab.badge > 9 ? '9+' : tab.badge}
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] mt-0.5 leading-tight text-center">
-                    {tab.comingSoon ? 'Coming Soon' : tab.label}
-                  </span>
+                  <span className="text-xs mt-1">{tab.label}</span>
                 </button>
               );
             })}
