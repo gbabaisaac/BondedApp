@@ -105,7 +105,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
               alt="bonded logo" 
               className="w-16 h-16"
             />
-            <h1 className="text-3xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
+            <h1 className="text-3xl text-[#1E4F74] lowercase font-bold tracking-wide">
               bonded
             </h1>
           </div>

@@ -156,7 +156,7 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
                 alt="bonded logo" 
                 className="w-12 h-12"
               />
-              <h1 className="text-4xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
+              <h1 className="text-4xl text-[#1E4F74] lowercase font-bold tracking-wide">
                 bonded
               </h1>
             </div>

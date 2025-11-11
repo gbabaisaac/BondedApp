@@ -190,11 +190,11 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
           {/* Logo */}
           <div className="flex items-center justify-center gap-2 mb-3">
             <img 
-              src="/icon.svg" 
+              src="/Bonded_transparent_icon.png" 
               alt="bonded logo" 
               className="w-8 h-8"
             />
-            <h1 className="text-2xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
+            <h1 className="text-2xl text-[#1E4F74] lowercase font-bold tracking-wide">
               bonded
             </h1>
           </div>
@@ -215,7 +215,7 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
             alt="bonded logo" 
             className="w-8 h-8"
           />
-          <h1 className="text-2xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
+          <h1 className="text-2xl text-[#1E4F74] lowercase font-bold tracking-wide">
             bonded
           </h1>
         </div>
