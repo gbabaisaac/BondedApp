@@ -31,6 +31,7 @@ interface OnboardingWizardProps {
   userSchool: string;
   accessToken: string;
   onComplete: (profile: any) => void;
+  existingProfile?: any; // For editing existing profile
 }
 
 const INTERESTS = [
@@ -96,50 +97,136 @@ const MAJORS = [
 
 const YEARS = ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'];
 
-export function OnboardingWizard({ userEmail, userName, userSchool, accessToken, onComplete }: OnboardingWizardProps) {
+export function OnboardingWizard({ userEmail, userName, userSchool, accessToken, onComplete, existingProfile }: OnboardingWizardProps) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   
   // Step 1: School Selection
-  const [school, setSchool] = useState(userSchool === 'Pending' ? '' : userSchool);
+  const [school, setSchool] = useState(
+    existingProfile?.school || (userSchool === 'Pending' ? '' : userSchool)
+  );
   
   // Step 2: Basic Info
-  const [name, setName] = useState(userName || '');
-  const [age, setAge] = useState('');
-  const [major, setMajor] = useState('');
-  const [customMajor, setCustomMajor] = useState('');
-  const [year, setYear] = useState('');
+  const [name, setName] = useState(existingProfile?.name || userName || '');
+  const [age, setAge] = useState(existingProfile?.age?.toString() || '');
+  const [major, setMajor] = useState(existingProfile?.major || '');
+  const [customMajor, setCustomMajor] = useState(existingProfile?.major && !MAJORS.includes(existingProfile.major) ? existingProfile.major : '');
+  const [year, setYear] = useState(existingProfile?.year || '');
   
   // Step 3: Photos
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>(() => {
+    if (existingProfile?.photos && Array.isArray(existingProfile.photos)) {
+      return existingProfile.photos;
+    }
+    if (existingProfile?.imageUrl) {
+      return [existingProfile.imageUrl];
+    }
+    if (existingProfile?.profilePicture) {
+      return [existingProfile.profilePicture];
+    }
+    return [];
+  });
   const [uploading, setUploading] = useState(false);
   
   // Step 4: Interests
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(
+    existingProfile?.interests || []
+  );
   
   // Step 5: Personality
-  const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
+  const [selectedTraits, setSelectedTraits] = useState<string[]>(
+    existingProfile?.personality || []
+  );
   
   // Step 6: Living Habits
-  const [sleepSchedule, setSleepSchedule] = useState('');
-  const [cleanliness, setCleanliness] = useState('');
-  const [guests, setGuests] = useState('');
-  const [noise, setNoise] = useState('');
+  const [sleepSchedule, setSleepSchedule] = useState(
+    existingProfile?.sleepSchedule || existingProfile?.livingHabits?.sleepSchedule || ''
+  );
+  const [cleanliness, setCleanliness] = useState(
+    existingProfile?.cleanliness || existingProfile?.livingHabits?.cleanliness || ''
+  );
+  const [guests, setGuests] = useState(
+    existingProfile?.livingHabits?.guests || ''
+  );
+  const [noise, setNoise] = useState(
+    existingProfile?.livingHabits?.noise || ''
+  );
   
   // Step 7: Bio
-  const [bio, setBio] = useState('');
+  const [bio, setBio] = useState(existingProfile?.bio || '');
   
   // Step 8: Looking For
-  const [lookingFor, setLookingFor] = useState<string[]>([]);
+  // Convert normalized lookingFor back to display format
+  const normalizeLookingForItem = (item: string) => item.toLowerCase().replace(/ /g, '-');
+  const lookingForOptionsNormalized = LOOKING_FOR_OPTIONS.map(opt => normalizeLookingForItem(opt));
+  
+  const initialLookingFor = existingProfile?.lookingFor || [];
+  const lookingForDisplay = initialLookingFor.map((item: string) => {
+    const normalized = normalizeLookingForItem(item);
+    const index = lookingForOptionsNormalized.indexOf(normalized);
+    return index >= 0 ? LOOKING_FOR_OPTIONS[index] : item;
+  }).filter(Boolean);
+  
+  const [lookingFor, setLookingFor] = useState<string[]>(lookingForDisplay);
   
   // Step 9: Future Goals (Optional)
-  const [academicGoals, setAcademicGoals] = useState<string[]>([]);
-  const [leisureGoals, setLeisureGoals] = useState<string[]>([]);
-  const [careerGoal, setCareerGoal] = useState('');
-  const [personalGoal, setPersonalGoal] = useState('');
-  const [customAcademicGoal, setCustomAcademicGoal] = useState('');
-  const [customLeisureGoal, setCustomLeisureGoal] = useState('');
-  const [additionalInfo, setAdditionalInfo] = useState('');
+  // Initialize academic goals - normalize and match with predefined list
+  const normalizeGoal = (goal: string) => goal.toLowerCase().replace(/ /g, '-');
+  const normalizeGoalList = (goals: string[]) => goals.map(normalizeGoal);
+  
+  const initialAcademicGoals = existingProfile?.goals?.academic || [];
+  const normalizedAcademicList = normalizeGoalList(ACADEMIC_GOALS);
+  const initialCustomAcademic = initialAcademicGoals.find((g: string) => 
+    !normalizedAcademicList.includes(normalizeGoal(g))
+  );
+  
+  // Convert normalized goals back to display format, or keep as-is if custom
+  const academicGoalsDisplay = initialAcademicGoals.map((g: string) => {
+    const normalized = normalizeGoal(g);
+    const index = normalizedAcademicList.indexOf(normalized);
+    return index >= 0 ? ACADEMIC_GOALS[index] : g;
+  }).filter(Boolean);
+  
+  const [academicGoals, setAcademicGoals] = useState<string[]>(
+    initialCustomAcademic 
+      ? [...academicGoalsDisplay.filter((g: string) => normalizeGoal(g) !== normalizeGoal(initialCustomAcademic)), 'Other']
+      : academicGoalsDisplay
+  );
+  
+  // Initialize leisure goals
+  const initialLeisureGoals = existingProfile?.goals?.leisure || [];
+  const normalizedLeisureList = normalizeGoalList(LEISURE_GOALS);
+  const initialCustomLeisure = initialLeisureGoals.find((g: string) => 
+    !normalizedLeisureList.includes(normalizeGoal(g))
+  );
+  
+  const leisureGoalsDisplay = initialLeisureGoals.map((g: string) => {
+    const normalized = normalizeGoal(g);
+    const index = normalizedLeisureList.indexOf(normalized);
+    return index >= 0 ? LEISURE_GOALS[index] : g;
+  }).filter(Boolean);
+  
+  const [leisureGoals, setLeisureGoals] = useState<string[]>(
+    initialCustomLeisure 
+      ? [...leisureGoalsDisplay.filter((g: string) => normalizeGoal(g) !== normalizeGoal(initialCustomLeisure)), 'Other']
+      : leisureGoalsDisplay
+  );
+  
+  const [careerGoal, setCareerGoal] = useState(
+    existingProfile?.goals?.career || ''
+  );
+  const [personalGoal, setPersonalGoal] = useState(
+    existingProfile?.goals?.personal || ''
+  );
+  const [customAcademicGoal, setCustomAcademicGoal] = useState(
+    initialCustomAcademic || ''
+  );
+  const [customLeisureGoal, setCustomLeisureGoal] = useState(
+    initialCustomLeisure || ''
+  );
+  const [additionalInfo, setAdditionalInfo] = useState(
+    existingProfile?.additionalInfo || ''
+  );
 
   const totalSteps = 9;
   const progress = (step / totalSteps) * 100;
@@ -378,11 +465,15 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
       }
 
       const profile = await response.json();
-      toast.success('Profile created! 🎉');
+      if (existingProfile) {
+        toast.success('Profile updated! 🎉');
+      } else {
+        toast.success('Profile created! 🎉');
+      }
       onComplete(profile);
     } catch (error) {
-      console.error('Profile creation error:', error);
-      toast.error('Failed to create profile');
+      console.error('Profile save error:', error);
+      toast.error(existingProfile ? 'Failed to update profile' : 'Failed to create profile');
     }
   };
 

@@ -76,11 +76,12 @@ export function ProfileSetup({ accessToken, onComplete, existingProfile }: Profi
 
   return (
     <OnboardingWizard
-      userEmail={userInfo?.email || ''}
-      userName={userInfo?.name || ''}
-      userSchool={userInfo?.school || ''}
+      userEmail={userInfo?.email || existingProfile?.email || ''}
+      userName={userInfo?.name || existingProfile?.name || ''}
+      userSchool={userInfo?.school || existingProfile?.school || ''}
       accessToken={accessToken}
       onComplete={onComplete}
+      existingProfile={existingProfile}
     />
   );
 }

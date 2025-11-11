@@ -181,12 +181,12 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
           style={{
             WebkitOverflowScrolling: 'touch',
             overscrollBehavior: 'contain',
-            paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+            paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
             WebkitTransform: 'translateZ(0)',
             transform: 'translateZ(0)',
           }}
         >
-          <div className="p-6 pb-8">
+          <div className="p-6 pb-12">
           {step === 'reason' && (
             <div>
               <h3 className="text-xl mb-2">Why do you want to connect with {profile.name.split(' ')[0]}?</h3>
@@ -248,12 +248,12 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
 
               {/* Similarities */}
               <div>
-                <h3 className="text-sm text-[#64748b] mb-3 font-medium">What You Have in Common</h3>
+                <h3 className="text-sm text-[#64748b] mb-3 font-medium">Key Highlights</h3>
                 <div className="space-y-2">
                   {aiAnalysis.similarities.map((similarity, idx) => (
                     <div key={idx} className="flex items-start gap-2 p-3 bg-[#F9F6F3] rounded-2xl">
                       <div className="w-2 h-2 bg-[#2E7B91] rounded-full mt-1.5 flex-shrink-0" />
-                      <p className="text-sm text-[#1E4F74]">{similarity}</p>
+                      <p className="text-sm text-[#1E4F74] leading-relaxed">{similarity}</p>
                     </div>
                   ))}
                 </div>
@@ -261,15 +261,15 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
 
               {/* AI Recommendation */}
               <div className="p-4 bg-gradient-to-br from-[#2E7B9115] to-[#B69CFF15] rounded-2xl border border-[#2E7B9140]">
-                <h3 className="text-sm text-[#1E4F74] mb-2 flex items-center gap-2">
+                <h3 className="text-sm text-[#1E4F74] mb-2 flex items-center gap-2 font-medium">
                   <Sparkles className="w-4 h-4 text-[#2E7B91]" />
-                  AI Recommendation
+                  Why You Should Connect
                 </h3>
-                <p className="text-sm text-[#1E4F74]">{aiAnalysis.recommendation}</p>
+                <p className="text-sm text-[#1E4F74] leading-relaxed">{aiAnalysis.recommendation}</p>
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-6 pb-4">
                 <Button
                   variant="outline"
                   onClick={onClose}

@@ -713,27 +713,31 @@ ${user1Summary}
 User 2 (${user2.name}):
 ${user2Summary}
 
-Connection reason: ${reason} (roommate/friends/study-partner/going-out/collaborate/network/event-buddy/workout-partner/dining-companion)
+Connection reason: ${reason} (friends/roommate/study/collaborate/network/event-buddy/workout-partner/dining-companion)
 ${bondPrintScore !== null ? `\nBond Print Compatibility Score: ${bondPrintScore}/100 (based on personality profile analysis)` : '\nNote: One or both users have not completed Bond Print quiz'}
 
-Generate:
-1. A warm, personalized analysis (2-3 sentences) explaining why they'd be a great match
-2. A compatibility score (0-100) based on shared goals, interests, and compatibility
-3. 2-3 key highlights of what they have in common
+Generate a detailed, insightful analysis that:
+1. Explains WHY they're a great match (2-3 sentences) - be specific about shared interests, goals, or complementary traits
+2. Suggests HOW they can connect - whether as friends, study partners, business collaborators, or other meaningful relationships
+3. Highlights WHAT they have in common - specific shared interests, goals, or values
+4. Provides actionable insights - concrete ways they can help each other or activities they could do together
 
 Focus on:
-- Shared academic/leisure goals
-- Common interests
-- Complementary personalities
-- Why this connection makes sense for the reason given
-- How they can help each other achieve their goals
-- Any additional information provided that indicates compatibility
+- Specific shared academic/leisure goals and how they align
+- Common interests and how they could explore them together
+- Complementary personalities and how they balance each other
+- Why this connection makes sense for the reason given (${reason})
+- Concrete ways they can help each other achieve their goals
+- Potential activities, projects, or experiences they could share
+- Any additional information that indicates compatibility
+
+Be specific and actionable. Instead of "you both like tech", say "You both share an interest in tech - you could collaborate on projects, attend hackathons together, or form a study group for CS classes."
 
 Return ONLY valid JSON in this exact format:
 {
-  "analysis": "Your warm, personalized analysis here...",
+  "analysis": "Your detailed, specific analysis here (2-3 sentences explaining why they match and how they can connect)...",
   "score": 85,
-  "highlights": ["Both interested in tech", "Similar study habits", "Want to explore the city"]
+  "highlights": ["Specific shared interest or goal", "How they can connect (friends/business/study)", "Actionable way they can help each other"]
 }`;
 
   try {
@@ -760,10 +764,14 @@ Return ONLY valid JSON in this exact format:
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+      const score = parsed.score || 75;
+      const analysis = parsed.analysis || "You seem like a great match!";
+      const highlights = parsed.highlights || ["Shared interests", "Similar goals"];
+      
       return {
-        analysis: parsed.analysis || "You seem like a great match!",
-        score: parsed.score || 75,
-        highlights: parsed.highlights || ["Shared interests", "Similar goals"]
+        analysis: analysis,
+        score: score,
+        highlights: highlights
       };
     }
     
