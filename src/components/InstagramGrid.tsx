@@ -7,6 +7,7 @@ import { ProfileGridSkeleton } from './LoadingSkeletons';
 interface InstagramGridProps {
   userProfile?: any;
   accessToken?: string;
+  onProfileDetailOpen?: (isOpen: boolean) => void; // Callback to notify parent
 }
 
 interface Profile {
@@ -31,7 +32,7 @@ interface Profile {
 
 
 
-export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) {
+export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }: InstagramGridProps) {
   const [selectedProfileIndex, setSelectedProfileIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLookingFor, setFilterLookingFor] = useState<string>('All');
@@ -151,10 +152,12 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
     const profile = filteredProfiles[index];
     const originalIndex = profiles.findIndex(p => p.id === profile.id);
     setSelectedProfileIndex(originalIndex);
+    onProfileDetailOpen?.(true); // Notify parent that profile detail is open
   };
 
   const handleClose = () => {
     setSelectedProfileIndex(null);
+    onProfileDetailOpen?.(false); // Notify parent that profile detail is closed
   };
 
   const handleNext = () => {

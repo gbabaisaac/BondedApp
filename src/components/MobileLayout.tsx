@@ -7,9 +7,10 @@ interface MobileLayoutProps {
   activeTab: 'discover' | 'matches' | 'messages' | 'profile';
   onTabChange: (tab: 'discover' | 'matches' | 'messages' | 'profile') => void;
   accessToken?: string;
+  hideNavigation?: boolean; // Hide bottom nav when profile detail is open
 }
 
-export function MobileLayout({ children, activeTab, onTabChange, accessToken }: MobileLayoutProps) {
+export function MobileLayout({ children, activeTab, onTabChange, accessToken, hideNavigation = false }: MobileLayoutProps) {
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -89,40 +90,42 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken }: 
         {children}
       </div>
 
-      {/* Bottom Navigation */}
-      <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
-        style={{
-          paddingBottom: 'env(safe-area-inset-bottom)'
-        }}
-      >
-        <div className="flex items-center justify-around h-16 px-2">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-                  isActive ? 'text-[#2E7B91]' : 'text-[#64748b]'
-                }`}
-              >
-                <div className="relative">
-                  <Icon className={`w-6 h-6 ${isActive ? 'fill-[#2E7B91]' : ''}`} />
-                  {tab.badge > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center">
-                      {tab.badge > 9 ? '9+' : tab.badge}
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs mt-1">{tab.label}</span>
-              </button>
-            );
-          })}
+      {/* Bottom Navigation - Hidden when profile detail is open */}
+      {!hideNavigation && (
+        <div
+          className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+          style={{
+            paddingBottom: 'env(safe-area-inset-bottom)'
+          }}
+        >
+          <div className="flex items-center justify-around h-16 px-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+                    isActive ? 'text-[#2E7B91]' : 'text-[#64748b]'
+                  }`}
+                >
+                  <div className="relative">
+                    <Icon className={`w-6 h-6 ${isActive ? 'fill-[#2E7B91]' : ''}`} />
+                    {tab.badge > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                        {tab.badge > 9 ? '9+' : tab.badge}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs mt-1">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

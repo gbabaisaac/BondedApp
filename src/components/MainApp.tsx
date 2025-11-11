@@ -20,6 +20,7 @@ type AppMode = 'friend' | 'love';
 export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
   const [currentView, setCurrentView] = useState<View>('discover');
   const [mode, setMode] = useState<AppMode>('friend');
+  const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
   const loveModeEnabled = isFeatureEnabled('LOVE_MODE_ENABLED');
 
   // Love Mode has its own full-screen view (no mode toggle inside)
@@ -47,9 +48,13 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
       {/* Only show mode toggle if Love Mode is enabled */}
       {loveModeEnabled && <ModeToggle mode={mode} onChange={setMode} />}
       <div className="flex-1 overflow-hidden">
-        <MobileLayout activeTab={currentView} onTabChange={setCurrentView} accessToken={accessToken}>
+        <MobileLayout activeTab={currentView} onTabChange={setCurrentView} accessToken={accessToken} hideNavigation={isProfileDetailOpen}>
           {currentView === 'discover' && (
-            <InstagramGrid userProfile={userProfile} accessToken={accessToken} />
+            <InstagramGrid 
+              userProfile={userProfile} 
+              accessToken={accessToken}
+              onProfileDetailOpen={setIsProfileDetailOpen}
+            />
           )}
           {currentView === 'matches' && (
             <MatchSuggestions userProfile={userProfile} accessToken={accessToken} />

@@ -160,9 +160,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
       <div 
         className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl flex flex-col"
         style={{
-          maxHeight: '90vh',
           maxHeight: '90dvh',
-          height: '90vh',
           height: '90dvh',
         }}
       >
@@ -183,10 +181,12 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
           style={{
             WebkitOverflowScrolling: 'touch',
             overscrollBehavior: 'contain',
-            paddingBottom: 'env(safe-area-inset-bottom)',
+            paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+            WebkitTransform: 'translateZ(0)',
+            transform: 'translateZ(0)',
           }}
         >
-          <div className="p-6">
+          <div className="p-6 pb-8">
           {step === 'reason' && (
             <div>
               <h3 className="text-xl mb-2">Why do you want to connect with {profile.name.split(' ')[0]}?</h3>
@@ -194,16 +194,16 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                 Our AI will analyze your compatibility and create a personalized introduction.
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-3 pb-4">
                 {reasonOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => handleReasonSelect(option.value)}
-                    className="w-full text-left p-4 border-2 border-[#EAEAEA] rounded-2xl hover:border-[#2E7B91] hover:bg-[#2E7B9115] transition-all"
+                    className="w-full text-left p-4 border-2 border-[#EAEAEA] rounded-2xl hover:border-[#2E7B91] hover:bg-[#2E7B9115] active:bg-[#2E7B9120] transition-all touch-manipulation"
                   >
                     <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium mb-1">{option.label}</p>
+                      <div className="flex-1">
+                        <p className="font-medium mb-1 text-[#1E4F74]">{option.label}</p>
                         <p className="text-sm text-[#475569]">{option.description}</p>
                       </div>
                     </div>
