@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { projectId } from '../utils/supabase/info';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
@@ -36,6 +37,7 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
   const [filterLookingFor, setFilterLookingFor] = useState<string>('All');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bondPrintScores, setBondPrintScores] = useState<Record<string, number>>({});
 
   useEffect(() => {
     loadProfiles();
@@ -69,6 +71,11 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
           }));
         
         setProfiles(otherProfiles);
+        
+        // Load Bond Print compatibility scores for all profiles
+        if (userProfile.bondPrint) {
+          loadBondPrintScores(otherProfiles);
+        }
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -77,17 +84,62 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
     }
   };
 
-  const filteredProfiles = profiles.filter(profile => {
-    const matchesSearch = searchQuery === '' || 
-      profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.major.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.interests.some(i => i.toLowerCase().includes(searchQuery.toLowerCase()));
+  const loadBondPrintScores = async (profileList: Profile[]) => {
+    if (!userProfile?.bondPrint || !accessToken) return;
     
-    const matchesFilter = filterLookingFor === 'All' || 
-      profile.lookingFor.some(lf => lf.toLowerCase().includes(filterLookingFor.toLowerCase()));
+    const scores: Record<string, number> = {};
     
-    return matchesSearch && matchesFilter;
-  });
+    // Batch fetch compatibility scores (limit to avoid too many requests)
+    const profilesToCheck = profileList.slice(0, 20); // Check first 20
+    
+    await Promise.all(
+      profilesToCheck.map(async (profile) => {
+        try {
+          const response = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/bond-print/compatibility/${profile.id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.score > 0) {
+              scores[profile.id] = data.score;
+            }
+          }
+        } catch (error) {
+          console.error(`Error loading Bond Print score for ${profile.id}:`, error);
+        }
+      })
+    );
+    
+    setBondPrintScores(scores);
+  };
+
+  const filteredProfiles = profiles
+    .filter(profile => {
+      const matchesSearch = searchQuery === '' || 
+        profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        profile.major.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        profile.interests.some(i => i.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesFilter = filterLookingFor === 'All' || 
+        profile.lookingFor.some(lf => lf.toLowerCase().includes(filterLookingFor.toLowerCase()));
+      
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      // Sort by Bond Print score (highest first), then by name
+      const scoreA = bondPrintScores[a.id] || 0;
+      const scoreB = bondPrintScores[b.id] || 0;
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
   const handleProfileClick = (index: number) => {
     // Map back to original index
@@ -187,33 +239,57 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
 
       {/* Grid */}
       <div className="grid grid-cols-2 gap-3 p-3">
-        {filteredProfiles.map((profile, index) => (
-          <button
-            key={profile.id}
-            onClick={() => handleProfileClick(index)}
-            className="relative overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-md active:scale-95 transition-all"
-          >
-            <div className="aspect-[3/4] relative">
-              <img
-                src={profile.imageUrl}
-                alt={profile.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-3 text-white text-left">
-                <p className="text-sm font-semibold truncate">{profile.name}</p>
-                <p className="text-xs text-gray-200 truncate">{profile.major}</p>
-                <div className="flex gap-1 mt-1">
-                  {profile.lookingFor.slice(0, 2).map((item, i) => (
-                    <span key={i} className="text-[10px] bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                      {item}
-                    </span>
-                  ))}
+        {filteredProfiles.map((profile, index) => {
+          const bondPrintScore = bondPrintScores[profile.id];
+          const isHighMatch = bondPrintScore && bondPrintScore >= 70;
+          const isMediumMatch = bondPrintScore && bondPrintScore >= 50 && bondPrintScore < 70;
+          
+          return (
+            <button
+              key={profile.id}
+              onClick={() => handleProfileClick(index)}
+              className={`relative overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-md active:scale-95 transition-all ${
+                isHighMatch 
+                  ? 'ring-2 ring-purple-500 ring-offset-2' 
+                  : isMediumMatch 
+                  ? 'ring-1 ring-purple-300'
+                  : ''
+              }`}
+            >
+              {/* Bond Print Badge */}
+              {bondPrintScore && bondPrintScore >= 50 && (
+                <div className={`absolute top-2 right-2 z-10 ${
+                  isHighMatch 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600' 
+                    : 'bg-purple-500'
+                } text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1`}>
+                  <Sparkles className="w-3 h-3" />
+                  {bondPrintScore}% Match
+                </div>
+              )}
+              
+              <div className="aspect-[3/4] relative">
+                <img
+                  src={profile.imageUrl}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-3 text-white text-left">
+                  <p className="text-sm font-semibold truncate">{profile.name}</p>
+                  <p className="text-xs text-gray-200 truncate">{profile.major}</p>
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {profile.lookingFor?.slice(0, 2).map((item: string, i: number) => (
+                      <span key={i} className="text-[10px] bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

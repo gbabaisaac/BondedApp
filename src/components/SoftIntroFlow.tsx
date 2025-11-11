@@ -32,6 +32,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
     score: number;
   } | null>(null);
   const [sending, setSending] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const reasonOptions = [
     { value: 'friends', label: '👋 Make Friends', description: 'Looking to connect and hang out' },
@@ -45,97 +46,65 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
     setSelectedReason(reason);
     setStep('ai-analysis');
     
-    // Call real AI compatibility analysis if accessToken is available
-    if (accessToken) {
-      try {
-        const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/love-print/compatibility`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              otherUserId: profile.id,
-              reason,
-            }),
-          }
-        );
-
-        if (response.ok) {
-          const compatibility = await response.json();
-          setAiAnalysis({
-            similarities: compatibility.similarities,
-            compatibility: compatibility.compatibility,
-            recommendation: compatibility.recommendation,
-            score: compatibility.score,
-          });
-        } else {
-          // Fall back to mock analysis
-          const analysis = generateAIAnalysis(reason);
-          setAiAnalysis(analysis);
-        }
-      } catch (error) {
-        console.error('Error getting AI compatibility:', error);
-        // Fall back to mock analysis
-        const analysis = generateAIAnalysis(reason);
-        setAiAnalysis(analysis);
-      }
-    } else {
-      // No auth, use mock
-      const analysis = generateAIAnalysis(reason);
+    // Generate AI analysis
+    const analysis = await generateAIAnalysis(reason);
+    if (analysis) {
       setAiAnalysis(analysis);
     }
   };
 
-  const generateAIAnalysis = (reason: string) => {
-    // This is a mock AI analysis - in production, this would call your AI backend
-    const similarities: string[] = [];
-    
-    // Analyze common interests
-    const mockUserInterests = ['Coding', 'Coffee', 'Gaming'];
-    const commonInterests = profile.interests.filter(interest => 
-      mockUserInterests.some(ui => ui.toLowerCase() === interest.toLowerCase())
-    );
-    
-    if (commonInterests.length > 0) {
-      similarities.push(`You both enjoy ${commonInterests.join(', ')}`);
+  const generateAIAnalysis = async (reason: string) => {
+    if (!accessToken) {
+      toast.error('You must be logged in');
+      return null;
     }
-    
-    // Analyze personality match
-    if (profile.personality && profile.personality.includes('Introverted')) {
-      similarities.push('Similar personality types - both appreciate quiet time');
+
+    setGenerating(true);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/soft-intro/generate-ai-analysis`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            toUserId: profile.id,
+            reason: reason.toLowerCase().replace(/\s+/g, '-'),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to generate AI analysis');
+      }
+
+      const data = await response.json();
+      
+      // Convert API response to component format
+      const compatibility = data.score >= 85 ? 'Excellent' : data.score >= 70 ? 'Great' : 'Good';
+      
+      return {
+        similarities: data.highlights || [],
+        compatibility,
+        recommendation: data.analysis || "You seem like a great match!",
+        score: data.score || 75,
+      };
+    } catch (error) {
+      console.error('AI analysis error:', error);
+      toast.error('Failed to generate analysis. Using basic match.');
+      
+      // Fallback to basic analysis
+      return {
+        similarities: ['Shared interests', 'Similar goals'],
+        compatibility: 'Good',
+        recommendation: `You and ${profile.name.split(' ')[0]} seem like a great match!`,
+        score: 75,
+      };
+    } finally {
+      setGenerating(false);
     }
-    
-    // Analyze academic alignment
-    similarities.push(`Both are interested in ${profile.major.includes('Computer') || profile.major.includes('Engineering') ? 'tech and innovation' : 'learning and growth'}`);
-    
-    // Generate compatibility score
-    const score = 75 + Math.floor(Math.random() * 20);
-    const compatibility = score >= 85 ? 'Excellent' : score >= 70 ? 'Great' : 'Good';
-    
-    // Generate recommendation
-    let recommendation = '';
-    switch (reason) {
-      case 'friends':
-        recommendation = `Based on your shared interests and compatible personalities, I think you two would make great friends! ${profile.name.split(' ')[0]} seems like someone who would enjoy the same activities as you.`;
-        break;
-      case 'roommate':
-        recommendation = `Your living preferences and schedules appear to align well. ${profile.name.split(' ')[0]} could be an excellent roommate match with a ${score}% compatibility score!`;
-        break;
-      case 'study':
-        recommendation = `With your similar academic interests and study styles, you could form a productive study partnership. ${profile.name.split(' ')[0]} is a ${profile.year} in ${profile.major}.`;
-        break;
-      case 'collaborate':
-        recommendation = `Your complementary skills and shared passion for innovation make you great collaboration candidates. I recommend connecting!`;
-        break;
-      case 'network':
-        recommendation = `Your professional interests align well. This could be a valuable connection for both of your careers!`;
-        break;
-    }
-    
-    return { similarities, compatibility, recommendation, score };
   };
 
   const handleSendIntro = async () => {
@@ -224,30 +193,38 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
             </div>
           )}
 
-          {step === 'ai-analysis' && aiAnalysis && (
+          {step === 'ai-analysis' && (
             <div className="space-y-6">
-              {/* AI Thinking Animation */}
-              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
-                <Sparkles className="w-6 h-6 text-purple-600 animate-pulse" />
-                <div className="flex-1">
-                  <p className="font-medium text-purple-900">AI Analysis Complete</p>
-                  <p className="text-sm text-purple-700">Here's what I found...</p>
+              {generating ? (
+                <div className="text-center py-8">
+                  <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-4 animate-pulse" />
+                  <p className="text-lg font-medium text-gray-900 mb-2">Analyzing compatibility...</p>
+                  <p className="text-sm text-gray-600">Our AI is finding what makes you a great match!</p>
                 </div>
-              </div>
-
-              {/* Compatibility */}
-              <div>
-                <h3 className="text-sm text-gray-500 mb-2">Compatibility Score</h3>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${75 + Math.floor(Math.random() * 20)}%` }}
-                    />
+              ) : aiAnalysis ? (
+                <>
+                  {/* AI Thinking Animation */}
+                  <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
+                    <Sparkles className="w-6 h-6 text-purple-600" />
+                    <div className="flex-1">
+                      <p className="font-medium text-purple-900">AI Analysis Complete</p>
+                      <p className="text-sm text-purple-700">Here's what I found...</p>
+                    </div>
                   </div>
-                  <Badge className="bg-purple-100 text-purple-700">{aiAnalysis.compatibility} Match</Badge>
-                </div>
-              </div>
+
+                  {/* Compatibility */}
+                  <div>
+                    <h3 className="text-sm text-gray-500 mb-2">Compatibility Score</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-1000"
+                          style={{ width: `${aiAnalysis.score}%` }}
+                        />
+                      </div>
+                      <Badge className="bg-purple-100 text-purple-700">{aiAnalysis.compatibility} Match ({aiAnalysis.score}%)</Badge>
+                    </div>
+                  </div>
 
               {/* Similarities */}
               <div>
@@ -289,6 +266,18 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                   {sending ? 'Sending...' : 'Send Intro'}
                 </Button>
               </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">Failed to generate analysis. Please try again.</p>
+                  <Button
+                    onClick={() => handleReasonSelect(selectedReason)}
+                    variant="outline"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

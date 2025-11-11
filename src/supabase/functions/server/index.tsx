@@ -3,7 +3,7 @@ import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getFirstQuestion, getNextQuestion, generateLovePrint } from "./love-print-helpers.tsx";
+import { getFirstQuestion, getNextQuestion, generateLovePrint, tryCallGemini } from "./love-print-helpers.tsx";
 
 const app = new Hono();
 
@@ -161,8 +161,28 @@ app.post("/make-server-2516be19/profile", async (c) => {
         twitter: profileData.twitter,
         snapchat: profileData.snapchat,
       },
+      goals: profileData.goals || {
+        academic: [],
+        leisure: [],
+        career: undefined,
+        personal: undefined,
+      },
+      additionalInfo: profileData.additionalInfo || undefined,
+      // Note: classSchedule will be added in a future update for study partner matching
       updatedAt: new Date().toISOString(),
     };
+
+    // If profile has goals or additionalInfo and Bond Print exists, regenerate it with new data
+    if (profile.bondPrint && (profileData.goals || profileData.additionalInfo)) {
+      try {
+        // Regenerate Bond Print with updated profile data
+        const updatedBondPrint = await regenerateBondPrint(profile);
+        profile.bondPrint = updatedBondPrint;
+      } catch (error) {
+        console.error('Failed to regenerate Bond Print:', error);
+        // Continue without regenerating - Bond Print will update on next quiz completion
+      }
+    }
 
     // Store profile
     await kv.set(`user:${userId}`, profile);
@@ -198,6 +218,176 @@ app.get("/make-server-2516be19/profile/:userId", async (c) => {
     return c.json({ error: error.message }, 500);
   }
 });
+
+// Smart matches endpoint with advanced filtering
+app.get("/make-server-2516be19/discover/smart-matches", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const {
+      lookingFor,
+      major,
+      year,
+      academicGoal,
+      leisureGoal,
+      limit = 20
+    } = c.req.query();
+
+    const userProfile = await kv.get(`user:${userId}`);
+    if (!userProfile) {
+      return c.json({ error: 'Profile not found' }, 404);
+    }
+
+    // Get all users from same school
+    const schoolKey = `school:${userProfile.school}:users`;
+    const schoolUserIds = await kv.get(schoolKey) || [];
+    
+    // Filter out current user and existing connections
+    const connections = await kv.get(`user:${userId}:connections`) || [];
+    const pendingIntros = await kv.get(`user:${userId}:soft-intros:outgoing`) || [];
+    
+    const excludeIds = new Set([userId, ...connections, ...pendingIntros]);
+    const candidateIds = schoolUserIds.filter((id: string) => !excludeIds.has(id));
+    
+    // Batch fetch profiles
+    const profileKeys = candidateIds.map((id: string) => `user:${id}`);
+    const profiles = await kv.mget(profileKeys);
+    
+    // Filter and score matches
+    let matches = profiles
+      .filter((p: any) => p && p.id)
+      .map((profile: any) => {
+        const matchScore = calculateMatchScore(userProfile, profile, {
+          lookingFor,
+          major,
+          year,
+          academicGoal,
+          leisureGoal,
+        });
+        
+        // Add Bond Print compatibility score if both have completed it
+        let bondPrintScore = null;
+        if (userProfile.bondPrint && profile.bondPrint) {
+          bondPrintScore = calculateBondPrintCompatibility(
+            userProfile.bondPrint,
+            profile.bondPrint
+          );
+        }
+        
+        // Combine scores (Bond Print is weighted more heavily)
+        const combinedScore = bondPrintScore 
+          ? (matchScore * 0.4) + (bondPrintScore * 0.6) // 60% Bond Print, 40% other factors
+          : matchScore;
+        
+        return {
+          profile,
+          score: combinedScore,
+          bondPrintScore,
+          matchScore,
+        };
+      })
+      .filter((m: any) => m.score > 0)
+      .sort((a: any, b: any) => b.score - a.score)
+      .slice(0, parseInt(limit))
+      .map((m: any) => ({
+        ...m.profile,
+        bondPrintCompatibility: m.bondPrintScore,
+      }));
+
+    return c.json(matches);
+  } catch (error: any) {
+    console.error('Smart matches error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Helper function to calculate match score
+function calculateMatchScore(
+  user1: any,
+  user2: any,
+  filters: any
+): number {
+  let score = 0;
+
+  // Filter by lookingFor
+  if (filters.lookingFor && filters.lookingFor !== 'all' && filters.lookingFor !== 'All') {
+    const filterValue = filters.lookingFor.toLowerCase().replace(/\s+/g, '-');
+    if (!user2.lookingFor?.some((lf: string) => lf.toLowerCase().includes(filterValue))) {
+      return 0; // No match
+    }
+    score += 30; // Base match
+  }
+
+  // Filter by major
+  if (filters.major && filters.major !== 'all' && filters.major !== 'All') {
+    if (user2.major?.toLowerCase() !== filters.major.toLowerCase()) {
+      return 0;
+    }
+    score += 20;
+  }
+
+  // Filter by year
+  if (filters.year && filters.year !== 'all' && filters.year !== 'All') {
+    if (user2.year !== filters.year) {
+      return 0;
+    }
+    score += 10;
+  }
+
+  // Filter by academic goal
+  if (filters.academicGoal && filters.academicGoal !== 'all' && filters.academicGoal !== 'All') {
+    const goalValue = filters.academicGoal.toLowerCase().replace(/\s+/g, '-');
+    if (user2.goals?.academic?.some((g: string) => g.toLowerCase().includes(goalValue))) {
+      score += 25;
+    } else {
+      return 0;
+    }
+  }
+
+  // Filter by leisure goal
+  if (filters.leisureGoal && filters.leisureGoal !== 'all' && filters.leisureGoal !== 'All') {
+    const goalValue = filters.leisureGoal.toLowerCase().replace(/\s+/g, '-');
+    if (user2.goals?.leisure?.some((g: string) => g.toLowerCase().includes(goalValue))) {
+      score += 25;
+    } else {
+      return 0;
+    }
+  }
+
+  // Bonus scoring (even without filters)
+  // Common interests
+  const commonInterests = (user1.interests || []).filter((i: string) =>
+    (user2.interests || []).includes(i)
+  );
+  score += commonInterests.length * 5;
+
+  // Common academic goals
+  const commonAcademicGoals = (user1.goals?.academic || []).filter((g: string) =>
+    (user2.goals?.academic || []).includes(g)
+  );
+  score += commonAcademicGoals.length * 10;
+
+  // Common leisure goals
+  const commonLeisureGoals = (user1.goals?.leisure || []).filter((g: string) =>
+    (user2.goals?.leisure || []).includes(g)
+  );
+  score += commonLeisureGoals.length * 10;
+
+  // Same major (bonus)
+  if (user1.major === user2.major) {
+    score += 15;
+  }
+
+  // Same year (bonus)
+  if (user1.year === user2.year) {
+    score += 10;
+  }
+
+  return score;
+}
 
 // Get compatibility analysis between current user and another profile
 app.get("/make-server-2516be19/compatibility/:targetUserId", async (c) => {
@@ -433,6 +623,193 @@ app.get("/make-server-2516be19/matches", async (c) => {
     return c.json({ error: error.message }, 500);
   }
 });
+
+// Generate AI analysis for soft intro
+app.post("/make-server-2516be19/soft-intro/generate-ai-analysis", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { toUserId, reason } = await c.req.json();
+    
+    // Get both profiles
+    const currentProfile = await kv.get(`user:${userId}`);
+    const targetProfile = await kv.get(`user:${toUserId}`);
+    
+    if (!currentProfile || !targetProfile) {
+      return c.json({ error: 'Profile not found' }, 404);
+    }
+
+    // Calculate Bond Print compatibility if both have completed it
+    let bondPrintScore = null;
+    if (currentProfile.bondPrint && targetProfile.bondPrint) {
+      bondPrintScore = calculateBondPrintCompatibility(
+        currentProfile.bondPrint,
+        targetProfile.bondPrint
+      );
+    }
+
+    // Generate AI analysis (includes Bond Print compatibility)
+    const analysis = await generateAISoftIntro(
+      currentProfile,
+      targetProfile,
+      reason,
+      bondPrintScore
+    );
+
+    return c.json(analysis);
+  } catch (error: any) {
+    console.error('AI analysis error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Helper function to generate AI soft intro
+async function generateAISoftIntro(
+  user1: any,
+  user2: any,
+  reason: string,
+  bondPrintScore: number | null = null
+): Promise<{ analysis: string; score: number; highlights: string[] }> {
+  
+  // Build profile summaries
+  const user1Summary = `
+Name: ${user1.name}
+Major: ${user1.major || 'Not specified'}
+Year: ${user1.year || 'Not specified'}
+Interests: ${user1.interests?.join(', ') || 'None specified'}
+Looking for: ${user1.lookingFor?.join(', ') || 'Not specified'}
+Academic goals: ${user1.goals?.academic?.join(', ') || 'Not specified'}
+Leisure goals: ${user1.goals?.leisure?.join(', ') || 'Not specified'}
+Career goal: ${user1.goals?.career || 'Not specified'}
+Personal goal: ${user1.goals?.personal || 'Not specified'}
+Personality: ${user1.personality?.join(', ') || 'Not specified'}
+Additional info: ${user1.additionalInfo || 'None provided'}
+`.trim();
+
+  const user2Summary = `
+Name: ${user2.name}
+Major: ${user2.major || 'Not specified'}
+Year: ${user2.year || 'Not specified'}
+Interests: ${user2.interests?.join(', ') || 'None specified'}
+Looking for: ${user2.lookingFor?.join(', ') || 'Not specified'}
+Academic goals: ${user2.goals?.academic?.join(', ') || 'Not specified'}
+Leisure goals: ${user2.goals?.leisure?.join(', ') || 'Not specified'}
+Career goal: ${user2.goals?.career || 'Not specified'}
+Personal goal: ${user2.goals?.personal || 'Not specified'}
+Personality: ${user2.personality?.join(', ') || 'Not specified'}
+Additional info: ${user2.additionalInfo || 'None provided'}
+`.trim();
+
+  const prompt = `You are an AI assistant helping college students make meaningful connections on campus.
+
+Generate a personalized soft intro analysis explaining why ${user1.name} should connect with ${user2.name}.
+
+User 1 (${user1.name}):
+${user1Summary}
+
+User 2 (${user2.name}):
+${user2Summary}
+
+Connection reason: ${reason} (roommate/friends/study-partner/going-out/collaborate/network/event-buddy/workout-partner/dining-companion)
+${bondPrintScore !== null ? `\nBond Print Compatibility Score: ${bondPrintScore}/100 (based on personality profile analysis)` : '\nNote: One or both users have not completed Bond Print quiz'}
+
+Generate:
+1. A warm, personalized analysis (2-3 sentences) explaining why they'd be a great match
+2. A compatibility score (0-100) based on shared goals, interests, and compatibility
+3. 2-3 key highlights of what they have in common
+
+Focus on:
+- Shared academic/leisure goals
+- Common interests
+- Complementary personalities
+- Why this connection makes sense for the reason given
+- How they can help each other achieve their goals
+- Any additional information provided that indicates compatibility
+
+Return ONLY valid JSON in this exact format:
+{
+  "analysis": "Your warm, personalized analysis here...",
+  "score": 85,
+  "highlights": ["Both interested in tech", "Similar study habits", "Want to explore the city"]
+}`;
+
+  try {
+    // Call Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${Deno.env.get('GEMINI_API_KEY')}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates[0]?.content?.parts[0]?.text || '';
+    
+    // Parse JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        analysis: parsed.analysis || "You seem like a great match!",
+        score: parsed.score || 75,
+        highlights: parsed.highlights || ["Shared interests", "Similar goals"]
+      };
+    }
+    
+    // Fallback if parsing fails
+    return {
+      analysis: "You seem like a great match based on your shared interests and goals!",
+      score: 75,
+      highlights: ["Shared interests", "Similar goals"]
+    };
+  } catch (error: any) {
+    console.error('Gemini API error:', error);
+    // Fallback analysis
+    const commonInterests = (user1.interests || []).filter((i: string) =>
+      (user2.interests || []).includes(i)
+    );
+    const commonAcademicGoals = (user1.goals?.academic || []).filter((g: string) =>
+      (user2.goals?.academic || []).includes(g)
+    );
+    const commonLeisureGoals = (user1.goals?.leisure || []).filter((g: string) =>
+      (user2.goals?.leisure || []).includes(g)
+    );
+
+    let analysis = `You and ${user2.name} seem like a great match!`;
+    if (commonInterests.length > 0) {
+      analysis += ` You both enjoy ${commonInterests.slice(0, 2).join(' and ')}.`;
+    }
+    if (commonAcademicGoals.length > 0) {
+      analysis += ` You share the academic goal of ${commonAcademicGoals[0]}.`;
+    }
+    if (commonLeisureGoals.length > 0) {
+      analysis += ` You both want to ${commonLeisureGoals[0]}.`;
+    }
+
+    const highlights: string[] = [];
+    if (commonInterests.length > 0) highlights.push(`Both interested in ${commonInterests[0]}`);
+    if (commonAcademicGoals.length > 0) highlights.push(`Shared academic goal: ${commonAcademicGoals[0]}`);
+    if (commonLeisureGoals.length > 0) highlights.push(`Shared leisure goal: ${commonLeisureGoals[0]}`);
+    if (user1.major === user2.major) highlights.push(`Same major: ${user1.major}`);
+
+    return {
+      analysis,
+      score: Math.min(90, 60 + (commonInterests.length * 5) + (commonAcademicGoals.length * 10) + (commonLeisureGoals.length * 10)),
+      highlights: highlights.length > 0 ? highlights : ["Potential great connection"]
+    };
+  }
+}
 
 // Send soft intro
 app.post("/make-server-2516be19/soft-intro", async (c) => {
@@ -921,6 +1298,171 @@ app.post("/make-server-2516be19/bond-print/answer", async (c) => {
   }
 });
 
+// Regenerate Bond Print with updated profile data (goals, additionalInfo)
+async function regenerateBondPrint(profile: any): Promise<any> {
+  if (!profile.bondPrint) {
+    return null;
+  }
+
+  const goalsText = profile.goals ? `
+Academic Goals: ${profile.goals.academic?.join(', ') || 'None'}
+Leisure Goals: ${profile.goals.leisure?.join(', ') || 'None'}
+Career Goal: ${profile.goals.career || 'None'}
+Personal Goal: ${profile.goals.personal || 'None'}
+` : '';
+  
+  const additionalInfoText = profile.additionalInfo ? `\nAdditional Context: ${profile.additionalInfo}` : '';
+
+  const prompt = `You are updating a Bond Print (personality profile) with new information about a college student.
+
+Current Bond Print:
+${JSON.stringify(profile.bondPrint, null, 2)}
+
+New Profile Information:
+Interests: ${profile.interests?.join(', ') || 'None'}
+Looking For: ${profile.lookingFor?.join(', ') || 'None'}
+${goalsText}${additionalInfoText}
+
+Update the Bond Print to incorporate this new information while maintaining consistency. Adjust traits, values, and summary to reflect their goals and additional context.
+
+Return ONLY a JSON object (no markdown) with the same structure as the current Bond Print:
+{
+  "traits": { ... },
+  "personality": { ... },
+  "communication": { ... },
+  "social": { ... },
+  "values": [ ... ],
+  "livingPreferences": { ... },
+  "summary": "..."
+}`;
+
+  const geminiResponse = await tryCallGemini(prompt);
+  
+  if (geminiResponse) {
+    try {
+      const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const updatedBondPrint = JSON.parse(jsonMatch[0]);
+        updatedBondPrint.createdAt = profile.bondPrint.createdAt;
+        updatedBondPrint.updatedAt = new Date().toISOString();
+        updatedBondPrint.quizVersion = profile.bondPrint.quizVersion || '1.0';
+        updatedBondPrint.regenerated = true;
+        return updatedBondPrint;
+      }
+    } catch (e) {
+      console.log('Failed to parse regenerated Bond Print');
+    }
+  }
+  
+  // If regeneration fails, return original
+  return profile.bondPrint;
+}
+
+// Get Bond Print compatibility score between two users
+function calculateBondPrintCompatibility(bondPrint1: any, bondPrint2: any): number {
+  if (!bondPrint1 || !bondPrint2) {
+    return 0;
+  }
+
+  let score = 0;
+  let factors = 0;
+
+  // Compare traits (0-1 scale)
+  if (bondPrint1.traits && bondPrint2.traits) {
+    const traitKeys = Object.keys(bondPrint1.traits);
+    traitKeys.forEach(key => {
+      if (bondPrint2.traits[key] !== undefined) {
+        const diff = Math.abs(bondPrint1.traits[key] - bondPrint2.traits[key]);
+        score += (1 - diff) * 10; // Closer = higher score
+        factors++;
+      }
+    });
+  }
+
+  // Compare personality types
+  if (bondPrint1.personality?.primaryType === bondPrint2.personality?.primaryType) {
+    score += 20;
+  } else if (bondPrint1.personality?.secondaryTraits && bondPrint2.personality?.secondaryTraits) {
+    const commonTraits = bondPrint1.personality.secondaryTraits.filter((t: string) =>
+      bondPrint2.personality.secondaryTraits.includes(t)
+    );
+    score += commonTraits.length * 5;
+  }
+
+  // Compare communication styles
+  if (bondPrint1.communication?.style === bondPrint2.communication?.style) {
+    score += 15;
+  }
+
+  // Compare social preferences
+  if (bondPrint1.social?.idealSetting === bondPrint2.social?.idealSetting) {
+    score += 10;
+  }
+
+  // Compare values
+  if (bondPrint1.values && bondPrint2.values) {
+    const commonValues = bondPrint1.values.filter((v: string) =>
+      bondPrint2.values.includes(v)
+    );
+    score += commonValues.length * 8;
+  }
+
+  // Compare living preferences
+  if (bondPrint1.livingPreferences && bondPrint2.livingPreferences) {
+    const livingKeys = ['cleanliness', 'noiseLevel', 'socialSpace'];
+    livingKeys.forEach(key => {
+      if (bondPrint1.livingPreferences[key] !== undefined && bondPrint2.livingPreferences[key] !== undefined) {
+        const diff = Math.abs(bondPrint1.livingPreferences[key] - bondPrint2.livingPreferences[key]);
+        score += (1 - diff) * 5;
+      }
+    });
+    if (bondPrint1.livingPreferences.schedule === bondPrint2.livingPreferences.schedule) {
+      score += 10;
+    }
+  }
+
+  // Normalize to 0-100
+  const normalizedScore = Math.min(100, Math.round(score));
+  return normalizedScore;
+}
+
+// Get Bond Print compatibility score
+app.get("/make-server-2516be19/bond-print/compatibility/:targetUserId", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const targetUserId = c.req.param('targetUserId');
+    
+    const userProfile = await kv.get(`user:${userId}`);
+    const targetProfile = await kv.get(`user:${targetUserId}`);
+    
+    if (!userProfile || !targetProfile) {
+      return c.json({ error: 'Profile not found' }, 404);
+    }
+
+    if (!userProfile.bondPrint || !targetProfile.bondPrint) {
+      return c.json({ 
+        score: 0, 
+        message: 'One or both users have not completed Bond Print' 
+      });
+    }
+
+    const score = calculateBondPrintCompatibility(userProfile.bondPrint, targetProfile.bondPrint);
+    
+    return c.json({ 
+      score,
+      userBondPrint: userProfile.bondPrint,
+      targetBondPrint: targetProfile.bondPrint
+    });
+  } catch (error: any) {
+    console.error('Bond Print compatibility error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Generate final Bond Print from quiz answers
 app.post("/make-server-2516be19/bond-print/generate", async (c) => {
   try {
@@ -935,11 +1477,23 @@ app.post("/make-server-2516be19/bond-print/generate", async (c) => {
       return c.json({ error: 'Not enough quiz answers' }, 400);
     }
 
+    // Get full profile to include goals and additionalInfo
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile) {
+      // Merge profile data into quiz session for Bond Print generation
+      quizSession.userProfile = {
+        ...quizSession.userProfile,
+        goals: userProfile.goals,
+        additionalInfo: userProfile.additionalInfo,
+        interests: userProfile.interests,
+        lookingFor: userProfile.lookingFor,
+      };
+    }
+
     // Generate Bond Print (tries Gemini, falls back to algorithm)
     const bondPrint = await generateLovePrint(quizSession);
 
     // Store in user profile
-    const userProfile = await kv.get(`user:${userId}`);
     if (userProfile) {
       userProfile.bondPrint = bondPrint;
       userProfile.hasCompletedBondPrint = true;

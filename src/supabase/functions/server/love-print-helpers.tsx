@@ -158,15 +158,31 @@ Return ONLY a JSON object (no markdown):
 export async function generateLovePrint(quizSession: any): Promise<any> {
   const answersText = quizSession.answers.map((a: any) => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n');
   
+  // Get full profile data including goals and additionalInfo
+  const profile = quizSession.userProfile;
+  const goalsText = profile.goals ? `
+Academic Goals: ${profile.goals.academic?.join(', ') || 'None specified'}
+Leisure Goals: ${profile.goals.leisure?.join(', ') || 'None specified'}
+Career Goal: ${profile.goals.career || 'None specified'}
+Personal Goal: ${profile.goals.personal || 'None specified'}
+` : '';
+  
+  const additionalInfoText = profile.additionalInfo ? `\nAdditional Context: ${profile.additionalInfo}` : '';
+  
   // Try Gemini first
-  const prompt = `You are an emotional intelligence expert analyzing quiz responses to create a "Love Print" - a comprehensive personality profile for college students.
+  const prompt = `You are an emotional intelligence expert analyzing quiz responses to create a "Bond Print" - a comprehensive personality profile for college students looking for friends, roommates, and connections.
 
-User: ${quizSession.userProfile.name}, ${quizSession.userProfile.major}
+User: ${profile.name}, ${profile.major}, ${profile.year || ''}
+Interests: ${profile.interests?.join(', ') || 'None specified'}
+Looking For: ${profile.lookingFor?.join(', ') || 'None specified'}
+${goalsText}${additionalInfoText}
 
 Quiz Responses:
 ${answersText}
 
-Create a detailed Love Print analysis. Return ONLY a JSON object (no markdown):
+Create a detailed Bond Print analysis that incorporates their goals, interests, and additional context. This will be used to match them with compatible people for friendships, roommates, and study partners.
+
+Return ONLY a JSON object (no markdown):
 
 {
   "traits": {

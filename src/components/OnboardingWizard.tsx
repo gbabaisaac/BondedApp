@@ -60,6 +60,31 @@ const LOOKING_FOR_OPTIONS = [
   'Dining Companion'
 ];
 
+const ACADEMIC_GOALS = [
+  'Maintain high GPA (3.5+)',
+  'Get into grad school',
+  'Land internships',
+  'Build portfolio/projects',
+  'Join research labs',
+  'Study abroad',
+  'Change major',
+  'Just graduate',
+  'Other'
+];
+
+const LEISURE_GOALS = [
+  'Join clubs/orgs',
+  'Play sports',
+  'Go to parties',
+  'Explore the city',
+  'Try new restaurants',
+  'Attend concerts/events',
+  'Outdoor activities',
+  'Gaming',
+  'Travel',
+  'Other'
+];
+
 const MAJORS = [
   'Computer Science', 'Engineering', 'Business', 'Psychology', 'Biology',
   'English', 'Mathematics', 'Chemistry', 'Physics', 'Economics',
@@ -106,8 +131,17 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
   
   // Step 8: Looking For
   const [lookingFor, setLookingFor] = useState<string[]>([]);
+  
+  // Step 9: Future Goals (Optional)
+  const [academicGoals, setAcademicGoals] = useState<string[]>([]);
+  const [leisureGoals, setLeisureGoals] = useState<string[]>([]);
+  const [careerGoal, setCareerGoal] = useState('');
+  const [personalGoal, setPersonalGoal] = useState('');
+  const [customAcademicGoal, setCustomAcademicGoal] = useState('');
+  const [customLeisureGoal, setCustomLeisureGoal] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
 
-  const totalSteps = 8;
+  const totalSteps = 9;
   const progress = (step / totalSteps) * 100;
 
   const handleNext = () => {
@@ -144,6 +178,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
       toast.error('Please select what you\'re looking for');
       return;
     }
+    // Step 9 is optional, no validation needed
 
     if (step < totalSteps) {
       setDirection(1);
@@ -256,8 +291,48 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
     }
   };
 
+  const toggleAcademicGoal = (goal: string) => {
+    if (goal === 'Other') {
+      // Handle custom input
+      return;
+    }
+    if (academicGoals.includes(goal)) {
+      setAcademicGoals(prev => prev.filter(g => g !== goal));
+    } else {
+      setAcademicGoals(prev => [...prev, goal]);
+    }
+  };
+
+  const toggleLeisureGoal = (goal: string) => {
+    if (goal === 'Other') {
+      // Handle custom input
+      return;
+    }
+    if (leisureGoals.includes(goal)) {
+      setLeisureGoals(prev => prev.filter(g => g !== goal));
+    } else {
+      setLeisureGoals(prev => [...prev, goal]);
+    }
+  };
+
   const handleComplete = async () => {
     try {
+      // Process academic goals (include custom if "Other" selected)
+      const processedAcademicGoals = academicGoals.map(g => {
+        if (g === 'Other' && customAcademicGoal) {
+          return customAcademicGoal;
+        }
+        return g.toLowerCase().replace(/ /g, '-');
+      });
+
+      // Process leisure goals (include custom if "Other" selected)
+      const processedLeisureGoals = leisureGoals.map(g => {
+        if (g === 'Other' && customLeisureGoal) {
+          return customLeisureGoal;
+        }
+        return g.toLowerCase().replace(/ /g, '-');
+      });
+
       const profileData = {
         name,
         school,
@@ -277,6 +352,13 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
         cleanliness,
         guests,
         noise,
+        goals: {
+          academic: processedAcademicGoals,
+          leisure: processedLeisureGoals,
+          career: careerGoal.trim() || undefined,
+          personal: personalGoal.trim() || undefined,
+        },
+        additionalInfo: additionalInfo.trim() || undefined,
       };
 
       const response = await fetch(
@@ -736,6 +818,139 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                   </CardContent>
                 </Card>
               )}
+
+              {/* Step 9: Future Goals (Optional) */}
+              {step === 9 && (
+                <Card>
+                  <CardContent className="pt-6 space-y-6">
+                    <div className="text-center mb-4">
+                      <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
+                      <h3 className="text-xl mb-1">What are your goals?</h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Help us connect you with like-minded people on campus
+                      </p>
+                      <Badge variant="secondary" className="text-xs">
+                        Optional - You can skip this step
+                      </Badge>
+                    </div>
+
+                    {/* Academic Goals */}
+                    <div>
+                      <Label className="text-base font-semibold mb-3 block">
+                        Academic Goals
+                      </Label>
+                      <div className="space-y-2">
+                        {ACADEMIC_GOALS.map(goal => (
+                          <button
+                            key={goal}
+                            onClick={() => toggleAcademicGoal(goal)}
+                            className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+                              academicGoals.includes(goal)
+                                ? 'border-purple-600 bg-purple-50'
+                                : 'border-gray-200 hover:border-purple-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">{goal}</span>
+                              {academicGoals.includes(goal) && (
+                                <Check className="w-4 h-4 text-purple-600" />
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      {academicGoals.includes('Other') && (
+                        <Input
+                          placeholder="Describe your academic goal..."
+                          value={customAcademicGoal}
+                          onChange={(e) => setCustomAcademicGoal(e.target.value)}
+                          className="mt-2"
+                        />
+                      )}
+                    </div>
+
+                    {/* Leisure Goals */}
+                    <div>
+                      <Label className="text-base font-semibold mb-3 block">
+                        Leisure Goals
+                      </Label>
+                      <div className="space-y-2">
+                        {LEISURE_GOALS.map(goal => (
+                          <button
+                            key={goal}
+                            onClick={() => toggleLeisureGoal(goal)}
+                            className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+                              leisureGoals.includes(goal)
+                                ? 'border-purple-600 bg-purple-50'
+                                : 'border-gray-200 hover:border-purple-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">{goal}</span>
+                              {leisureGoals.includes(goal) && (
+                                <Check className="w-4 h-4 text-purple-600" />
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      {leisureGoals.includes('Other') && (
+                        <Input
+                          placeholder="Describe your leisure goal..."
+                          value={customLeisureGoal}
+                          onChange={(e) => setCustomLeisureGoal(e.target.value)}
+                          className="mt-2"
+                        />
+                      )}
+                    </div>
+
+                    {/* Career Goal */}
+                    <div>
+                      <Label className="text-base font-semibold mb-2 block">
+                        Career Goal (Optional)
+                      </Label>
+                      <Input
+                        placeholder="e.g., Software Engineer at Google, Medical School, Start my own business"
+                        value={careerGoal}
+                        onChange={(e) => setCareerGoal(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Personal Goal */}
+                    <div>
+                      <Label className="text-base font-semibold mb-2 block">
+                        Personal Goal (Optional)
+                      </Label>
+                      <Input
+                        placeholder="e.g., Get fit, Learn Spanish, Read more books"
+                        value={personalGoal}
+                        onChange={(e) => setPersonalGoal(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Additional Info */}
+                    <div>
+                      <Label className="text-base font-semibold mb-2 block">
+                        Anything else we should know? (Optional)
+                      </Label>
+                      <Textarea
+                        placeholder="Tell us anything else that would help our AI match you with the right people... (e.g., hobbies, values, what you're looking for in connections, etc.)"
+                        value={additionalInfo}
+                        onChange={(e) => setAdditionalInfo(e.target.value)}
+                        rows={4}
+                        className="resize-none"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        💡 This helps our AI understand you better and make more personalized connection suggestions
+                      </p>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                      💡 <strong>Note:</strong> Class schedule matching for study partners will be available soon!
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -764,7 +979,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
             onClick={handleNext}
             className="flex-1 gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
-            {step === totalSteps ? 'Complete' : 'Next'}
+            {step === totalSteps ? 'Complete' : step === 9 ? 'Skip or Complete' : 'Next'}
             {step < totalSteps && <ArrowRight className="w-4 h-4" />}
             {step === totalSteps && <Check className="w-4 h-4" />}
           </Button>
