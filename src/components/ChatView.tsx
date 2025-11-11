@@ -122,6 +122,14 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
           body: JSON.stringify({}),
         }
       );
+      
+      // Trigger navigation badge refresh immediately
+      if ((window as any).__refreshNavCounts) {
+        (window as any).__refreshNavCounts();
+      }
+      
+      // Also reload chats to update unread counts in the chat list
+      await loadChats();
     } catch (error) {
       // Silently fail - not critical
     }

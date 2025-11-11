@@ -8,19 +8,27 @@ interface MobileLayoutProps {
   onTabChange: (tab: 'discover' | 'matches' | 'messages' | 'profile') => void;
   accessToken?: string;
   hideNavigation?: boolean; // Hide bottom nav when profile detail is open
+  onUnreadCountChange?: (count: number) => void; // Callback to expose unread count
 }
 
-export function MobileLayout({ children, activeTab, onTabChange, accessToken, hideNavigation = false }: MobileLayoutProps) {
+export function MobileLayout({ children, activeTab, onTabChange, accessToken, hideNavigation = false, onUnreadCountChange }: MobileLayoutProps) {
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (accessToken) {
       loadCounts();
-      const interval = setInterval(loadCounts, 10000); // Update every 10 seconds
+      const interval = setInterval(loadCounts, 5000); // Update every 5 seconds (reduced from 10 for better responsiveness)
       return () => clearInterval(interval);
     }
   }, [accessToken]);
+
+  // Expose unread count to parent via callback
+  useEffect(() => {
+    if (onUnreadCountChange) {
+      onUnreadCountChange(unreadCount);
+    }
+  }, [unreadCount, onUnreadCountChange]);
 
   const loadCounts = async () => {
     if (!accessToken) return;
@@ -42,7 +50,7 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
         setPendingCount(pending.length);
       }
 
-      // Load unread messages (simplified - counts all chats for now)
+      // Load unread messages - sum up unreadCount from all chats
       const chatsResponse = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chats`,
         {
@@ -54,14 +62,25 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
 
       if (chatsResponse.ok) {
         const chats = await chatsResponse.json();
-        // For now, show badge if there are any chats
-        // In future, track actual unread status
-        setUnreadCount(chats.length > 0 ? chats.length : 0);
+        // Sum up unreadCount from all chats
+        const totalUnread = chats.reduce((sum: number, chat: any) => {
+          return sum + (chat.unreadCount || 0);
+        }, 0);
+        setUnreadCount(totalUnread);
       }
     } catch (error) {
       console.error('Error loading counts:', error);
     }
   };
+
+  // Expose loadCounts so parent can trigger refresh
+  useEffect(() => {
+    // Store loadCounts in a ref or expose via window for ChatView to call
+    (window as any).__refreshNavCounts = loadCounts;
+    return () => {
+      delete (window as any).__refreshNavCounts;
+    };
+  }, [accessToken]);
 
   const tabs = [
     { id: 'discover' as const, icon: Home, label: 'Discover', badge: 0 },
