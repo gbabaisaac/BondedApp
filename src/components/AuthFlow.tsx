@@ -54,7 +54,8 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
 
     try {
       // School will be selected during onboarding, use placeholder for now
-      const school = email.includes('.edu') ? extractSchool(email) : 'Pending';
+      // Use a default school name if not .edu email
+      const school = email.includes('.edu') ? extractSchool(email) : 'University';
       
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/signup`,
