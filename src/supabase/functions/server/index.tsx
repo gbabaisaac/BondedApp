@@ -1486,7 +1486,10 @@ app.get("/make-server-2516be19/bond-print/compatibility/:targetUserId", async (c
     const targetProfile = await kv.get(`user:${targetUserId}`);
     
     if (!userProfile || !targetProfile) {
-      return c.json({ error: 'Profile not found' }, 404);
+      return c.json({ 
+        score: 0, 
+        error: 'Profile not found' 
+      }, 200); // Return 200 with score 0 instead of 404
     }
 
     if (!userProfile.bondPrint || !targetProfile.bondPrint) {

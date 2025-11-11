@@ -106,12 +106,17 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
           
           if (response.ok) {
             const data = await response.json();
-            if (data.score > 0) {
+            // Handle both score format and error format
+            if (data.score !== undefined && data.score > 0) {
               scores[profile.id] = data.score;
             }
+          } else if (response.status === 404) {
+            // Profile or Bond Print not found - skip silently
+            // This is expected for users without Bond Prints
           }
         } catch (error) {
-          console.error(`Error loading Bond Print score for ${profile.id}:`, error);
+          // Silently fail - not all users will have Bond Prints
+          // Don't log errors for missing Bond Prints
         }
       })
     );

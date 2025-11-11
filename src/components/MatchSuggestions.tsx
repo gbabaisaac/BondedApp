@@ -305,7 +305,9 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                                 <div className="flex items-start gap-2">
                                   <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
                                   <p className="text-xs text-purple-900 leading-relaxed">
-                                    {intro.analysis}
+                                    {typeof intro.analysis === 'string' 
+                                      ? intro.analysis 
+                                      : intro.analysis?.analysis || intro.analysis?.recommendation || 'You have a great match!'}
                                   </p>
                                 </div>
                               </div>

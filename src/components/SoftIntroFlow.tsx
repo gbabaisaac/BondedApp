@@ -127,7 +127,11 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
           body: JSON.stringify({
             toUserId: profile.id,
             reason: selectedReason,
-            analysis: aiAnalysis,
+            analysis: aiAnalysis ? {
+              score: aiAnalysis.score,
+              highlights: aiAnalysis.similarities,
+              analysis: aiAnalysis.recommendation,
+            } : null,
           }),
         }
       );
