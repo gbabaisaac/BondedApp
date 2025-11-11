@@ -39,11 +39,10 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
   return (
     <div
       className="fixed inset-0 flex flex-col bg-white"
-      style={{
-        height: '100vh',
-        height: '100dvh',
-        overflow: 'hidden'
-      }}
+        style={{
+          height: '100dvh',
+          overflow: 'hidden'
+        }}
     >
       {/* Only show mode toggle if Love Mode is enabled */}
       {loveModeEnabled && <ModeToggle mode={mode} onChange={setMode} />}

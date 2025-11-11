@@ -61,10 +61,9 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div
           className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4"
-          style={{
-            height: '100vh',
-            height: '100dvh',
-          }}
+            style={{
+              height: '100dvh',
+            }}
         >
           <Card className="max-w-lg w-full">
             <CardContent className="pt-8 pb-6 px-6">

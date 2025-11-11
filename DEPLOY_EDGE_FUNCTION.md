@@ -5,6 +5,8 @@ You're getting a 404 error because the Edge Function needs to be deployed/update
 
 ## Quick Fix - Deploy via Supabase CLI
 
+**The function files have been moved to the correct location: `supabase/functions/make-server-2516be19/`**
+
 1. **Install Supabase CLI** (if not already installed):
    ```bash
    npm install -g supabase
@@ -20,16 +22,12 @@ You're getting a 404 error because the Edge Function needs to be deployed/update
    supabase link --project-ref wmlklvlnxftedtylgxsc
    ```
 
-4. **Deploy the function**:
+4. **Deploy the function** (from project root):
    ```bash
    supabase functions deploy make-server-2516be19
    ```
 
-   Or if your function folder structure is different:
-   ```bash
-   cd src/supabase/functions
-   supabase functions deploy make-server-2516be19 --no-verify-jwt
-   ```
+   **Note**: Make sure you're in the project root directory (`C:\Users\gbaba\Downloads\Bonded`) when running this command.
 
 ## Alternative: Deploy via Supabase Dashboard
 
