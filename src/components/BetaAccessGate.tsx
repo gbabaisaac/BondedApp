@@ -109,7 +109,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
               bonded
             </h1>
           </div>
-          <p className="text-center text-gray-600 mb-6">
+          <p className="text-center text-[#475569] mb-6">
             Social networking for college students
           </p>
 
@@ -129,7 +129,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
           {/* Access Form */}
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              <label className="text-sm font-medium text-[#1E4F74] mb-1.5 block">
                 University Email
               </label>
               <Input
@@ -153,7 +153,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
 
           {/* Request Access */}
           <div className="mt-6 pt-6 border-t text-center">
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-[#475569] mb-2">
               Don't have access yet?
             </p>
             <Button

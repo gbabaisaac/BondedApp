@@ -269,7 +269,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                     <CardContent className="p-8 text-center">
                       <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                       <h3 className="text-lg font-medium mb-2">No pending requests</h3>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-[#475569]">
                         When someone sends you a connection request, it will appear here.
                       </p>
                     </CardContent>
@@ -296,7 +296,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                             >
                               {intro.senderProfile?.name}
                             </h3>
-                            <p className="text-xs text-gray-600 mb-2">
+                            <p className="text-xs text-[#475569] mb-2">
                               {intro.senderProfile?.school} • {intro.senderProfile?.major}
                             </p>
                             
@@ -351,7 +351,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                     <CardContent className="p-8 text-center">
                       <Send className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                       <h3 className="text-lg font-medium mb-2">No sent requests</h3>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-[#475569]">
                         Find people on the Discover tab and send them connection requests!
                       </p>
                     </CardContent>
@@ -383,7 +383,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                                 {getStatusIcon(intro.status)}
                               </div>
                             </div>
-                            <p className="text-xs text-gray-600 mb-2">
+                            <p className="text-xs text-[#475569] mb-2">
                               {intro.receiverProfile?.school} • {intro.receiverProfile?.major}
                             </p>
                             
@@ -460,7 +460,7 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
                             </div>
                             <div className="p-3 text-center">
                               <h3 className="font-medium text-sm mb-1">{connection.name || 'Unknown'}</h3>
-                              <p className="text-xs text-gray-600">{connection.major || ''}</p>
+                              <p className="text-xs text-[#475569]">{connection.major || ''}</p>
                             </div>
                           </CardContent>
                         </Card>

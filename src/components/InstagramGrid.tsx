@@ -246,15 +246,15 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
       <div className="bg-white border-b px-4 py-3 flex justify-around text-center">
         <div>
           <p className="font-semibold text-[#2E7B91]">{filteredProfiles.length}</p>
-          <p className="text-xs text-gray-600">Students</p>
+          <p className="text-xs text-[#475569]">Students</p>
         </div>
         <div>
           <p className="font-semibold">{userProfile?.school || 'Your School'}</p>
-          <p className="text-xs text-gray-600">University</p>
+          <p className="text-xs text-[#475569]">University</p>
         </div>
         <div>
           <p className="font-semibold text-green-600">Active</p>
-          <p className="text-xs text-gray-600">Community</p>
+          <p className="text-xs text-[#475569]">Community</p>
         </div>
       </div>
 

@@ -416,7 +416,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl">Create Your Profile</h2>
-            <span className="text-sm text-gray-500">Step {step} of {totalSteps}</span>
+            <span className="text-sm text-[#64748b]">Step {step} of {totalSteps}</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -453,7 +453,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">Let's start with the basics</h3>
-                      <p className="text-sm text-gray-600">Tell us about yourself</p>
+                      <p className="text-sm text-[#475569]">Tell us about yourself</p>
                     </div>
 
                     <div>
@@ -517,7 +517,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                       </select>
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-3 text-sm text-gray-700">
+                    <div className="bg-[#2E7B9115] rounded-2xl p-3 text-sm text-[#1E4F74]">
                       📍 School: <span className="font-medium">{school}</span>
                     </div>
                   </CardContent>
@@ -531,7 +531,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Camera className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">Add your photos</h3>
-                      <p className="text-sm text-gray-600">Upload 1-6 photos (first photo will be your profile picture)</p>
+                      <p className="text-sm text-[#475569]">Upload 1-6 photos (first photo will be your profile picture)</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
@@ -559,7 +559,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                       {photos.length < 6 && (
                         <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-colors">
                           <Upload className="w-8 h-8 text-gray-400 mb-1" />
-                          <span className="text-xs text-gray-500">Upload</span>
+                          <span className="text-xs text-[#64748b]">Upload</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -576,7 +576,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                       <p className="text-center text-sm text-purple-600">Uploading...</p>
                     )}
 
-                    <div className="bg-blue-50 rounded-lg p-3 text-sm text-gray-700">
+                    <div className="bg-[#2E7B9115] rounded-2xl p-3 text-sm text-[#1E4F74]">
                       💡 Tip: Choose clear photos that show your personality!
                     </div>
                   </CardContent>
@@ -590,7 +590,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Heart className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">What are you into?</h3>
-                      <p className="text-sm text-gray-600">Select 3-10 interests</p>
+                      <p className="text-sm text-[#475569]">Select 3-10 interests</p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -601,7 +601,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                           className={`cursor-pointer transition-all ${
                             selectedInterests.includes(interest)
                               ? 'bg-purple-600 text-white hover:bg-purple-700'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              : 'bg-[#F9F6F3] text-[#1E4F74] hover:bg-[#EAEAEA]'
                           }`}
                         >
                           {interest}
@@ -612,7 +612,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                       ))}
                     </div>
 
-                    <p className="text-sm text-center text-gray-500">
+                    <p className="text-sm text-center text-[#64748b]">
                       {selectedInterests.length} selected
                     </p>
                   </CardContent>
@@ -626,7 +626,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">Describe your personality</h3>
-                      <p className="text-sm text-gray-600">Select 3-8 traits that fit you</p>
+                      <p className="text-sm text-[#475569]">Select 3-8 traits that fit you</p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -637,7 +637,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                           className={`cursor-pointer transition-all ${
                             selectedTraits.includes(trait)
                               ? 'bg-purple-600 text-white hover:bg-purple-700'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              : 'bg-[#F9F6F3] text-[#1E4F74] hover:bg-[#EAEAEA]'
                           }`}
                         >
                           {trait}
@@ -648,7 +648,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                       ))}
                     </div>
 
-                    <p className="text-sm text-center text-gray-500">
+                    <p className="text-sm text-center text-[#64748b]">
                       {selectedTraits.length} selected
                     </p>
                   </CardContent>
@@ -662,7 +662,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Moon className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">Living preferences</h3>
-                      <p className="text-sm text-gray-600">Help potential roommates know your style</p>
+                      <p className="text-sm text-[#475569]">Help potential roommates know your style</p>
                     </div>
 
                     <div>
@@ -762,7 +762,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">Tell your story</h3>
-                      <p className="text-sm text-gray-600">Write a short bio about yourself</p>
+                      <p className="text-sm text-[#475569]">Write a short bio about yourself</p>
                     </div>
 
                     <div>
@@ -773,12 +773,12 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                         rows={8}
                         className="resize-none"
                       />
-                      <p className="text-sm text-gray-500 mt-2">
+                      <p className="text-sm text-[#64748b] mt-2">
                         {bio.length} / 500 characters
                       </p>
                     </div>
 
-                    <div className="bg-purple-50 rounded-lg p-3 text-sm text-gray-700">
+                    <div className="bg-[#2E7B9115] rounded-2xl p-3 text-sm text-[#1E4F74]">
                       💡 Tip: Be authentic and show your personality!
                     </div>
                   </CardContent>
@@ -792,7 +792,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Users className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">What brings you here?</h3>
-                      <p className="text-sm text-gray-600">Select all that apply</p>
+                      <p className="text-sm text-[#475569]">Select all that apply</p>
                     </div>
 
                     <div className="space-y-2">
@@ -826,7 +826,7 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                     <div className="text-center mb-4">
                       <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
                       <h3 className="text-xl mb-1">What are your goals?</h3>
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="text-sm text-[#475569] mb-2">
                         Help us connect you with like-minded people on campus
                       </p>
                       <Badge variant="secondary" className="text-xs">

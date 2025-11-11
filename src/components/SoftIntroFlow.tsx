@@ -174,7 +174,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
           {step === 'reason' && (
             <div>
               <h3 className="text-xl mb-2">Why do you want to connect with {profile.name.split(' ')[0]}?</h3>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-[#475569] mb-6">
                 Our AI will analyze your compatibility and create a personalized introduction.
               </p>
 
@@ -188,7 +188,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium mb-1">{option.label}</p>
-                        <p className="text-sm text-gray-600">{option.description}</p>
+                        <p className="text-sm text-[#475569]">{option.description}</p>
                       </div>
                     </div>
                   </button>
@@ -202,8 +202,8 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
               {generating ? (
                 <div className="text-center py-8">
                   <Sparkles className="w-12 h-12 text-[#2E7B91] mx-auto mb-4 animate-pulse" />
-                  <p className="text-lg font-medium text-gray-900 mb-2">Analyzing compatibility...</p>
-                  <p className="text-sm text-gray-600">Our AI is finding what makes you a great match!</p>
+                  <p className="text-lg font-medium text-[#1E4F74] mb-2">Analyzing compatibility...</p>
+                  <p className="text-sm text-[#475569]">Our AI is finding what makes you a great match!</p>
                 </div>
               ) : aiAnalysis ? (
                 <>
@@ -218,9 +218,9 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
 
                   {/* Compatibility */}
                   <div>
-                    <h3 className="text-sm text-gray-500 mb-2">Compatibility Score</h3>
+                    <h3 className="text-sm text-[#64748b] mb-2 font-medium">Compatibility Score</h3>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
+                      <div className="flex-1 bg-[#EAEAEA] rounded-full h-3 overflow-hidden">
                         <div 
                           className="bg-gradient-to-r from-[#2E7B91] to-[#B69CFF] h-full rounded-full transition-all duration-1000"
                           style={{ width: `${aiAnalysis.score}%` }}
@@ -232,12 +232,12 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
 
               {/* Similarities */}
               <div>
-                <h3 className="text-sm text-gray-500 mb-3">What You Have in Common</h3>
+                <h3 className="text-sm text-[#64748b] mb-3 font-medium">What You Have in Common</h3>
                 <div className="space-y-2">
                   {aiAnalysis.similarities.map((similarity, idx) => (
-                    <div key={idx} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div key={idx} className="flex items-start gap-2 p-3 bg-[#F9F6F3] rounded-2xl">
                       <div className="w-2 h-2 bg-[#2E7B91] rounded-full mt-1.5 flex-shrink-0" />
-                      <p className="text-sm text-gray-700">{similarity}</p>
+                      <p className="text-sm text-[#1E4F74]">{similarity}</p>
                     </div>
                   ))}
                 </div>
@@ -273,7 +273,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">Failed to generate analysis. Please try again.</p>
+                  <p className="text-[#475569] mb-4">Failed to generate analysis. Please try again.</p>
                   <Button
                     onClick={() => handleReasonSelect(selectedReason)}
                     variant="outline"
@@ -291,10 +291,10 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
                 <Send className="w-10 h-10 text-green-600" />
               </div>
               <h3 className="text-xl mb-2">Intro Sent! 🎉</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-[#475569] mb-4">
                 {profile.name.split(' ')[0]} will receive a notification about your interest in connecting.
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[#64748b]">
                 They'll be able to review your profile and decide if they'd like to connect back.
               </p>
             </div>

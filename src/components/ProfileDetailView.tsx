@@ -150,6 +150,8 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         right: 0,
         bottom: 0,
         zIndex: 100,
+        WebkitTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
       }}
     >
       {/* Header */}
@@ -159,7 +161,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         </button>
         <div className="flex-1 text-center">
           <h3 className="font-semibold text-lg">{profile.name}, {profile.age}</h3>
-          <p className="text-sm text-gray-500">{profile.school}</p>
+          <p className="text-sm text-[#64748b]">{profile.school}</p>
         </div>
         <div className="w-10" /> {/* Spacer for centering */}
       </div>
@@ -224,14 +226,14 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           {/* Basic Info */}
           <div>
             <h2 className="text-2xl mb-1">{profile.name}, {profile.age}</h2>
-            <p className="text-gray-600">{profile.major} • {profile.year}</p>
-            <p className="text-sm text-gray-500">{profile.school}</p>
+            <p className="text-[#475569]">{profile.major} • {profile.year}</p>
+            <p className="text-sm text-[#64748b]">{profile.school}</p>
           </div>
 
           {/* Bio */}
           <div>
-            <h3 className="text-sm text-gray-500 mb-2">About</h3>
-            <p className="text-gray-700">{profile.bio}</p>
+            <h3 className="text-sm text-[#64748b] mb-2 font-medium">About</h3>
+            <p className="text-[#1E4F74]">{profile.bio}</p>
           </div>
 
           {/* Compatibility Analysis */}
@@ -262,7 +264,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
                   </div>
                 )}
                 {compatibility.analysis && (
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-[#1E4F74]">
                     {compatibility.analysis}
                   </p>
                 )}
@@ -273,7 +275,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           {/* Looking For */}
           {profile.lookingFor && profile.lookingFor.length > 0 && (
             <div>
-              <h3 className="text-sm text-gray-500 mb-2">Looking For</h3>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Looking For</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.lookingFor.map((item) => (
                   <Badge key={item} className="bg-[#2E7B9120] text-[#1E4F74]">
@@ -287,7 +289,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           {/* Interests */}
           {profile.interests && profile.interests.length > 0 && (
             <div>
-              <h3 className="text-sm text-gray-500 mb-2">Interests</h3>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Interests</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.interests.map((interest) => (
                   <Badge key={interest} variant="outline">
@@ -301,7 +303,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           {/* Personality */}
           {profile.personality && profile.personality.length > 0 && (
             <div>
-              <h3 className="text-sm text-gray-500 mb-2">Personality</h3>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Personality</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.personality.map((trait) => (
                   <Badge key={trait} variant="secondary">
@@ -315,17 +317,17 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           {/* Living Habits */}
           {(profile.sleepSchedule || profile.cleanliness) && (
             <div>
-              <h3 className="text-sm text-gray-500 mb-2">Living Habits</h3>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Living Habits</h3>
               <div className="space-y-1 text-sm">
                 {profile.sleepSchedule && (
                   <p>
-                    <span className="text-gray-500">Sleep Schedule:</span>{' '}
+                    <span className="text-[#64748b]">Sleep Schedule:</span>{' '}
                     <span className="capitalize">{profile.sleepSchedule}</span>
                   </p>
                 )}
                 {profile.cleanliness && (
                   <p>
-                    <span className="text-gray-500">Cleanliness:</span>{' '}
+                    <span className="text-[#64748b]">Cleanliness:</span>{' '}
                     <span className="capitalize">{profile.cleanliness}</span>
                   </p>
                 )}
@@ -336,7 +338,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           {/* Social Media */}
           {(profile.instagram || profile.snapchat) && (
             <div>
-              <h3 className="text-sm text-gray-500 mb-2">Social Media</h3>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Social Media</h3>
               <div className="space-y-2">
                 {profile.instagram && (
                   <a
@@ -351,7 +353,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
                 )}
                 {profile.snapchat && (
                   <p className="text-sm">
-                    <span className="text-gray-500">Snapchat:</span> {profile.snapchat}
+                    <span className="text-[#64748b]">Snapchat:</span> {profile.snapchat}
                   </p>
                 )}
               </div>
@@ -374,8 +376,11 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           minHeight: '80px',
           width: '100%',
           backgroundColor: '#ffffff',
-          zIndex: 102, // Above everything including bottom nav (z-50) and ProfileDetailView (z-100)
+          zIndex: 9999, // Very high z-index to ensure visibility
           boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)',
+          WebkitTransform: 'translateZ(0)', // Force hardware acceleration for Safari
+          transform: 'translateZ(0)',
+          willChange: 'transform', // Optimize for Safari
         }}
       >
         <div className="flex gap-3 max-w-2xl mx-auto">
@@ -390,8 +395,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
             <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
             {liked ? 'Liked' : 'Like'}
           </Button>
-          <Button
-            size="lg"
+          <button
             onClick={() => {
               if (!accessToken) {
                 toast.error('Please log in to send a soft intro');
@@ -399,12 +403,17 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
               }
               setShowSoftIntro(true);
             }}
-            className="flex-1 gap-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] !text-white font-semibold h-12 shadow-lg text-base rounded-2xl"
-            style={{ color: '#ffffff' }}
+            className="flex-1 gap-2 font-semibold h-12 shadow-lg text-base rounded-2xl flex items-center justify-center"
+            style={{ 
+              color: '#ffffff',
+              backgroundColor: '#2E7B91',
+              background: 'linear-gradient(to right, #2E7B91, #25658A)',
+              border: 'none',
+            }}
           >
-            <Sparkles className="w-5 h-5 text-white" />
-            <span className="text-white">Soft Intro</span>
-          </Button>
+            <Sparkles className="w-5 h-5" style={{ color: '#ffffff', fill: 'none', stroke: '#ffffff' }} />
+            <span style={{ color: '#ffffff', fontWeight: 600 }}>Soft Intro</span>
+          </button>
         </div>
       </div>
 
