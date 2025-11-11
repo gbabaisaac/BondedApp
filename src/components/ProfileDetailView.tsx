@@ -39,6 +39,11 @@ interface ProfileDetailViewProps {
 export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, hasPrev, accessToken }: ProfileDetailViewProps) {
   const [showSoftIntro, setShowSoftIntro] = useState(false);
   const [liked, setLiked] = useState(false);
+  
+  // Debug: Ensure buttons are rendered
+  useEffect(() => {
+    console.log('ProfileDetailView: Buttons should be visible at bottom');
+  }, []);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [direction, setDirection] = useState(0);
@@ -149,7 +154,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))', // Space for fixed bottom buttons
+          paddingBottom: '1rem', // Small padding, buttons are in flex layout now
         }}
       >
         {/* Image with tap zones for navigation */}
@@ -341,18 +346,15 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
       {/* Action Buttons - Fixed at bottom - Always visible */}
       <div
-        className="bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+        className="flex-shrink-0 bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
           paddingTop: '1rem',
           paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
           minHeight: '80px',
           width: '100%',
           backgroundColor: '#ffffff',
-          zIndex: 10,
+          flexShrink: 0, // Ensure it doesn't shrink
+          order: 999, // Ensure it's last in flex order
         }}
       >
         <div className="flex gap-3 max-w-2xl mx-auto">
