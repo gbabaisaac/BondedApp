@@ -152,7 +152,7 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
           <CardHeader className="text-center space-y-2">
             <div className="flex items-center justify-center gap-3 mb-4">
               <img 
-                src="/bonded-icon.png" 
+                src="/Bonded_transparent_icon.png" 
                 alt="bonded logo" 
                 className="w-12 h-12"
               />

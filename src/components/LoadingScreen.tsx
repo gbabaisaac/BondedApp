@@ -11,7 +11,7 @@ export function LoadingScreen() {
           className="relative inline-block mb-8"
         >
           <img 
-            src="/bonded-icon.png" 
+            src="/Bonded_transparent_icon.png" 
             alt="bonded logo" 
             className="w-24 h-24 mx-auto"
           />
@@ -24,7 +24,7 @@ export function LoadingScreen() {
           className="mb-4"
         >
           <img 
-            src="/bonded-word-logo.png" 
+            src="/Bonded_transparent_word_logo.png" 
             alt="bonded" 
             className="h-12 mx-auto"
           />
