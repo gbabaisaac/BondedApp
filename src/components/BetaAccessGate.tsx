@@ -29,9 +29,35 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
     const storedAccess = localStorage.getItem('betaAccess');
     if (storedAccess === 'granted') {
       setHasAccess(true);
+    } else {
+      setHasAccess(false);
     }
     setLoading(false);
   }, []);
+
+  // Listen for storage changes (in case logout clears localStorage)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedAccess = localStorage.getItem('betaAccess');
+      if (storedAccess !== 'granted') {
+        setHasAccess(false);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Also check periodically in case of same-tab changes
+    const interval = setInterval(() => {
+      const storedAccess = localStorage.getItem('betaAccess');
+      if (storedAccess !== 'granted' && hasAccess) {
+        setHasAccess(false);
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [hasAccess]);
 
   const checkAccess = async () => {
     if (!email) {

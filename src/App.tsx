@@ -51,6 +51,7 @@ export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [bondPrintData, setBondPrintData] = useState<any>(null);
+  const [appKey, setAppKey] = useState(0); // Key to force remount on logout
 
   useEffect(() => {
     checkSession();
@@ -140,16 +141,53 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setAccessToken(null);
-    setUserProfile(null);
-    setAppState('auth');
+    try {
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        // Continue with logout even if there's an error
+      }
+      
+      // Clear all state
+      setAccessToken(null);
+      setUserProfile(null);
+      setBondPrintData(null);
+      
+      // Clear localStorage (beta access, etc.)
+      localStorage.removeItem('betaAccess');
+      localStorage.removeItem('betaEmail');
+      
+      // Force remount of BetaAccessGate by changing key
+      setAppKey(prev => prev + 1);
+      
+      // Reset app state to loading, which will then check session and go to auth
+      setAppState('loading');
+      
+      // Small delay to ensure state updates, then check session
+      setTimeout(() => {
+        checkSession();
+      }, 100);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, try to clear state
+      setAccessToken(null);
+      setUserProfile(null);
+      setBondPrintData(null);
+      localStorage.removeItem('betaAccess');
+      localStorage.removeItem('betaEmail');
+      setAppKey(prev => prev + 1);
+      setAppState('loading');
+      setTimeout(() => {
+        checkSession();
+      }, 100);
+    }
   };
 
   return (
     <ErrorBoundary>
       <Suspense fallback={<LoadingScreen />}>
-        <BetaAccessGate onAccessGranted={() => console.log('Beta access granted')}>
+        <BetaAccessGate key={appKey} onAccessGranted={() => console.log('Beta access granted')}>
           <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 overflow-x-hidden">
           {appState === 'loading' && <LoadingScreen />}
           <Suspense fallback={<LoadingScreen />}>
