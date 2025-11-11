@@ -211,7 +211,7 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-3">
           <img 
-            src="/icon.svg" 
+            src="/bonded-icon.png" 
             alt="bonded logo" 
             className="w-8 h-8"
           />

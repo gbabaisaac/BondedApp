@@ -43,6 +43,21 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
   // Debug: Ensure buttons are rendered
   useEffect(() => {
     console.log('ProfileDetailView: Buttons should be visible at bottom');
+    // Force a re-render check after a short delay
+    setTimeout(() => {
+      const buttonElement = document.querySelector('[data-action-buttons]');
+      if (buttonElement) {
+        console.log('✅ Action buttons element found in DOM');
+        const styles = window.getComputedStyle(buttonElement);
+        console.log('Button position:', styles.position);
+        console.log('Button bottom:', styles.bottom);
+        console.log('Button zIndex:', styles.zIndex);
+        console.log('Button display:', styles.display);
+        console.log('Button visibility:', styles.visibility);
+      } else {
+        console.error('❌ Action buttons element NOT found in DOM!');
+      }
+    }, 100);
   }, []);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -134,6 +149,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         left: 0,
         right: 0,
         bottom: 0,
+        zIndex: 100,
       }}
     >
       {/* Header */}
@@ -154,7 +170,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: '1rem', // Small padding, buttons are in flex layout now
+          paddingBottom: 'calc(80px + env(safe-area-inset-bottom))', // Space for fixed buttons
         }}
       >
         {/* Image with tap zones for navigation */}
@@ -346,15 +362,20 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
       {/* Action Buttons - Fixed at bottom - Always visible */}
       <div
-        className="flex-shrink-0 bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+        data-action-buttons
+        className="bg-white border-t-2 border-[#EAEAEA] px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
         style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
           paddingTop: '1rem',
           paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
           minHeight: '80px',
           width: '100%',
           backgroundColor: '#ffffff',
-          flexShrink: 0, // Ensure it doesn't shrink
-          order: 999, // Ensure it's last in flex order
+          zIndex: 102, // Above everything including bottom nav (z-50) and ProfileDetailView (z-100)
+          boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)',
         }}
       >
         <div className="flex gap-3 max-w-2xl mx-auto">
@@ -362,7 +383,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
             variant="outline"
             size="lg"
             onClick={handleLike}
-            className={`flex-1 gap-2 font-semibold h-12 text-base ${
+            className={`flex-1 gap-2 font-semibold h-12 text-base rounded-2xl ${
               liked ? 'bg-red-50 border-2 border-red-400 text-red-600 hover:bg-red-100' : 'border-2 hover:border-gray-400'
             }`}
           >

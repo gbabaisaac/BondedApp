@@ -101,7 +101,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-6">
             <img 
-              src="/icon.svg" 
+              src="/bonded-icon.png" 
               alt="bonded logo" 
               className="w-16 h-16"
             />
