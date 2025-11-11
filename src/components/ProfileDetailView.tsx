@@ -336,11 +336,13 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
       {/* Action Buttons - Fixed at bottom - Always visible */}
       <div
-        className="flex-shrink-0 bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] relative z-20"
+        className="flex-shrink-0 bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
         style={{
           paddingTop: '1rem',
           paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
           minHeight: '80px',
+          position: 'relative',
+          zIndex: 101, // Above everything including bottom nav (z-50)
         }}
       >
         <div className="flex gap-3 max-w-2xl mx-auto">

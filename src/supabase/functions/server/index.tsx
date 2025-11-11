@@ -839,13 +839,23 @@ app.post("/make-server-2516be19/soft-intro", async (c) => {
 
     // Add to sender's outgoing list
     const outgoing = await kv.get(`user:${userId}:soft-intros:outgoing`) || [];
-    outgoing.push(introId);
-    await kv.set(`user:${userId}:soft-intros:outgoing`, outgoing);
+    if (!Array.isArray(outgoing)) {
+      console.warn('outgoing is not an array, resetting:', outgoing);
+      await kv.set(`user:${userId}:soft-intros:outgoing`, [introId]);
+    } else {
+      outgoing.push(introId);
+      await kv.set(`user:${userId}:soft-intros:outgoing`, outgoing);
+    }
 
     // Add to receiver's incoming list
     const incoming = await kv.get(`user:${toUserId}:soft-intros:incoming`) || [];
-    incoming.push(introId);
-    await kv.set(`user:${toUserId}:soft-intros:incoming`, incoming);
+    if (!Array.isArray(incoming)) {
+      console.warn('incoming is not an array, resetting:', incoming);
+      await kv.set(`user:${toUserId}:soft-intros:incoming`, [introId]);
+    } else {
+      incoming.push(introId);
+      await kv.set(`user:${toUserId}:soft-intros:incoming`, incoming);
+    }
 
     return c.json(softIntro);
   } catch (error: any) {
@@ -863,22 +873,40 @@ app.get("/make-server-2516be19/soft-intros/incoming", async (c) => {
     }
 
     const introIds = await kv.get(`user:${userId}:soft-intros:incoming`) || [];
+    
+    // Ensure introIds is an array
+    if (!Array.isArray(introIds)) {
+      console.error('introIds is not an array:', introIds);
+      return c.json([]);
+    }
+
     const intros = [];
 
     for (const introId of introIds) {
-      const intro = await kv.get(introId);
-      if (intro) {
-        // Get sender's profile
-        const senderProfile = await kv.get(`user:${intro.fromUserId}`);
-        intros.push({
-          ...intro,
-          senderProfile,
-        });
+      try {
+        const intro = await kv.get(introId);
+        if (intro && intro.status === 'pending') {
+          // Get sender's profile
+          const senderProfile = await kv.get(`user:${intro.fromUserId}`);
+          if (senderProfile) {
+            intros.push({
+              ...intro,
+              senderProfile,
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`Error loading intro ${introId}:`, err);
+        // Continue with other intros
       }
     }
 
     // Sort by date (newest first)
-    intros.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    intros.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
     return c.json(intros);
   } catch (error: any) {
@@ -896,22 +924,40 @@ app.get("/make-server-2516be19/soft-intros/outgoing", async (c) => {
     }
 
     const introIds = await kv.get(`user:${userId}:soft-intros:outgoing`) || [];
+    
+    // Ensure introIds is an array
+    if (!Array.isArray(introIds)) {
+      console.error('introIds is not an array:', introIds);
+      return c.json([]);
+    }
+
     const intros = [];
 
     for (const introId of introIds) {
-      const intro = await kv.get(introId);
-      if (intro) {
-        // Get receiver's profile
-        const receiverProfile = await kv.get(`user:${intro.toUserId}`);
-        intros.push({
-          ...intro,
-          receiverProfile,
-        });
+      try {
+        const intro = await kv.get(introId);
+        if (intro) {
+          // Get receiver's profile
+          const receiverProfile = await kv.get(`user:${intro.toUserId}`);
+          if (receiverProfile) {
+            intros.push({
+              ...intro,
+              receiverProfile,
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`Error loading intro ${introId}:`, err);
+        // Continue with other intros
       }
     }
 
     // Sort by date (newest first)
-    intros.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    intros.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
     return c.json(intros);
   } catch (error: any) {
