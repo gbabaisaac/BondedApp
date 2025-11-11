@@ -568,13 +568,20 @@ app.post("/make-server-2516be19/soft-intro/:introId/accept", async (c) => {
     await kv.set(introId, intro);
 
     // Create connection for both users
-    const userConnections = await kv.get(`user:${userId}:connections`) || [];
+    // Ensure we have valid arrays (handle edge cases where data might be corrupted)
+    let userConnections = await kv.get(`user:${userId}:connections`);
+    if (!Array.isArray(userConnections)) {
+      userConnections = [];
+    }
     if (!userConnections.includes(intro.fromUserId)) {
       userConnections.push(intro.fromUserId);
       await kv.set(`user:${userId}:connections`, userConnections);
     }
 
-    const otherConnections = await kv.get(`user:${intro.fromUserId}:connections`) || [];
+    let otherConnections = await kv.get(`user:${intro.fromUserId}:connections`);
+    if (!Array.isArray(otherConnections)) {
+      otherConnections = [];
+    }
     if (!otherConnections.includes(userId)) {
       otherConnections.push(userId);
       await kv.set(`user:${intro.fromUserId}:connections`, otherConnections);
@@ -652,17 +659,29 @@ app.get("/make-server-2516be19/connections", async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const connectionIds = await kv.get(`user:${userId}:connections`) || [];
-    const connections = [];
-
-    for (const connectionId of connectionIds) {
-      const profile = await kv.get(`user:${connectionId}`);
-      if (profile) {
-        connections.push(profile);
-      }
+    const connectionIds = await kv.get(`user:${userId}:connections`);
+    
+    // Ensure connectionIds is an array
+    if (!Array.isArray(connectionIds)) {
+      console.warn(`Invalid connections data for user ${userId}, expected array but got:`, typeof connectionIds);
+      return c.json([]);
     }
 
-    return c.json(connections);
+    // If no connections, return empty array
+    if (connectionIds.length === 0) {
+      return c.json([]);
+    }
+
+    // Batch fetch all profiles at once using mget (more efficient than N+1 queries)
+    const profileKeys = connectionIds.map(id => `user:${id}`);
+    const profiles = await kv.mget(profileKeys);
+
+    // Filter out null/undefined profiles and ensure they have required fields
+    const validConnections = profiles.filter((profile: any) => {
+      return profile && profile.id && profile.name;
+    });
+
+    return c.json(validConnections);
   } catch (error: any) {
     console.error('Connections fetch error:', error);
     return c.json({ error: error.message }, 500);
