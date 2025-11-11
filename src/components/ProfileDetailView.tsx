@@ -122,6 +122,8 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         height: '100dvh',
         maxHeight: '100dvh',
         overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Header */}
@@ -142,6 +144,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
+          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))', // Space for bottom buttons
         }}
       >
         {/* Image with tap zones for navigation */}
@@ -331,12 +334,13 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         </div>
       </div>
 
-      {/* Action Buttons - Fixed at bottom - NO flex-1, stays at natural height */}
+      {/* Action Buttons - Fixed at bottom - Always visible */}
       <div
-        className="flex-shrink-0 bg-white border-t border-gray-200 px-4 py-4"
+        className="flex-shrink-0 bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] relative z-20"
         style={{
           paddingTop: '1rem',
           paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
+          minHeight: '80px',
         }}
       >
         <div className="flex gap-3 max-w-2xl mx-auto">
@@ -344,8 +348,8 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
             variant="outline"
             size="lg"
             onClick={handleLike}
-            className={`flex-1 gap-2 font-semibold ${
-              liked ? 'bg-red-50 border-red-400 text-red-600 hover:bg-red-100' : 'hover:border-gray-400'
+            className={`flex-1 gap-2 font-semibold h-12 text-base ${
+              liked ? 'bg-red-50 border-2 border-red-400 text-red-600 hover:bg-red-100' : 'border-2 hover:border-gray-400'
             }`}
           >
             <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
@@ -353,8 +357,14 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           </Button>
           <Button
             size="lg"
-            onClick={() => setShowSoftIntro(true)}
-            className="flex-1 gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold"
+            onClick={() => {
+              if (!accessToken) {
+                toast.error('Please log in to send a soft intro');
+                return;
+              }
+              setShowSoftIntro(true);
+            }}
+            className="flex-1 gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold h-12 shadow-lg text-base"
           >
             <Sparkles className="w-5 h-5" />
             Soft Intro
