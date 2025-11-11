@@ -74,15 +74,31 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
         }
       );
 
-      const data = await response.json();
-
+      // Check response status before parsing JSON
       if (!response.ok) {
-        // Check if it's a duplicate email error
-        if (data.error && (data.error.includes('already been registered') || data.error.includes('email_exists'))) {
-          throw new Error('This email is already registered. Please sign in instead.');
+        // Try to parse error response, but handle non-JSON responses
+        let errorMessage = 'Signup failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          // Check if it's a duplicate email error
+          if (errorMessage.includes('already been registered') || errorMessage.includes('email_exists')) {
+            errorMessage = 'This email is already registered. Please sign in instead.';
+          }
+        } catch (parseError) {
+          // If response is not JSON (e.g., HTML error page), use status text
+          const text = await response.text();
+          console.error('Non-JSON error response:', text);
+          if (response.status === 404) {
+            errorMessage = 'Service unavailable. Please try again in a moment.';
+          } else {
+            errorMessage = `Server error (${response.status}): ${response.statusText}`;
+          }
         }
-        throw new Error(data.error || 'Signup failed');
+        throw new Error(errorMessage);
       }
+
+      const data = await response.json();
 
       // Auto sign in after signup
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({

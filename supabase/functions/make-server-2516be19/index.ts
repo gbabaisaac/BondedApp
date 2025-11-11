@@ -319,7 +319,7 @@ app.get("/discover/smart-matches", async (c) => {
         });
         
         // Add Bond Print compatibility score if both have completed it
-        let bondPrintScore = null;
+        let bondPrintScore: number | null = null;
         if (userProfile.bondPrint && profile.bondPrint) {
           bondPrintScore = calculateBondPrintCompatibility(
             userProfile.bondPrint,
@@ -703,7 +703,7 @@ app.post("/soft-intro/generate-ai-analysis", async (c) => {
     }
 
     // Calculate Bond Print compatibility if both have completed it
-    let bondPrintScore = null;
+    let bondPrintScore: number | null = null;
     if (currentProfile.bondPrint && targetProfile.bondPrint) {
       bondPrintScore = calculateBondPrintCompatibility(
         currentProfile.bondPrint,
@@ -1785,7 +1785,10 @@ Analyze their compatibility for this specific type of relationship. Return ONLY 
   "icebreaker": "A specific conversation starter they could use based on shared interests"
 }`;
 
-    const response = await callGemini(prompt);
+    const response = await tryCallGemini(prompt);
+    if (!response) {
+      throw new Error('Failed to generate AI analysis');
+    }
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Invalid response format from AI');
@@ -2659,7 +2662,7 @@ app.post("/love-mode/send-message", async (c) => {
 
     // Check for stage progression
     const messageCount = messages.filter((m: any) => m.type !== 'system').length;
-    let linkCoaching = null;
+    let linkCoaching: string | null = null;
 
     // Progress to Voice Exchange after 15+ meaningful messages
     if (relationship.stage === 1 && messageCount >= 15 && relationship.bondScore >= 40) {
