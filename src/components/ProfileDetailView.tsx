@@ -124,6 +124,11 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
       }}
     >
       {/* Header */}
@@ -144,7 +149,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))', // Space for bottom buttons
+          paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))', // Space for fixed bottom buttons
         }}
       >
         {/* Image with tap zones for navigation */}
@@ -336,13 +341,18 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
       {/* Action Buttons - Fixed at bottom - Always visible */}
       <div
-        className="flex-shrink-0 bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+        className="bg-white border-t-2 border-gray-300 px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
         style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
           paddingTop: '1rem',
           paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
           minHeight: '80px',
-          position: 'relative',
-          zIndex: 101, // Above everything including bottom nav (z-50)
+          width: '100%',
+          backgroundColor: '#ffffff',
+          zIndex: 10,
         }}
       >
         <div className="flex gap-3 max-w-2xl mx-auto">
