@@ -150,8 +150,13 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
 
         <Card className="w-full">
           <CardHeader className="text-center space-y-2">
-            <div className="flex justify-center mb-4">
-              <h1 className="text-4xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img 
+                src="/icon.svg" 
+                alt="bonded logo" 
+                className="w-12 h-12"
+              />
+              <h1 className="text-4xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
                 bonded
               </h1>
             </div>

@@ -99,14 +99,16 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
       <Card className="max-w-md w-full">
         <CardContent className="pt-6">
           {/* Logo */}
-          <div className="w-20 h-20 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-10 h-10 text-white" />
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <img 
+              src="/icon.svg" 
+              alt="bonded logo" 
+              className="w-16 h-16"
+            />
+            <h1 className="text-3xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
+              bonded
+            </h1>
           </div>
-
-          {/* Title */}
-          <h1 className="text-3xl text-center mb-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
-            bonded
-          </h1>
           <p className="text-center text-gray-600 mb-6">
             Social networking for college students
           </p>

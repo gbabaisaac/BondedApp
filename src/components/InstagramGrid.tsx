@@ -185,11 +185,19 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="sticky top-0 bg-white border-b px-4 py-4 z-10">
-          <h1 className="text-2xl text-center bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent mb-3 lowercase font-bold tracking-wide">
-            bonded
-          </h1>
+      <div className="min-h-screen bg-[#F9F6F3]">
+        <div className="sticky top-0 bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <img 
+              src="/icon.svg" 
+              alt="bonded logo" 
+              className="w-8 h-8"
+            />
+            <h1 className="text-2xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
+              bonded
+            </h1>
+          </div>
         </div>
         <ProfileGridSkeleton />
       </div>
@@ -197,12 +205,20 @@ export function InstagramGrid({ userProfile, accessToken }: InstagramGridProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F9F6F3]">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b px-4 py-4 z-10">
-        <h1 className="text-2xl text-center bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent mb-3 lowercase font-bold tracking-wide">
-          bonded
-        </h1>
+      <div className="sticky top-0 bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <img 
+            src="/icon.svg" 
+            alt="bonded logo" 
+            className="w-8 h-8"
+          />
+          <h1 className="text-2xl bg-gradient-to-r from-[#2E7B91] to-[#25658A] bg-clip-text text-transparent lowercase font-bold tracking-wide">
+            bonded
+          </h1>
+        </div>
         
         {/* Search and Filter */}
         <div className="flex gap-2 items-center">
