@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, Heart, Sparkles, Instagram, Send } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -7,6 +8,7 @@ import { toast } from 'sonner';
 import { SoftIntroFlow } from './SoftIntroFlow';
 import { projectId } from '../utils/supabase/info';
 import { theme } from '../utils/theme';
+import './ProfileDetailView.css';
 
 interface Profile {
   id: string;
@@ -152,6 +154,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         zIndex: 100,
         WebkitTransform: 'translateZ(0)',
         transform: 'translateZ(0)',
+        overflow: 'visible', // Allow buttons to escape
       }}
     >
       {/* Header */}
@@ -172,7 +175,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(80px + env(safe-area-inset-bottom))', // Space for fixed buttons
+          paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', // Extra space for fixed buttons
         }}
       >
         {/* Image with tap zones for navigation */}
@@ -362,60 +365,71 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         </div>
       </div>
 
-      {/* Action Buttons - Fixed at bottom - Always visible */}
-      <div
-        data-action-buttons
-        className="bg-white border-t-2 border-[#EAEAEA] px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          paddingTop: '1rem',
-          paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
-          minHeight: '80px',
-          width: '100%',
-          backgroundColor: '#ffffff',
-          zIndex: 9999, // Very high z-index to ensure visibility
-          boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)',
-          WebkitTransform: 'translateZ(0)', // Force hardware acceleration for Safari
-          transform: 'translateZ(0)',
-          willChange: 'transform', // Optimize for Safari
-        }}
-      >
-        <div className="flex gap-3 max-w-2xl mx-auto">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleLike}
-            className={`flex-1 gap-2 font-semibold h-12 text-base rounded-2xl ${
-              liked ? 'bg-red-50 border-2 border-red-400 text-red-600 hover:bg-red-100' : 'border-2 hover:border-gray-400'
-            }`}
-          >
-            <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
-            {liked ? 'Liked' : 'Like'}
-          </Button>
-          <button
-            onClick={() => {
-              if (!accessToken) {
-                toast.error('Please log in to send a soft intro');
-                return;
-              }
-              setShowSoftIntro(true);
-            }}
-            className="flex-1 gap-2 font-semibold h-12 shadow-lg text-base rounded-2xl flex items-center justify-center"
-            style={{ 
-              color: '#ffffff',
-              backgroundColor: '#2E7B91',
-              background: 'linear-gradient(to right, #2E7B91, #25658A)',
-              border: 'none',
-            }}
-          >
-            <Sparkles className="w-5 h-5" style={{ color: '#ffffff', fill: 'none', stroke: '#ffffff' }} />
-            <span style={{ color: '#ffffff', fontWeight: 600 }}>Soft Intro</span>
-          </button>
-        </div>
-      </div>
+      {/* Action Buttons - Fixed at bottom - Always visible - Rendered via Portal for Safari */}
+      {typeof document !== 'undefined' && createPortal(
+        <div
+          data-action-buttons
+          className="bg-white border-t-2 border-[#EAEAEA] px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            paddingTop: '1rem',
+            paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
+            minHeight: '80px',
+            width: '100vw',
+            maxWidth: '100%',
+            backgroundColor: '#ffffff',
+            zIndex: 99999,
+            boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)',
+            WebkitTransform: 'translateZ(0)',
+            transform: 'translateZ(0)',
+            willChange: 'transform',
+            display: 'block',
+            visibility: 'visible',
+            opacity: 1,
+            WebkitBackfaceVisibility: 'visible',
+            backfaceVisibility: 'visible',
+          }}
+        >
+          <div className="flex gap-3 max-w-2xl mx-auto">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleLike}
+              className={`flex-1 gap-2 font-semibold h-12 text-base rounded-2xl ${
+                liked ? 'bg-red-50 border-2 border-red-400 text-red-600 hover:bg-red-100' : 'border-2 hover:border-gray-400'
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
+              {liked ? 'Liked' : 'Like'}
+            </Button>
+            <button
+              data-soft-intro-button
+              onClick={() => {
+                if (!accessToken) {
+                  toast.error('Please log in to send a soft intro');
+                  return;
+                }
+                setShowSoftIntro(true);
+              }}
+              className="flex-1 gap-2 font-semibold h-12 shadow-lg text-base rounded-2xl flex items-center justify-center"
+              style={{ 
+                color: '#ffffff',
+                backgroundColor: '#2E7B91',
+                background: 'linear-gradient(to right, #2E7B91, #25658A)',
+                backgroundImage: 'linear-gradient(to right, #2E7B91, #25658A)',
+                border: 'none',
+              }}
+            >
+              <Sparkles className="w-5 h-5" style={{ color: '#ffffff', fill: 'none', stroke: '#ffffff' }} />
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Soft Intro</span>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Soft Intro Flow */}
       {showSoftIntro && (

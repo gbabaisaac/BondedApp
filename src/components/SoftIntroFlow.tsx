@@ -157,9 +157,17 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] max-h-[90dvh] overflow-y-auto overflow-x-hidden">
+      <div 
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl flex flex-col"
+        style={{
+          maxHeight: '90vh',
+          maxHeight: '90dvh',
+          height: '90vh',
+          height: '90dvh',
+        }}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-3xl">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-3xl flex-shrink-0 z-10">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#2E7B91]" />
             <h2 className="text-lg">Soft Intro</h2>
@@ -169,8 +177,16 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
+        {/* Content - Scrollable */}
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
+        >
+          <div className="p-6">
           {step === 'reason' && (
             <div>
               <h3 className="text-xl mb-2">Why do you want to connect with {profile.name.split(' ')[0]}?</h3>
@@ -299,6 +315,7 @@ export function SoftIntroFlow({ profile, onClose, currentUserName = 'You', acces
               </p>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
