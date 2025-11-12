@@ -7,6 +7,7 @@ import { EmptyState } from './EmptyStates';
 import { apiGet } from '../utils/api-client';
 import { EnhancedSearch } from './EnhancedSearch';
 import { toast } from 'sonner';
+import { getProfileCardAriaLabel, handleGridKeyDown } from '../utils/accessibility';
 
 interface InstagramGridProps {
   userProfile?: any;

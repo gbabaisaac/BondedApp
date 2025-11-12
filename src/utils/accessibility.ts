@@ -2,6 +2,8 @@
  * Accessibility utilities and helpers
  */
 
+import type React from 'react';
+
 /**
  * Generate ARIA label for profile card
  */
