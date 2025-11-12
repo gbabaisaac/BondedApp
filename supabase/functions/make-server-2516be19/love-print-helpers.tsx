@@ -52,18 +52,19 @@ export async function tryCallGemini(prompt: string): Promise<string | null> {
 
 // Get first question (try Gemini, fall back to preset)
 export async function getFirstQuestion(userProfile: any): Promise<any> {
-  const prompt = `You are an emotional intelligence expert creating a personalized "Love Print" quiz - a psychological profile for college students looking for friends and roommates.
+  const prompt = `You are an emotional intelligence expert creating a personalized "Bond Print" quiz - a psychological profile for college students looking for friends, roommates, study partners, and collaborators.
 
 User Info: ${userProfile.name}, ${userProfile.major}, ${userProfile.year}
 
-Create the FIRST question of an adaptive quiz to understand their personality, communication style, and social preferences. 
+Create the FIRST question of an adaptive quiz to understand their personality, communication style, social preferences, and collaboration style. This will help match them with compatible people for friendships, study groups, co-founders, and roommates.
 
 Requirements:
 - Make it conversational and engaging
 - Relate to their college life and major if possible
-- Ask about ONE specific trait (communication, social energy, conflict style, values, etc.)
+- Ask about ONE specific trait (communication, social energy, conflict style, values, collaboration style, etc.)
 - Provide 3-4 answer options that clearly differentiate personality types
 - Make answers feel natural, not clinical
+- Focus on friendship, collaboration, and social connection (not romantic relationships)
 
 Return ONLY a JSON object in this exact format (no markdown, no extra text):
 {
@@ -98,7 +99,7 @@ export async function getNextQuestion(quizSession: any): Promise<any> {
   if (quizSession.usedGemini !== false) {
     const previousAnswers = quizSession.answers.map((a: any) => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n');
     
-    const prompt = `You are an emotional intelligence expert creating an adaptive "Love Print" quiz for college students.
+    const prompt = `You are an emotional intelligence expert creating an adaptive "Bond Print" quiz for college students looking for friends, roommates, study partners, and collaborators.
 
 User Info: ${quizSession.userProfile.name}, ${quizSession.userProfile.major}, ${quizSession.userProfile.year}
 
@@ -109,10 +110,12 @@ Based on their answers so far, create the NEXT question to deepen understanding 
 - Personality traits (introvert/extrovert, spontaneous/planned, etc.)
 - Communication style (direct/subtle, emotional/logical, etc.)
 - Social preferences (group/1-on-1, competitive/collaborative, etc.)
+- Collaboration style (leadership, teamwork, independence, etc.)
 - Values and priorities (independence/community, adventure/stability, etc.)
 - Living habits (cleanliness, noise, schedules, etc.)
+- Academic and professional goals alignment
 
-Make the question build on what you've learned. If they seem introverted, ask about their recharge methods. If extroverted, ask about social energy.
+Make the question build on what you've learned. If they seem introverted, ask about their recharge methods. If extroverted, ask about social energy. Focus on friendship, collaboration, and connection (not romantic relationships).
 
 Return ONLY a JSON object (no markdown):
 {
@@ -170,7 +173,7 @@ Personal Goal: ${profile.goals.personal || 'None specified'}
   const additionalInfoText = profile.additionalInfo ? `\nAdditional Context: ${profile.additionalInfo}` : '';
   
   // Try Gemini first
-  const prompt = `You are an emotional intelligence expert analyzing quiz responses to create a "Bond Print" - a comprehensive personality profile for college students looking for friends, roommates, and connections.
+  const prompt = `You are an emotional intelligence expert analyzing quiz responses to create a "Bond Print" - a comprehensive personality profile for college students looking for friends, roommates, study partners, co-founders, and collaborators.
 
 User: ${profile.name}, ${profile.major}, ${profile.year || ''}
 Interests: ${profile.interests?.join(', ') || 'None specified'}
@@ -180,7 +183,14 @@ ${goalsText}${additionalInfoText}
 Quiz Responses:
 ${answersText}
 
-Create a detailed Bond Print analysis that incorporates their goals, interests, and additional context. This will be used to match them with compatible people for friendships, roommates, and study partners.
+Create a detailed Bond Print analysis that incorporates their goals, interests, and additional context. This will be used to match them with compatible people for:
+- Friendships and social connections
+- Roommates and living situations
+- Study partners and academic collaboration
+- Co-founders and business partners
+- Activity partners and shared interests
+
+Focus on friendship, collaboration, and professional connections (not romantic relationships).
 
 Return ONLY a JSON object (no markdown):
 

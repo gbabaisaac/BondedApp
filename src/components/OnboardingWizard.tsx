@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { motion, AnimatePresence } from 'motion/react';
+import { BondPrintQuiz } from './BondPrintQuiz';
 
 interface OnboardingWizardProps {
   userEmail: string;
@@ -228,7 +229,10 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
     existingProfile?.additionalInfo || ''
   );
 
-  const totalSteps = 9;
+  const [bondPrintCompleted, setBondPrintCompleted] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  
+  const totalSteps = 10; // Added Bond Print quiz as step 10
   const progress = (step / totalSteps) * 100;
 
   const handleNext = () => {
@@ -266,8 +270,14 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
       return;
     }
     // Step 9 is optional, no validation needed
+    // Step 10 (Bond Print) is mandatory - handled separately
 
     if (step < totalSteps) {
+      // If moving to step 10, show quiz instead
+      if (step === 9) {
+        setShowQuiz(true);
+        return;
+      }
       setDirection(1);
       setStep(step + 1);
     } else {
@@ -470,10 +480,50 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
       } else {
         toast.success('Profile created! 🎉');
       }
+      // If this is new profile creation and Bond Print not completed, show quiz
+      if (!existingProfile && !bondPrintCompleted) {
+        setShowQuiz(true);
+        return; // Don't complete yet, wait for quiz
+      }
+      
       onComplete(profile);
     } catch (error) {
       console.error('Profile save error:', error);
       toast.error(existingProfile ? 'Failed to update profile' : 'Failed to create profile');
+    }
+  };
+
+  const handleBondPrintComplete = async (bondPrint: any) => {
+    setBondPrintCompleted(true);
+    setShowQuiz(false);
+    
+    // Update profile with Bond Print
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/profile`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            bondPrint,
+            hasCompletedBondPrint: true,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to save Bond Print');
+      
+      const updatedProfile = await response.json();
+      toast.success('Bond Print completed! 🎉');
+      onComplete(updatedProfile);
+    } catch (error) {
+      console.error('Bond Print save error:', error);
+      toast.error('Failed to save Bond Print');
+      // Still complete onboarding even if Bond Print save fails
+      handleComplete();
     }
   };
 
@@ -1071,11 +1121,42 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
             className="flex-1 gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
             {step === totalSteps ? 'Complete' : step === 9 ? 'Skip or Complete' : 'Next'}
-            {step < totalSteps && <ArrowRight className="w-4 h-4" />}
+            {step < totalSteps && step !== 9 && <ArrowRight className="w-4 h-4" />}
             {step === totalSteps && <Check className="w-4 h-4" />}
           </Button>
         </div>
       </div>
+      
+      {/* Bond Print Quiz Modal/Overlay */}
+      {showQuiz && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <BondPrintQuiz
+              userProfile={{
+                name,
+                school,
+                major: major === 'Other' ? customMajor : major,
+                year,
+                interests: selectedInterests,
+                personality: selectedTraits,
+                goals: {
+                  academic: academicGoals,
+                  leisure: leisureGoals,
+                  career: careerGoal,
+                  personal: personalGoal,
+                },
+                additionalInfo,
+              }}
+              accessToken={accessToken}
+              onComplete={handleBondPrintComplete}
+              onSkip={existingProfile ? () => {
+                setShowQuiz(false);
+                handleComplete();
+              } : undefined}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

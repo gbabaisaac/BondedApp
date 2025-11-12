@@ -166,7 +166,7 @@ export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: 
                 Create Your Bond Print
               </h2>
               <p className="text-center text-gray-600 mb-8">
-                Bonded is a social app for college students to find friends, roommates, and meaningful connections. We also offer a dating aspect in slow, meaningful stages — but only if you toggle Love Mode on. Answer these questions to create your Bond Print for better matches!
+                Complete this quick quiz to create your Bond Print - a personalized profile that helps us match you with compatible friends, roommates, study partners, and collaborators on campus. We'll use this to suggest people you'll find interesting and help facilitate meaningful connections!
               </p>
 
               {/* Features */}

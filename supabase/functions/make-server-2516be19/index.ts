@@ -2011,6 +2011,480 @@ app.get("/bond-print/:userId", async (c) => {
 });
 
 // ============================================
+// AI ASSISTANT - SERIES AI FUNCTIONALITY
+// ============================================
+
+// AI Assistant Chat - Handle user messages to AI
+app.post("/ai-assistant/chat", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { message } = await c.req.json();
+    if (!message || typeof message !== 'string') {
+      return c.json({ error: 'Message is required' }, 400);
+    }
+
+    // Get user profile
+    const userProfile = await kv.get(`user:${userId}`);
+    if (!userProfile) {
+      return c.json({ error: 'User profile not found' }, 404);
+    }
+
+    // Create AI chat if it doesn't exist
+    const aiChatId = `ai-assistant:${userId}`;
+    let aiChat = await kv.get(aiChatId);
+    if (!aiChat) {
+      aiChat = {
+        chatId: aiChatId,
+        userId,
+        messages: [],
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    // Add user message
+    const userMessage = {
+      id: `${aiChatId}:${Date.now()}`,
+      senderId: userId,
+      content: message,
+      timestamp: new Date().toISOString(),
+      type: 'user',
+    };
+    aiChat.messages.push(userMessage);
+    await kv.set(aiChatId, aiChat);
+
+    // Use Gemini to generate AI response
+    const { tryCallGemini } = await import('./love-print-helpers.tsx');
+    
+    const prompt = `You are Link, an AI assistant for Bonded - a social app for college students to find friends, roommates, study partners, and collaborators.
+
+User Profile:
+- Name: ${userProfile.name}
+- School: ${userProfile.school}
+- Major: ${userProfile.major}
+- Year: ${userProfile.year}
+- Interests: ${userProfile.interests?.join(', ') || 'None'}
+- Looking For: ${userProfile.lookingFor?.join(', ') || 'None'}
+- Goals: ${JSON.stringify(userProfile.goals || {})}
+
+User Message: "${message}"
+
+Your role:
+1. Help users find people on campus (co-founders, study partners, friends, roommates, etc.)
+2. Search through profiles to find matches
+3. Suggest people they should connect with
+4. Help facilitate soft intros
+
+When a user asks to find someone (e.g., "I'm looking for a co-founder for X"), you should:
+- Acknowledge their request
+- Let them know you'll search through profiles
+- Ask clarifying questions if needed (what skills, what type of project, etc.)
+
+Be warm, helpful, and conversational. Keep responses concise but friendly.
+
+Respond as Link:`;
+
+    const aiResponseText = await tryCallGemini(prompt);
+    
+    if (!aiResponseText) {
+      return c.json({
+        response: "I'm having trouble processing that right now. Could you try rephrasing?",
+        suggestions: ["Find a co-founder", "Find a study partner", "Find a roommate"],
+      });
+    }
+
+    // Add AI response
+    const aiMessage = {
+      id: `${aiChatId}:${Date.now() + 1}`,
+      senderId: 'ai-assistant',
+      content: aiResponseText.trim(),
+      timestamp: new Date().toISOString(),
+      type: 'ai',
+    };
+    aiChat.messages.push(aiMessage);
+    await kv.set(aiChatId, aiChat);
+
+    // Check if user is asking to find someone
+    const lowerMessage = message.toLowerCase();
+    const isSearchRequest = lowerMessage.includes('find') || 
+                           lowerMessage.includes('looking for') ||
+                           lowerMessage.includes('co-founder') ||
+                           lowerMessage.includes('study partner') ||
+                           lowerMessage.includes('roommate') ||
+                           lowerMessage.includes('collaborator');
+
+    return c.json({
+      response: aiResponseText.trim(),
+      suggestions: isSearchRequest ? ["Search profiles", "Tell me more about what you're looking for"] : 
+                   ["Find a co-founder", "Find a study partner", "Find a roommate"],
+      shouldSearch: isSearchRequest,
+    });
+  } catch (error: any) {
+    console.error('AI assistant chat error:', error);
+    return c.json({ error: error.message || 'Failed to process AI chat' }, 500);
+  }
+});
+
+// AI Search Profiles - Search for people based on criteria
+app.post("/ai-assistant/search", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { query, criteria } = await c.req.json();
+    
+    // Get user profile
+    const userProfile = await kv.get(`user:${userId}`);
+    if (!userProfile) {
+      return c.json({ error: 'User profile not found' }, 404);
+    }
+
+    // Get all profiles from user's school
+    const schoolKey = `school:${userProfile.school}:users`;
+    const schoolUserIds = await kv.get(schoolKey) || [];
+    
+    // Filter out current user
+    const otherUserIds = schoolUserIds.filter((id: string) => id !== userId);
+    
+    // Get profiles
+    const profiles = [];
+    for (const otherUserId of otherUserIds.slice(0, 100)) { // Limit to 100 for performance
+      const profile = await kv.get(`user:${otherUserId}`);
+      if (profile && profile.id !== userId) {
+        profiles.push(profile);
+      }
+    }
+
+    // Use Gemini to analyze and rank profiles based on query/criteria
+    const { tryCallGemini } = await import('./love-print-helpers.tsx');
+    
+    const profilesSummary = profiles.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      major: p.major,
+      year: p.year,
+      interests: p.interests || [],
+      lookingFor: p.lookingFor || [],
+      goals: p.goals || {},
+      bio: p.bio || '',
+    })).slice(0, 20); // Limit to 20 for AI analysis
+
+    const prompt = `You are Link, an AI assistant helping a college student find connections.
+
+User Request: "${query || JSON.stringify(criteria)}"
+User Profile:
+- Name: ${userProfile.name}
+- Major: ${userProfile.major}
+- Looking For: ${userProfile.lookingFor?.join(', ') || 'None'}
+- Goals: ${JSON.stringify(userProfile.goals || {})}
+
+Available Profiles (${profilesSummary.length}):
+${profilesSummary.map((p: any, i: number) => 
+  `${i + 1}. ${p.name} (${p.major}, ${p.year})
+     Interests: ${p.interests.join(', ') || 'None'}
+     Looking For: ${p.lookingFor.join(', ') || 'None'}
+     Goals: ${JSON.stringify(p.goals)}
+     Bio: ${p.bio || 'No bio'}`
+).join('\n\n')}
+
+Analyze these profiles and return the top 3-5 best matches for the user's request. Consider:
+- Compatibility with their goals/interests
+- What they're looking for
+- Major/field alignment
+- Year/experience level
+
+Return ONLY a JSON array of profile IDs in order of best match (most relevant first):
+["profile-id-1", "profile-id-2", "profile-id-3"]
+
+If no good matches, return an empty array: []`;
+
+    const geminiResponse = await tryCallGemini(prompt);
+    
+    let matchedProfileIds: string[] = [];
+    if (geminiResponse) {
+      try {
+        const jsonMatch = geminiResponse.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          matchedProfileIds = JSON.parse(jsonMatch[0]);
+        }
+      } catch (e) {
+        console.log('Failed to parse Gemini search response');
+      }
+    }
+
+    // Get full profiles for matched IDs
+    const matchedProfiles = matchedProfileIds
+      .map((id: string) => profiles.find((p: any) => p.id === id))
+      .filter(Boolean)
+      .slice(0, 5);
+
+    return c.json({
+      matches: matchedProfiles,
+      count: matchedProfiles.length,
+    });
+  } catch (error: any) {
+    console.error('AI search error:', error);
+    return c.json({ error: error.message || 'Failed to search profiles' }, 500);
+  }
+});
+
+// AI Soft Intro Request - AI handles soft intro with confirmation
+app.post("/ai-assistant/soft-intro", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { targetUserId, reason, context } = await c.req.json();
+    
+    if (!targetUserId || !reason) {
+      return c.json({ error: 'targetUserId and reason are required' }, 400);
+    }
+
+    // Get both user profiles
+    const userProfile = await kv.get(`user:${userId}`);
+    const targetProfile = await kv.get(`user:${targetUserId}`);
+    
+    if (!userProfile || !targetProfile) {
+      return c.json({ error: 'User profile not found' }, 404);
+    }
+
+    // Create AI message to target user explaining the situation
+    const { tryCallGemini } = await import('./love-print-helpers.tsx');
+    
+    const introPrompt = `You are Link, an AI assistant for Bonded. You need to create a friendly message to introduce two college students.
+
+From: ${userProfile.name} (${userProfile.major}, ${userProfile.year})
+To: ${targetProfile.name} (${targetProfile.major}, ${targetProfile.year})
+
+Reason for intro: ${reason}
+Additional context: ${context || 'None'}
+
+Create a warm, friendly message (2-3 sentences) explaining:
+1. Who ${userProfile.name} is
+2. Why they think ${targetProfile.name} would be a good connection
+3. What they're looking for (co-founder, study partner, friend, etc.)
+
+Be natural and conversational. Return ONLY the message text, no quotes or markdown.`;
+
+    const introMessage = await tryCallGemini(introPrompt) || 
+      `Hi ${targetProfile.name}! ${userProfile.name} (${userProfile.major}) thinks you'd be a great connection. They're looking for ${reason}. Would you like me to introduce you?`;
+
+    // Store the soft intro request (pending confirmation)
+    const introRequest = {
+      id: `soft-intro:${userId}:${targetUserId}:${Date.now()}`,
+      fromUserId: userId,
+      toUserId: targetUserId,
+      reason,
+      context,
+      aiMessage: introMessage,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    await kv.set(`soft-intro:${introRequest.id}`, introRequest);
+    
+    // Add to target user's incoming intros
+    const targetIntros = await kv.get(`user:${targetUserId}:soft-intros-incoming`) || [];
+    targetIntros.push(introRequest.id);
+    await kv.set(`user:${targetUserId}:soft-intros-incoming`, targetIntros);
+
+    // Create a chat message from AI to target user
+    const aiChatId = `ai-assistant:${targetUserId}`;
+    let aiChat = await kv.get(aiChatId);
+    if (!aiChat) {
+      aiChat = {
+        chatId: aiChatId,
+        userId: targetUserId,
+        messages: [],
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    const aiNotificationMessage = {
+      id: `${aiChatId}:${Date.now()}`,
+      senderId: 'ai-assistant',
+      content: introMessage,
+      timestamp: new Date().toISOString(),
+      type: 'ai',
+      metadata: {
+        type: 'soft-intro-request',
+        introRequestId: introRequest.id,
+        fromUserId: userId,
+        fromUserName: userProfile.name,
+      },
+    };
+    aiChat.messages.push(aiNotificationMessage);
+    await kv.set(aiChatId, aiChat);
+
+    return c.json({
+      success: true,
+      introRequestId: introRequest.id,
+      message: introMessage,
+    });
+  } catch (error: any) {
+    console.error('AI soft intro error:', error);
+    return c.json({ error: error.message || 'Failed to create soft intro' }, 500);
+  }
+});
+
+// AI Soft Intro Response - Handle target user's response
+app.post("/ai-assistant/soft-intro/respond", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { introRequestId, accepted } = await c.req.json();
+    
+    if (!introRequestId || typeof accepted !== 'boolean') {
+      return c.json({ error: 'introRequestId and accepted are required' }, 400);
+    }
+
+    // Get intro request
+    const introRequest = await kv.get(`soft-intro:${introRequestId}`);
+    if (!introRequest || introRequest.toUserId !== userId) {
+      return c.json({ error: 'Intro request not found or unauthorized' }, 404);
+    }
+
+    if (introRequest.status !== 'pending') {
+      return c.json({ error: 'Intro request already processed' }, 400);
+    }
+
+    // Update status
+    introRequest.status = accepted ? 'accepted' : 'declined';
+    introRequest.respondedAt = new Date().toISOString();
+    await kv.set(`soft-intro:${introRequestId}`, introRequest);
+
+    if (accepted) {
+      // Create connection between users
+      const connection = {
+        id: `connection:${introRequest.fromUserId}:${introRequest.toUserId}`,
+        userId1: introRequest.fromUserId,
+        userId2: introRequest.toUserId,
+        status: 'connected',
+        createdAt: new Date().toISOString(),
+        source: 'ai-soft-intro',
+      };
+      await kv.set(`connection:${connection.id}`, connection);
+
+      // Add to both users' connections
+      const user1Connections = await kv.get(`user:${introRequest.fromUserId}:connections`) || [];
+      if (!user1Connections.includes(introRequest.toUserId)) {
+        user1Connections.push(introRequest.toUserId);
+        await kv.set(`user:${introRequest.fromUserId}:connections`, user1Connections);
+      }
+
+      const user2Connections = await kv.get(`user:${userId}:connections`) || [];
+      if (!user2Connections.includes(introRequest.fromUserId)) {
+        user2Connections.push(introRequest.fromUserId);
+        await kv.set(`user:${userId}:connections`, user2Connections);
+      }
+
+      // Create chat between them
+      const chatId = [introRequest.fromUserId, userId].sort().join(':');
+      const existingChat = await kv.get(`chat:${chatId}`);
+      if (!existingChat) {
+        const chat = {
+          chatId,
+          participants: [introRequest.fromUserId, userId],
+          createdAt: new Date().toISOString(),
+        };
+        await kv.set(`chat:${chatId}`, chat);
+
+        // Add to both users' chat lists
+        const user1Chats = await kv.get(`user:${introRequest.fromUserId}:chats`) || [];
+        if (!user1Chats.includes(chatId)) {
+          user1Chats.push(chatId);
+          await kv.set(`user:${introRequest.fromUserId}:chats`, user1Chats);
+        }
+
+        const user2Chats = await kv.get(`user:${userId}:chats`) || [];
+        if (!user2Chats.includes(chatId)) {
+          user2Chats.push(chatId);
+          await kv.set(`user:${userId}:chats`, user2Chats);
+        }
+
+        // Send welcome message from AI
+        const welcomeMessage = {
+          id: `${chatId}:${Date.now()}`,
+          senderId: 'ai-assistant',
+          content: `Hi! I've connected you both. ${introRequest.reason}. Feel free to start chatting!`,
+          timestamp: new Date().toISOString(),
+          type: 'system',
+        };
+        const messages = [welcomeMessage];
+        await kv.set(`chat:${chatId}:messages`, messages);
+      }
+
+      // Notify the requester
+      const requesterProfile = await kv.get(`user:${introRequest.fromUserId}`);
+      const aiChatId = `ai-assistant:${introRequest.fromUserId}`;
+      let requesterAiChat = await kv.get(aiChatId);
+      if (!requesterAiChat) {
+        requesterAiChat = {
+          chatId: aiChatId,
+          userId: introRequest.fromUserId,
+          messages: [],
+          createdAt: new Date().toISOString(),
+        };
+      }
+
+      // Get target profile for notification
+      const targetProfile = await kv.get(`user:${userId}`);
+      
+      const notificationMessage = {
+        id: `${aiChatId}:${Date.now()}`,
+        senderId: 'ai-assistant',
+        content: `Great news! ${targetProfile?.name || 'They'} accepted your soft intro request. You're now connected and can start chatting!`,
+        timestamp: new Date().toISOString(),
+        type: 'ai',
+      };
+      requesterAiChat.messages.push(notificationMessage);
+      await kv.set(aiChatId, requesterAiChat);
+    }
+
+    return c.json({
+      success: true,
+      accepted,
+      chatId: accepted ? [introRequest.fromUserId, userId].sort().join(':') : null,
+    });
+  } catch (error: any) {
+    console.error('AI soft intro response error:', error);
+    return c.json({ error: error.message || 'Failed to process response' }, 500);
+  }
+});
+
+// Get AI Assistant Chat
+app.get("/ai-assistant/chat", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const aiChatId = `ai-assistant:${userId}`;
+    const aiChat = await kv.get(aiChatId);
+
+    if (!aiChat) {
+      return c.json({ messages: [], chatId: aiChatId });
+    }
+
+    return c.json(aiChat);
+  } catch (error: any) {
+    console.error('Get AI chat error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============================================
 // LOVE MODE - ANONYMOUS DATING SYSTEM
 // ============================================
 

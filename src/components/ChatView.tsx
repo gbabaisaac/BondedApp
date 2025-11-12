@@ -10,7 +10,11 @@ import {
   RefreshCw,
   Smile,
   Check,
-  CheckCheck
+  CheckCheck,
+  Sparkles,
+  Bot,
+  UserPlus,
+  X
 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
@@ -31,12 +35,27 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [readReceiptsEnabled, setReadReceiptsEnabled] = useState(true);
+  
+  // AI Assistant state
+  const [isAIChat, setIsAIChat] = useState(false);
+  const [aiMessages, setAiMessages] = useState<any[]>([]);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [suggestedProfiles, setSuggestedProfiles] = useState<any[]>([]);
+  const [pendingIntroRequest, setPendingIntroRequest] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     loadChats();
     const interval = setInterval(loadChats, 3000); // Poll every 3 seconds
     return () => clearInterval(interval);
   }, []);
+
+  // Load AI chat when AI chat is selected
+  useEffect(() => {
+    if (isAIChat) {
+      loadAIChat();
+    }
+  }, [isAIChat]);
 
   useEffect(() => {
     if (selectedChat) {
@@ -263,8 +282,192 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
     }
   };
 
+  const loadAIChat = async () => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/chat`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiMessages(data.messages || []);
+      }
+    } catch (error) {
+      console.error('Load AI chat error:', error);
+    }
+  };
+
+  const sendAIMessage = async () => {
+    if (!messageText.trim() || aiLoading) return;
+
+    setAiLoading(true);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ message: messageText }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to send message');
+
+      const data = await response.json();
+      
+      // Add user message
+      const userMsg = {
+        id: `ai-msg-${Date.now()}`,
+        senderId: userProfile.id,
+        content: messageText,
+        timestamp: new Date().toISOString(),
+        type: 'user',
+      };
+      
+      // Add AI response
+      const aiMsg = {
+        id: `ai-msg-${Date.now() + 1}`,
+        senderId: 'ai-assistant',
+        content: data.response,
+        timestamp: new Date().toISOString(),
+        type: 'ai',
+      };
+
+      setAiMessages(prev => [...prev, userMsg, aiMsg]);
+      setMessageText('');
+      setAiSuggestions(data.suggestions || []);
+
+      // If AI suggests searching, trigger search
+      if (data.shouldSearch) {
+        await searchProfiles(messageText);
+      }
+    } catch (error) {
+      console.error('Send AI message error:', error);
+      toast.error('Failed to send message');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const searchProfiles = async (query: string) => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/search`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ query }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestedProfiles(data.matches || []);
+        
+        // Add AI message about found profiles
+        if (data.matches && data.matches.length > 0) {
+          const suggestionMsg = {
+            id: `ai-msg-${Date.now()}`,
+            senderId: 'ai-assistant',
+            content: `I found ${data.matches.length} person${data.matches.length > 1 ? 's' : ''} that might be a great match! Check them out below.`,
+            timestamp: new Date().toISOString(),
+            type: 'ai',
+            metadata: { type: 'profile-suggestions' },
+          };
+          setAiMessages(prev => [...prev, suggestionMsg]);
+        }
+      }
+    } catch (error) {
+      console.error('Search profiles error:', error);
+    }
+  };
+
+  const requestSoftIntro = async (targetUserId: string, reason: string) => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/soft-intro`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            targetUserId,
+            reason,
+            context: messageText,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to request soft intro');
+
+      const data = await response.json();
+      setPendingIntroRequest({ targetUserId, reason, introRequestId: data.introRequestId });
+      
+      // Add confirmation message
+      const confirmMsg = {
+        id: `ai-msg-${Date.now()}`,
+        senderId: 'ai-assistant',
+        content: `Great! I've sent a message to them explaining the situation. I'll let you know when they respond!`,
+        timestamp: new Date().toISOString(),
+        type: 'ai',
+      };
+      setAiMessages(prev => [...prev, confirmMsg]);
+      toast.success('Soft intro request sent!');
+    } catch (error) {
+      console.error('Request soft intro error:', error);
+      toast.error('Failed to send soft intro request');
+    }
+  };
+
+  const handleIntroResponse = async (introRequestId: string, accepted: boolean) => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/soft-intro/respond`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ introRequestId, accepted }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to respond');
+
+      const data = await response.json();
+      
+      if (accepted && data.chatId) {
+        toast.success('You\'re now connected! Check your messages.');
+        // Reload chats to show new connection
+        loadChats();
+      }
+      
+      // Remove from messages
+      setAiMessages(prev => prev.filter(msg => 
+        !(msg.metadata?.introRequestId === introRequestId)
+      ));
+    } catch (error) {
+      console.error('Handle intro response error:', error);
+      toast.error('Failed to process response');
+    }
+  };
+
   // Chat List View
-  if (!selectedChat) {
+  if (!selectedChat && !isAIChat) {
     return (
       <div className="h-full flex flex-col bg-white">
         <div className="bg-white border-b px-4 py-4">
@@ -274,21 +477,35 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <ChatListSkeleton />
-          ) : chats.length === 0 ? (
-            <div className="flex items-center justify-center h-full p-8">
-              <Card className="max-w-md w-full border-0 shadow-none">
-                <CardContent className="p-8 text-center">
-                  <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No messages yet</h3>
-                  <p className="text-sm text-gray-600">
-                    Accept connection requests to start chatting with people!
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
           ) : (
             <div className="divide-y">
-              {chats.map((chat) => {
+              {/* AI Assistant Option */}
+              <div
+                onClick={() => setIsAIChat(true)}
+                className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 border-b-2 border-[#2E7B91]/20"
+              >
+                <div className="w-14 h-14 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between mb-1">
+                    <h3 className="font-medium">Link - AI Assistant</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 truncate">
+                    Find co-founders, study partners, and connections
+                  </p>
+                </div>
+              </div>
+
+              {/* Regular Chats */}
+              {chats.length === 0 ? (
+                <div className="flex items-center justify-center p-8">
+                  <p className="text-sm text-gray-500 text-center">
+                    No messages yet. Start a conversation or chat with Link!
+                  </p>
+                </div>
+              ) : (
+                chats.map((chat) => {
                 if (!chat?.chatId || !chat?.otherUser) {
                   console.warn('Invalid chat data:', chat);
                   return null;
@@ -338,6 +555,245 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
               })}
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // AI Chat View
+  if (isAIChat) {
+    return (
+      <div className="h-full flex flex-col bg-white">
+        {/* AI Chat Header */}
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={() => {
+              setIsAIChat(false);
+              setSuggestedProfiles([]);
+              setPendingIntroRequest(null);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors -ml-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          <div className="w-10 h-10 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h2 className="font-medium">Link - AI Assistant</h2>
+            <p className="text-xs text-gray-600">Finding connections for you</p>
+          </div>
+        </div>
+
+        {/* AI Messages */}
+        <div
+          className="flex-1 overflow-y-auto p-4 space-y-4"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain'
+          }}
+        >
+          {aiMessages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center max-w-md">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Hi! I'm Link</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  I can help you find co-founders, study partners, roommates, and friends on campus. Just tell me what you're looking for!
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {['Find a co-founder', 'Find a study partner', 'Find a roommate'].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => {
+                        setMessageText(suggestion);
+                        setTimeout(() => sendAIMessage(), 100);
+                      }}
+                      className="px-3 py-1.5 bg-[#2E7B9115] text-[#2E7B91] rounded-full text-sm hover:bg-[#2E7B9120] transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {aiMessages.map((message, index) => {
+                const isUser = message.senderId === userProfile.id;
+                const isIntroRequest = message.metadata?.type === 'soft-intro-request';
+
+                return (
+                  <div key={message.id || index}>
+                    <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                      {!isUser && (
+                        <div className="w-8 h-8 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center flex-shrink-0">
+                          <Sparkles className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      
+                      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                        <div
+                          className={`px-4 py-2 rounded-2xl ${
+                            isUser
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-100 text-gray-900'
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed">{message.content}</p>
+                        </div>
+                        <span className="text-xs text-gray-500 mt-1 px-2">
+                          {formatTime(message.timestamp)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Intro Request UI */}
+                    {isIntroRequest && message.metadata?.introRequestId && (
+                      <div className="mt-2 ml-10 max-w-md">
+                        <Card className="border-2 border-[#2E7B91]/30">
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
+                                  {getInitials(message.metadata.fromUserName || 'U')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{message.metadata.fromUserName} wants to connect</p>
+                                <p className="text-xs text-gray-600 mt-1">{message.content}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleIntroResponse(message.metadata.introRequestId, true)}
+                                className="flex-1 bg-[#2E7B91] hover:bg-[#25658A]"
+                              >
+                                <UserPlus className="w-4 h-4 mr-1" />
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleIntroResponse(message.metadata.introRequestId, false)}
+                                className="flex-1"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Decline
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* Profile Suggestions - Show after suggestion message or if we have profiles */}
+                    {((message.metadata?.type === 'profile-suggestions' || index === aiMessages.length - 1) && suggestedProfiles.length > 0 && message.senderId === 'ai-assistant') && (
+                      <div className="mt-2 ml-10 space-y-3 max-w-md">
+                        {suggestedProfiles.map((profile) => (
+                          <Card key={profile.id} className="border border-gray-200">
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-3">
+                                <Avatar className="w-12 h-12">
+                                  <AvatarImage src={profile.profilePicture} />
+                                  <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
+                                    {getInitials(profile.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-sm">{profile.name}</h4>
+                                  <p className="text-xs text-gray-600">{profile.major} • {profile.year}</p>
+                                  {profile.bio && (
+                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{profile.bio}</p>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      const reason = messageText || 'I think we could be a great connection!';
+                                      requestSoftIntro(profile.id, reason);
+                                    }}
+                                    className="mt-2 w-full bg-[#2E7B91] hover:bg-[#25658A] text-xs"
+                                  >
+                                    <UserPlus className="w-3 h-3 mr-1" />
+                                    Request Soft Intro
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* AI Suggestions */}
+              {aiSuggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 justify-start pt-2">
+                  {aiSuggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setMessageText(suggestion);
+                        setTimeout(() => sendAIMessage(), 100);
+                      }}
+                      className="px-3 py-1.5 bg-[#2E7B9115] text-[#2E7B91] rounded-full text-sm hover:bg-[#2E7B9120] transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {aiLoading && (
+                <div className="flex gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="bg-gray-100 rounded-2xl px-4 py-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* AI Message Input */}
+        <div
+          className="bg-white border-t px-4 flex-shrink-0"
+          style={{
+            paddingTop: '0.75rem',
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'
+          }}
+        >
+          <div className="flex gap-2">
+            <Input
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && !aiLoading && sendAIMessage()}
+              placeholder="Ask Link to find someone..."
+              className="flex-1"
+              disabled={aiLoading}
+            />
+            <Button
+              onClick={sendAIMessage}
+              disabled={!messageText.trim() || aiLoading}
+              className="bg-[#2E7B91] hover:bg-[#25658A]"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
     );
