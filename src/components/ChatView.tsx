@@ -454,6 +454,16 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
 
   const requestSoftIntro = async (targetUserId: string, reason: string) => {
     try {
+      // Build context from recent conversation history
+      const recentMessages = aiMessages
+        .slice(-5) // Last 5 messages for context
+        .map(msg => `${msg.senderId === userProfile.id ? 'User' : 'Link'}: ${msg.content}`)
+        .join('\n');
+      
+      const fullContext = messageText 
+        ? `Current message: ${messageText}\n\nRecent conversation:\n${recentMessages}`
+        : `Recent conversation:\n${recentMessages}`;
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/soft-intro`,
         {
@@ -465,7 +475,7 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
           body: JSON.stringify({
             targetUserId,
             reason,
-            context: messageText,
+            context: fullContext,
           }),
         }
       );
@@ -789,10 +799,11 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                               <Button
                                 size="sm"
                                 onClick={() => handleIntroResponse(message.metadata.introRequestId, true)}
-                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white font-medium shadow-sm min-w-[100px]"
+                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] font-medium shadow-sm min-w-[100px]"
+                                style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
                               >
-                                <UserPlus className="w-4 h-4 mr-1.5" />
-                                Accept
+                                <UserPlus className="w-4 h-4 mr-1.5" style={{ color: '#ffffff', stroke: '#ffffff' }} />
+                                <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>Accept</span>
                               </Button>
                               <Button
                                 size="sm"

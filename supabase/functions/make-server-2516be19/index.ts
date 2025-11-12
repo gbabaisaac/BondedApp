@@ -2418,20 +2418,48 @@ app.post("/ai-assistant/soft-intro", async (c) => {
     // Create AI message to target user explaining the situation
     const { tryCallGemini } = await import('./love-print-helpers.tsx');
     
-    const introPrompt = `You are Link, an AI assistant for Bonded. You need to create a friendly message to introduce two college students.
+    // Build comprehensive context about what the user is looking for
+    const userLookingFor = userProfile.lookingFor?.join(', ') || 'connections';
+    const userGoals = userProfile.goals ? JSON.stringify(userProfile.goals) : 'None';
+    const userInterests = userProfile.interests?.join(', ') || 'None';
+    const userBio = userProfile.bio || 'None';
+    
+    const introPrompt = `You are Link, an AI assistant for Bonded. Create a friendly, personalized message to introduce two college students.
 
-From: ${userProfile.name} (${userProfile.major}, ${userProfile.year})
-To: ${targetProfile.name} (${targetProfile.major}, ${targetProfile.year})
+FROM USER:
+- Name: ${userProfile.name}
+- Major: ${userProfile.major}
+- Year: ${userProfile.year}
+- Looking For: ${userLookingFor}
+- Interests: ${userInterests}
+- Goals: ${userGoals}
+- Bio: ${userBio}
 
-Reason for intro: ${reason}
-Additional context: ${context || 'None'}
+TO USER:
+- Name: ${targetProfile.name}
+- Major: ${targetProfile.major}
+- Year: ${targetProfile.year}
+- Looking For: ${targetProfile.lookingFor?.join(', ') || 'connections'}
+- Interests: ${targetProfile.interests?.join(', ') || 'None'}
 
-Create a warm, friendly message (2-3 sentences) explaining:
-1. Who ${userProfile.name} is
-2. Why they think ${targetProfile.name} would be a good connection
-3. What they're looking for (co-founder, study partner, friend, etc.)
+REASON FOR CONNECTION:
+${reason}
 
-Be natural and conversational. Return ONLY the message text, no quotes or markdown.`;
+ADDITIONAL CONTEXT FROM USER'S MESSAGE:
+${context || 'None'}
+
+Create a warm, friendly message (3-4 sentences) that:
+1. Introduces ${userProfile.name} naturally (mention their major/year if relevant)
+2. Explains SPECIFICALLY what they're looking for based on the reason and context (e.g., "a co-founder for their startup idea", "a study partner for CS classes", "someone to collaborate on projects with")
+3. Explains WHY ${targetProfile.name} would be a great match (mention shared interests, major, goals, or what they're looking for)
+4. Asks if they'd like to be introduced
+
+Be specific and contextual - don't just say "they're looking for ${reason}". Instead, explain what that means in a natural way. For example:
+- If reason mentions "co-founder", explain what kind of project/startup
+- If reason mentions "study partner", mention relevant classes or subjects
+- If reason mentions "friend", mention shared interests or activities
+
+Return ONLY the message text, no quotes or markdown.`;
 
     const introMessage = await tryCallGemini(introPrompt) || 
       `Hi ${targetProfile.name}! ${userProfile.name} (${userProfile.major}) thinks you'd be a great connection. They're looking for ${reason}. Would you like me to introduce you?`;
