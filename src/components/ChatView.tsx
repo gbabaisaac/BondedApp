@@ -345,8 +345,19 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       setMessageText('');
       setAiSuggestions(data.suggestions || []);
 
-      // If AI suggests searching, trigger search
+      // If AI suggests searching, trigger search automatically
       if (data.shouldSearch) {
+        // Use the original message or combine with context
+        const searchQuery = messageText;
+        await searchProfiles(searchQuery);
+      }
+      
+      // Also check if the AI response mentions searching - trigger search even if shouldSearch wasn't set
+      if (data.response && (
+        data.response.toLowerCase().includes('search') || 
+        data.response.toLowerCase().includes('let me find') ||
+        data.response.toLowerCase().includes('i\'ll search')
+      )) {
         await searchProfiles(messageText);
       }
     } catch (error) {
@@ -359,6 +370,8 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
 
   const searchProfiles = async (query: string) => {
     try {
+      console.log('[SEARCH] Searching for:', query);
+      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/search`,
         {
@@ -371,25 +384,49 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setSuggestedProfiles(data.matches || []);
-        
-        // Add AI message about found profiles
-        if (data.matches && data.matches.length > 0) {
-          const suggestionMsg = {
-            id: `ai-msg-${Date.now()}`,
-            senderId: 'ai-assistant',
-            content: `I found ${data.matches.length} person${data.matches.length > 1 ? 's' : ''} that might be a great match! Check them out below.`,
-            timestamp: new Date().toISOString(),
-            type: 'ai',
-            metadata: { type: 'profile-suggestions' },
-          };
-          setAiMessages(prev => [...prev, suggestionMsg]);
-        }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[SEARCH] Search failed:', response.status, errorText);
+        throw new Error(`Search failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[SEARCH] Search results:', data);
+      
+      setSuggestedProfiles(data.matches || []);
+      
+      // Add AI message about found profiles
+      if (data.matches && data.matches.length > 0) {
+        const suggestionMsg = {
+          id: `ai-msg-${Date.now()}`,
+          senderId: 'ai-assistant',
+          content: `I found ${data.matches.length} person${data.matches.length > 1 ? 's' : ''} that might be a great match! Check them out below.`,
+          timestamp: new Date().toISOString(),
+          type: 'ai',
+          metadata: { type: 'profile-suggestions' },
+        };
+        setAiMessages(prev => [...prev, suggestionMsg]);
+      } else {
+        // No matches found
+        const noMatchMsg = {
+          id: `ai-msg-${Date.now()}`,
+          senderId: 'ai-assistant',
+          content: `I couldn't find any matches for that right now. Try being more specific or check back later as more people join!`,
+          timestamp: new Date().toISOString(),
+          type: 'ai',
+        };
+        setAiMessages(prev => [...prev, noMatchMsg]);
       }
     } catch (error) {
-      console.error('Search profiles error:', error);
+      console.error('[SEARCH] Search profiles error:', error);
+      const errorMsg = {
+        id: `ai-msg-${Date.now()}`,
+        senderId: 'ai-assistant',
+        content: `I had trouble searching right now. Please try again in a moment!`,
+        timestamp: new Date().toISOString(),
+        type: 'ai',
+      };
+      setAiMessages(prev => [...prev, errorMsg]);
     }
   };
 

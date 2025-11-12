@@ -2117,6 +2117,12 @@ Respond as Link:`;
       } else if (lowerMessage.includes('find') || lowerMessage.includes('looking for')) {
         fallbackResponse = "I can help you find someone! What are you looking for? A co-founder, study partner, roommate, or friend?";
         shouldSearch = true;
+      } else if (lowerMessage.includes('compsci') || lowerMessage.includes('computer science') || lowerMessage.includes('cs ') || 
+                 lowerMessage.includes('major') || lowerMessage.includes('skill') || lowerMessage.includes('background') ||
+                 lowerMessage.includes('search')) {
+        // This is a follow-up with criteria - trigger search
+        fallbackResponse = "Got it! Let me search for people matching that criteria.";
+        shouldSearch = true;
       } else {
         fallbackResponse = "I'm here to help you find connections on campus! You can ask me to find co-founders, study partners, roommates, or friends. What are you looking for?";
       }
@@ -2156,9 +2162,20 @@ Respond as Link:`;
     const isSearchRequest = lowerMessage.includes('find') || 
                            lowerMessage.includes('looking for') ||
                            lowerMessage.includes('co-founder') ||
+                           lowerMessage.includes('cofounder') ||
+                           lowerMessage.includes('founder') ||
                            lowerMessage.includes('study partner') ||
+                           lowerMessage.includes('study buddy') ||
                            lowerMessage.includes('roommate') ||
-                           lowerMessage.includes('collaborator');
+                           lowerMessage.includes('collaborator') ||
+                           lowerMessage.includes('search') ||
+                           // Check if this is a follow-up with criteria (major, skills, etc.)
+                           lowerMessage.includes('compsci') ||
+                           lowerMessage.includes('computer science') ||
+                           lowerMessage.includes('cs ') ||
+                           lowerMessage.includes('major') ||
+                           lowerMessage.includes('skill') ||
+                           lowerMessage.includes('background');
 
     return c.json({
       response: aiResponseText.trim(),
@@ -2287,16 +2304,45 @@ If no good matches, return an empty array: []`;
           matchedProfileIds = JSON.parse(jsonMatch[0]);
         }
       } catch (e) {
-        console.log('Failed to parse Gemini search response');
+        console.log('[SEARCH] Failed to parse Gemini search response');
       }
     }
 
     // Get full profiles for matched IDs
-    const matchedProfiles = matchedProfileIds
+    let matchedProfiles = matchedProfileIds
       .map((id: string) => profiles.find((p: any) => p.id === id))
       .filter(Boolean)
       .slice(0, 5);
+    
+    // If Gemini didn't return matches but we have profiles, do a simple keyword match
+    if (matchedProfiles.length === 0 && profiles.length > 0) {
+      console.log('[SEARCH] Gemini returned no matches, doing keyword search...');
+      const lowerQuery = (query || '').toLowerCase();
+      
+      // Simple keyword matching
+      matchedProfiles = profiles
+        .filter((p: any) => {
+          const major = (p.major || '').toLowerCase();
+          const bio = (p.bio || '').toLowerCase();
+          const interests = (p.interests || []).join(' ').toLowerCase();
+          
+          return major.includes(lowerQuery) || 
+                 bio.includes(lowerQuery) || 
+                 interests.includes(lowerQuery) ||
+                 lowerQuery.includes(major) ||
+                 (lowerQuery.includes('compsci') && (major.includes('computer') || major.includes('cs'))) ||
+                 (lowerQuery.includes('cs') && (major.includes('computer') || major.includes('cs')));
+        })
+        .slice(0, 5);
+    }
+    
+    // If still no matches, return first few profiles as fallback
+    if (matchedProfiles.length === 0 && profiles.length > 0) {
+      console.log('[SEARCH] No keyword matches, returning first few profiles...');
+      matchedProfiles = profiles.slice(0, 3);
+    }
 
+    console.log(`[SEARCH] Returning ${matchedProfiles.length} matches`);
     return c.json({
       matches: matchedProfiles,
       count: matchedProfiles.length,
