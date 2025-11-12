@@ -17,7 +17,7 @@ interface MainAppProps {
   onLogout: () => void;
 }
 
-type View = 'discover' | 'matches' | 'messages' | 'forum' | 'profile';
+type View = 'discover' | 'matches' | 'messages' | 'forum';
 type AppMode = 'friend' | 'love';
 
 export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {

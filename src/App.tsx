@@ -4,6 +4,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { getSupabaseClient } from './utils/supabase/client';
 import { projectId, publicAnonKey } from './utils/supabase/info';
 import { initSentry, setSentryUser, clearSentryUser } from './config/sentry';
+import { AuthCallback } from './components/AuthCallback';
 
 // Initialize Sentry for error tracking
 initSentry();
@@ -59,7 +60,13 @@ export default function App() {
   const [bondPrintData, setBondPrintData] = useState<any>(null);
   const [appKey, setAppKey] = useState(0); // Key to force remount on logout
 
+  // Check if we're on an OAuth callback page
   useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes('/auth/') && path.includes('/callback')) {
+      // Don't check session, just show callback handler
+      return;
+    }
     checkSession();
   }, []);
 
@@ -202,6 +209,18 @@ export default function App() {
       }, 100);
     }
   };
+
+  // Check if we're on an OAuth callback route
+  const path = window.location.pathname;
+  if (path.includes('/auth/') && path.includes('/callback')) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingScreen />}>
+          <AuthCallback />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>

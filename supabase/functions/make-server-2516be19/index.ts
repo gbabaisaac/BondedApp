@@ -1839,6 +1839,85 @@ app.post("/bond-print/answer", async (c) => {
 });
 
 // Regenerate Bond Print with updated profile data (goals, additionalInfo)
+// Enhance Bond Print with LinkedIn data
+async function enhanceBondPrintWithLinkedIn(profile: any, linkedinData: any): Promise<any | null> {
+  if (!profile.bondPrint) {
+    return null;
+  }
+
+  const { tryCallGemini } = await import('./love-print-helpers.tsx');
+
+  const linkedinInfo = `
+LinkedIn Profile Data:
+- Name: ${linkedinData.name || 'Not available'}
+- Email: ${linkedinData.email || 'Not available'}
+- Locale: ${linkedinData.locale || 'Not available'}
+${linkedinData.profileDetails ? `- Profile Details: ${JSON.stringify(linkedinData.profileDetails).substring(0, 500)}` : ''}
+`;
+
+  const prompt = `You are enhancing a Bond Print (personality profile) with professional data from LinkedIn for a college student.
+
+Current Bond Print:
+${JSON.stringify(profile.bondPrint, null, 2)}
+
+User Profile:
+- Name: ${profile.name}
+- Major: ${profile.major || 'Not specified'}
+- Year: ${profile.year || 'Not specified'}
+- Interests: ${profile.interests?.join(', ') || 'None'}
+- Looking For: ${profile.lookingFor?.join(', ') || 'None'}
+
+${linkedinInfo}
+
+Enhance the Bond Print by:
+1. Adding professional traits and skills inferred from LinkedIn profile
+2. Updating collaboration style based on professional experience
+3. Refining communication style with professional context
+4. Adding career-oriented values if relevant
+5. Updating summary to reflect professional aspirations
+
+Maintain the existing structure and only enhance/add to it. Don't remove existing traits unless they conflict with professional data.
+
+Return ONLY a JSON object (no markdown) with the same structure as the current Bond Print, enhanced with LinkedIn insights:
+{
+  "traits": { ... (enhanced) },
+  "personality": { ... (enhanced) },
+  "communication": { ... (enhanced) },
+  "social": { ... (enhanced) },
+  "values": [ ... (may add professional values) ],
+  "livingPreferences": { ... },
+  "summary": "... (enhanced with professional context)",
+  "professionalInsights": {
+    "skills": ["skill1", "skill2"],
+    "careerOrientation": "description",
+    "collaborationStyle": "enhanced description"
+  }
+}`;
+
+  const geminiResponse = await tryCallGemini(prompt);
+  
+  if (geminiResponse) {
+    try {
+      const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const enhancedBondPrint = JSON.parse(jsonMatch[0]);
+        // Preserve original metadata
+        enhancedBondPrint.createdAt = profile.bondPrint.createdAt;
+        enhancedBondPrint.updatedAt = new Date().toISOString();
+        enhancedBondPrint.quizVersion = profile.bondPrint.quizVersion || '1.0';
+        enhancedBondPrint.enhancedWithLinkedIn = true;
+        enhancedBondPrint.enhancedAt = new Date().toISOString();
+        return enhancedBondPrint;
+      }
+    } catch (e) {
+      console.log('Failed to parse enhanced Bond Print from LinkedIn data');
+    }
+  }
+  
+  // If enhancement fails, return original
+  return profile.bondPrint;
+}
+
 async function regenerateBondPrint(profile: any): Promise<any> {
   if (!profile.bondPrint) {
     return null;
@@ -2210,6 +2289,19 @@ app.post("/ai-assistant/chat", async (c) => {
     // Use Gemini to generate AI response
     const { tryCallGemini } = await import('./love-print-helpers.tsx');
     
+    // Include LinkedIn data if available
+    const linkedinInfo = userProfile.socialConnections?.linkedin?.scrapedData ? `
+- LinkedIn: Connected
+  ${userProfile.socialConnections.linkedin.scrapedData.name ? `  Name: ${userProfile.socialConnections.linkedin.scrapedData.name}` : ''}
+  ${userProfile.socialConnections.linkedin.scrapedData.locale ? `  Location: ${userProfile.socialConnections.linkedin.scrapedData.locale}` : ''}
+` : '';
+
+    const bondPrintInfo = userProfile.bondPrint ? `
+- Bond Print: Available
+  ${userProfile.bondPrint.professionalInsights ? `  Professional Skills: ${userProfile.bondPrint.professionalInsights.skills?.join(', ') || 'None'}` : ''}
+  ${userProfile.bondPrint.professionalInsights?.careerOrientation ? `  Career Orientation: ${userProfile.bondPrint.professionalInsights.careerOrientation}` : ''}
+` : '';
+
     const prompt = `You are Link, an AI assistant for Bonded - a social app for college students to find friends, roommates, study partners, and collaborators.
 
 User Profile:
@@ -2220,6 +2312,7 @@ User Profile:
 - Interests: ${userProfile.interests?.join(', ') || 'None'}
 - Looking For: ${userProfile.lookingFor?.join(', ') || 'None'}
 - Goals: ${JSON.stringify(userProfile.goals || {})}
+${linkedinInfo}${bondPrintInfo}
 
 User Message: "${message}"
 
@@ -2233,6 +2326,7 @@ When a user asks to find someone (e.g., "I'm looking for a co-founder for X"), y
 - Acknowledge their request
 - Let them know you'll search through profiles
 - Ask clarifying questions if needed (what skills, what type of project, etc.)
+- Use LinkedIn data and professional insights when relevant (e.g., for co-founder searches, career-oriented connections)
 
 Be warm, helpful, and conversational. Keep responses concise but friendly.
 
@@ -2407,7 +2501,19 @@ app.post("/ai-assistant/search", async (c) => {
       lookingFor: p.lookingFor || [],
       goals: p.goals || {},
       bio: p.bio || '',
+      socialConnections: p.socialConnections || {},
+      bondPrint: p.bondPrint || null,
     })).slice(0, 20); // Limit to 20 for AI analysis
+
+    // Include LinkedIn and Bond Print data for better matching
+    const linkedinInfo = userProfile.socialConnections?.linkedin ? `
+- LinkedIn: Connected (has professional profile data)
+` : '';
+
+    const bondPrintInfo = userProfile.bondPrint?.professionalInsights ? `
+- Professional Skills: ${userProfile.bondPrint.professionalInsights.skills?.join(', ') || 'None'}
+- Career Orientation: ${userProfile.bondPrint.professionalInsights.careerOrientation || 'Not specified'}
+` : '';
 
     const prompt = `You are Link, an AI assistant helping a college student find connections.
 
@@ -2417,21 +2523,26 @@ User Profile:
 - Major: ${userProfile.major}
 - Looking For: ${userProfile.lookingFor?.join(', ') || 'None'}
 - Goals: ${JSON.stringify(userProfile.goals || {})}
+${linkedinInfo}${bondPrintInfo}
 
 Available Profiles (${profilesSummary.length}):
-${profilesSummary.map((p: any, i: number) => 
-  `${i + 1}. ${p.name} (${p.major}, ${p.year})
+${profilesSummary.map((p: any, i: number) => {
+  const pLinkedIn = p.socialConnections?.linkedin ? ' [Has LinkedIn]' : '';
+  const pSkills = p.bondPrint?.professionalInsights?.skills ? `\n     Skills: ${p.bondPrint.professionalInsights.skills.join(', ')}` : '';
+  return `${i + 1}. ${p.name} (${p.major}, ${p.year})${pLinkedIn}
      Interests: ${p.interests.join(', ') || 'None'}
      Looking For: ${p.lookingFor.join(', ') || 'None'}
      Goals: ${JSON.stringify(p.goals)}
-     Bio: ${p.bio || 'No bio'}`
-).join('\n\n')}
+     Bio: ${p.bio || 'No bio'}${pSkills}`;
+}).join('\n\n')}
 
 Analyze these profiles and return the top 3-5 best matches for the user's request. Consider:
 - Compatibility with their goals/interests
 - What they're looking for
 - Major/field alignment
 - Year/experience level
+- Professional skills and career orientation (especially for co-founder, business partner, or career-oriented connections)
+- LinkedIn connections (indicates professional presence)
 
 Return ONLY a JSON array of profile IDs in order of best match (most relevant first):
 ["profile-id-1", "profile-id-2", "profile-id-3"]
@@ -2568,12 +2679,18 @@ app.post("/ai-assistant/soft-intro", async (c) => {
     const userInterests = userProfile.interests?.join(', ') || 'None';
     const userBio = userProfile.bio || 'None';
     
+    // Include LinkedIn and professional insights if available
+    const userLinkedIn = userProfile.socialConnections?.linkedin ? ' [Has LinkedIn profile]' : '';
+    const userSkills = userProfile.bondPrint?.professionalInsights?.skills ? `\n- Skills: ${userProfile.bondPrint.professionalInsights.skills.join(', ')}` : '';
+    const targetLinkedIn = targetProfile.socialConnections?.linkedin ? ' [Has LinkedIn profile]' : '';
+    const targetSkills = targetProfile.bondPrint?.professionalInsights?.skills ? `\n- Skills: ${targetProfile.bondPrint.professionalInsights.skills.join(', ')}` : '';
+    
     const introPrompt = `You are Link, an AI assistant for Bonded. Create a friendly, personalized message to introduce two college students.
 
 FROM USER:
 - Name: ${userProfile.name}
 - Major: ${userProfile.major}
-- Year: ${userProfile.year}
+- Year: ${userProfile.year}${userLinkedIn}${userSkills}
 - Looking For: ${userLookingFor}
 - Interests: ${userInterests}
 - Goals: ${userGoals}
@@ -2582,7 +2699,7 @@ FROM USER:
 TO USER:
 - Name: ${targetProfile.name}
 - Major: ${targetProfile.major}
-- Year: ${targetProfile.year}
+- Year: ${targetProfile.year}${targetLinkedIn}${targetSkills}
 - Looking For: ${targetProfile.lookingFor?.join(', ') || 'connections'}
 - Interests: ${targetProfile.interests?.join(', ') || 'None'}
 
@@ -2595,13 +2712,14 @@ ${context || 'None'}
 Create a warm, friendly message (3-4 sentences) that:
 1. Introduces ${userProfile.name} naturally (mention their major/year if relevant)
 2. Explains SPECIFICALLY what they're looking for based on the reason and context (e.g., "a co-founder for their startup idea", "a study partner for CS classes", "someone to collaborate on projects with")
-3. Explains WHY ${targetProfile.name} would be a great match (mention shared interests, major, goals, or what they're looking for)
+3. Explains WHY ${targetProfile.name} would be a great match (mention shared interests, major, goals, professional skills, or what they're looking for)
 4. Asks if they'd like to be introduced
 
 Be specific and contextual - don't just say "they're looking for ${reason}". Instead, explain what that means in a natural way. For example:
-- If reason mentions "co-founder", explain what kind of project/startup
+- If reason mentions "co-founder", explain what kind of project/startup and mention relevant skills/experience
 - If reason mentions "study partner", mention relevant classes or subjects
 - If reason mentions "friend", mention shared interests or activities
+- If both have LinkedIn, mention their professional presence as a plus for career-oriented connections
 
 Return ONLY the message text, no quotes or markdown.`;
 
@@ -4304,7 +4422,9 @@ app.post("/social/linkedin/connect", async (c) => {
     // Store state for verification
     await kv.set(`oauth:linkedin:${userId}`, { state, timestamp: Date.now() });
 
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=r_liteprofile%20r_emailaddress`;
+    // Use OpenID Connect scopes + additional permissions for profile details
+    // openid profile email for basic info, w_member_social for profile details
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=openid%20profile%20email%20w_member_social`;
 
     return c.json({ authUrl });
   } catch (error: any) {
@@ -4364,6 +4484,31 @@ app.post("/social/linkedin/callback", async (c) => {
 
     const linkedinProfile = await profileResponse.json();
 
+    // Fetch additional LinkedIn data (skills, experience, education)
+    let linkedinData: any = {
+      name: linkedinProfile.name,
+      email: linkedinProfile.email,
+      picture: linkedinProfile.picture,
+      given_name: linkedinProfile.given_name,
+      family_name: linkedinProfile.family_name,
+      locale: linkedinProfile.locale,
+    };
+
+    // Try to fetch profile with more details (requires additional permissions)
+    try {
+      // Get user's profile with skills and experience
+      const profileDetailsResponse = await fetch('https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))', {
+        headers: { 'Authorization': `Bearer ${access_token}` },
+      });
+      
+      if (profileDetailsResponse.ok) {
+        const profileDetails = await profileDetailsResponse.json();
+        linkedinData.profileDetails = profileDetails;
+      }
+    } catch (e) {
+      console.log('Could not fetch additional LinkedIn profile details');
+    }
+
     // Update user profile with LinkedIn connection
     const userProfile = await kv.get(`user:${userId}`);
     if (userProfile) {
@@ -4373,19 +4518,32 @@ app.post("/social/linkedin/callback", async (c) => {
         username: linkedinProfile.sub || linkedinProfile.preferred_username,
         profileUrl: `https://www.linkedin.com/in/${linkedinProfile.sub}`,
         accessToken: access_token, // In production, encrypt this
-        scrapedData: {
-          name: linkedinProfile.name,
-          email: linkedinProfile.email,
-          picture: linkedinProfile.picture,
-        },
+        scrapedData: linkedinData,
       };
+
+      // Enhance Bond Print with LinkedIn data if it exists
+      if (userProfile.bondPrint) {
+        const enhancedBondPrint = await enhanceBondPrintWithLinkedIn(userProfile, linkedinData);
+        if (enhancedBondPrint) {
+          userProfile.bondPrint = enhancedBondPrint;
+        }
+      }
+
+      // Also update profile fields if missing (name, bio hints from LinkedIn)
+      if (!userProfile.name && linkedinData.name) {
+        userProfile.name = linkedinData.name;
+      }
+      if (!userProfile.bio && linkedinData.profileDetails) {
+        // Could extract headline or summary from LinkedIn if available
+      }
+
       await kv.set(`user:${userId}`, userProfile);
     }
 
     // Clean up state
     await kv.delete(`oauth:linkedin:${userId}`);
 
-    return c.json({ success: true, message: 'LinkedIn connected successfully' });
+    return c.json({ success: true, message: 'LinkedIn connected successfully', bondPrintUpdated: !!userProfile?.bondPrint });
   } catch (error: any) {
     console.error('LinkedIn callback error:', error);
     return c.json({ error: error.message }, 500);
@@ -4413,6 +4571,9 @@ app.post("/social/linkedin/disconnect", async (c) => {
   }
 });
 
+// Instagram OAuth - DISABLED (requires business verification)
+// Uncomment when Instagram business verification is complete
+/*
 // Instagram OAuth - Initiate connection
 app.post("/social/instagram/connect", async (c) => {
   try {
@@ -4531,6 +4692,7 @@ app.post("/social/instagram/disconnect", async (c) => {
     return c.json({ error: error.message }, 500);
   }
 });
+*/
 
 // Spotify OAuth - Initiate connection
 app.post("/social/spotify/connect", async (c) => {
@@ -4674,6 +4836,9 @@ app.post("/social/spotify/disconnect", async (c) => {
   }
 });
 
+// Apple Music - DISABLED
+// Uncomment when ready to implement Apple Music integration
+/*
 // Apple Music - Connect (requires MusicKit JS on frontend)
 app.post("/social/appleMusic/connect", async (c) => {
   try {
@@ -4731,6 +4896,7 @@ app.post("/social/appleMusic/disconnect", async (c) => {
     return c.json({ error: error.message }, 500);
   }
 });
+*/
 
 // Get blocked users list
 app.get("/user/blocked", async (c) => {

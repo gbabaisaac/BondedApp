@@ -5,6 +5,8 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 import {
   Heart,
   MessageCircle,
@@ -19,6 +21,7 @@ import {
 import { toast } from 'sonner';
 import { projectId } from '../utils/supabase/info';
 import { motion, AnimatePresence } from 'motion/react';
+import { ProfileDetailView } from './ProfileDetailView';
 
 interface ForumProps {
   userProfile: any;
@@ -46,10 +49,12 @@ export function Forum({ userProfile, accessToken }: ForumProps) {
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(true);
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState<string | null>(null);
   const [postComments, setPostComments] = useState<Record<string, any[]>>({});
+  const [selectedProfile, setSelectedProfile] = useState<any | null>(null);
 
   useEffect(() => {
     loadPosts();
@@ -96,7 +101,7 @@ export function Forum({ userProfile, accessToken }: ForumProps) {
           },
           body: JSON.stringify({
             content: newPost,
-            isAnonymous: true, // Forum is anonymous by default
+            isAnonymous: isAnonymous,
           }),
         }
       );
@@ -104,6 +109,7 @@ export function Forum({ userProfile, accessToken }: ForumProps) {
       if (response.ok) {
         toast.success('Post created!');
         setNewPost('');
+        setIsAnonymous(true); // Reset to anonymous for next post
         loadPosts();
       } else {
         throw new Error('Failed to create post');
@@ -240,19 +246,31 @@ export function Forum({ userProfile, accessToken }: ForumProps) {
               </Avatar>
               <div className="flex-1">
                 <Textarea
-                  placeholder="What's on your mind? Share anonymously..."
+                  placeholder="What's on your mind? Share with your campus..."
                   value={newPost}
                   onChange={(e) => setNewPost(e.target.value)}
                   className="min-h-[80px] resize-none"
                 />
                 <div className="flex items-center justify-between mt-2">
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ImageIcon className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Video className="w-4 h-4" />
-                    </Button>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="anonymous"
+                        checked={isAnonymous}
+                        onCheckedChange={setIsAnonymous}
+                      />
+                      <Label htmlFor="anonymous" className="text-xs text-gray-600 cursor-pointer">
+                        Post anonymously
+                      </Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <ImageIcon className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Video className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                   <Button
                     onClick={handleCreatePost}
@@ -290,7 +308,10 @@ export function Forum({ userProfile, accessToken }: ForumProps) {
                 <CardContent className="p-4">
                   {/* Post Header */}
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                    <div 
+                      className={`flex items-center gap-2 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
+                      onClick={() => !post.isAnonymous && handleProfileClick(post.authorId)}
+                    >
                       <Avatar className="w-8 h-8">
                         <AvatarImage src={post.authorAvatar} />
                         <AvatarFallback className="bg-gray-200 text-gray-600 text-xs">
@@ -430,6 +451,19 @@ export function Forum({ userProfile, accessToken }: ForumProps) {
             </motion.div>
           ))}
         </div>
+      )}
+
+      {/* Profile Detail Modal */}
+      {selectedProfile && (
+        <ProfileDetailView
+          profile={selectedProfile}
+          onClose={() => setSelectedProfile(null)}
+          onNext={() => {}}
+          onPrev={() => {}}
+          hasNext={false}
+          hasPrev={false}
+          accessToken={accessToken}
+        />
       )}
     </div>
   );

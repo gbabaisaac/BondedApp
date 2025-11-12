@@ -3,9 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import {
   Linkedin,
-  Instagram,
   Music,
-  Music2,
   Check,
   ExternalLink,
   Loader2,
@@ -20,7 +18,7 @@ interface SocialConnectionsProps {
 }
 
 interface SocialConnection {
-  platform: 'linkedin' | 'instagram' | 'spotify' | 'appleMusic';
+  platform: 'linkedin' | 'spotify';
   connected: boolean;
   username?: string;
   profileUrl?: string;
@@ -36,22 +34,10 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
       profileUrl: userProfile?.socialConnections?.linkedin?.profileUrl,
     },
     {
-      platform: 'instagram',
-      connected: !!userProfile?.socialConnections?.instagram,
-      username: userProfile?.socialConnections?.instagram?.username,
-      profileUrl: userProfile?.socialConnections?.instagram?.profileUrl,
-    },
-    {
       platform: 'spotify',
       connected: !!userProfile?.socialConnections?.spotify,
       username: userProfile?.socialConnections?.spotify?.username,
       profileUrl: userProfile?.socialConnections?.spotify?.profileUrl,
-    },
-    {
-      platform: 'appleMusic',
-      connected: !!userProfile?.socialConnections?.appleMusic,
-      username: userProfile?.socialConnections?.appleMusic?.username,
-      profileUrl: userProfile?.socialConnections?.appleMusic?.profileUrl,
     },
   ]);
 
@@ -64,28 +50,12 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
       connectText: 'Connect LinkedIn',
       description: 'Import your profile info',
     },
-    instagram: {
-      name: 'Instagram',
-      icon: Instagram,
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-50',
-      connectText: 'Connect Instagram',
-      description: 'Link your Instagram profile',
-    },
     spotify: {
       name: 'Spotify',
       icon: Music,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       connectText: 'Connect Spotify',
-      description: 'Share your music taste',
-    },
-    appleMusic: {
-      name: 'Apple Music',
-      icon: Music2,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      connectText: 'Connect Apple Music',
       description: 'Share your music taste',
     },
   };
@@ -98,6 +68,9 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
       
       if (platform === 'linkedin') {
         // LinkedIn OAuth flow
+        // Store access token for callback handler
+        localStorage.setItem('supabase_auth_token', accessToken);
+        
         const response = await fetch(
           `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/social/linkedin/connect`,
           {
@@ -117,27 +90,9 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
             toast.success('LinkedIn connected!');
             onUpdate();
           }
-        }
-      } else if (platform === 'instagram') {
-        // Instagram OAuth flow
-        const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/social/instagram/connect`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.authUrl) {
-            window.location.href = data.authUrl;
-          } else {
-            toast.success('Instagram connected!');
-            onUpdate();
-          }
+        } else {
+          const errorData = await response.json();
+          toast.error(`Failed to connect: ${errorData.error || 'Unknown error'}`);
         }
       } else if (platform === 'spotify') {
         // Spotify OAuth flow
@@ -149,10 +104,6 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
         // Store state for verification
         localStorage.setItem('spotify_connect_state', 'connecting');
         window.location.href = authUrl;
-      } else if (platform === 'appleMusic') {
-        // Apple Music uses MusicKit JS
-        // This requires Apple Developer setup
-        toast.info('Apple Music connection coming soon!');
       }
     } catch (error) {
       console.error(`Connect ${platform} error:`, error);

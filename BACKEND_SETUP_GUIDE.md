@@ -6,7 +6,8 @@ This guide will help you set up the backend for the new features: Forum, Social 
 
 - Supabase project with Edge Functions enabled
 - Database access to run migrations
-- OAuth app credentials for LinkedIn, Instagram, Spotify (optional)
+- OAuth app credentials for LinkedIn, Spotify (optional)
+- Instagram OAuth is currently disabled (requires business verification)
 
 ## 🗄️ Step 1: Run Database Migration
 
@@ -40,17 +41,21 @@ This guide will help you set up the backend for the new features: Forum, Social 
    - Copy Client ID and Client Secret
    - Add to Supabase Edge Function secrets
 
-### Instagram OAuth Setup
+### Instagram OAuth Setup (Currently Disabled)
 
-1. **Create Instagram App**
+⚠️ **Note:** Instagram OAuth is currently disabled in the codebase because it requires business verification. The endpoints are commented out and can be re-enabled once verification is complete.
+
+1. **Create Instagram App** (when ready)
    - Go to https://developers.facebook.com/apps
    - Create new app → Select "Consumer" type
    - Add Instagram Basic Display product
    - Add redirect URL: `https://your-domain.com/auth/instagram/callback`
+   - Complete business verification process
 
 2. **Get Credentials**
    - Copy App ID and App Secret
    - Add to Supabase Edge Function secrets
+   - Uncomment Instagram endpoints in `supabase/functions/make-server-2516be19/index.ts`
 
 ### Spotify OAuth Setup
 
@@ -63,11 +68,14 @@ This guide will help you set up the backend for the new features: Forum, Social 
    - Copy Client ID and Client Secret
    - Add to Supabase Edge Function secrets
 
-### Apple Music Setup
+### Apple Music Setup (Currently Disabled)
+
+⚠️ **Note:** Apple Music integration is currently disabled in the codebase. The endpoints are commented out and can be re-enabled when ready.
 
 - Requires Apple Developer account
 - Uses MusicKit JS on frontend
 - No OAuth flow needed (handled client-side)
+- Uncomment endpoints in `supabase/functions/make-server-2516be19/index.ts` when ready
 
 ## 🔧 Step 3: Configure Environment Variables
 
@@ -79,8 +87,9 @@ Add these to your Supabase Edge Function secrets:
 LINKEDIN_CLIENT_ID=your_linkedin_client_id
 LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
 
-INSTAGRAM_CLIENT_ID=your_instagram_app_id
-INSTAGRAM_CLIENT_SECRET=your_instagram_app_secret
+# Instagram (disabled - uncomment when business verification is complete)
+# INSTAGRAM_CLIENT_ID=your_instagram_app_id
+# INSTAGRAM_CLIENT_SECRET=your_instagram_app_secret
 
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
@@ -221,14 +230,14 @@ export function AuthCallback() {
 - `POST /social/linkedin/connect` - Initiate LinkedIn OAuth
 - `POST /social/linkedin/callback` - Handle LinkedIn callback
 - `POST /social/linkedin/disconnect` - Disconnect LinkedIn
-- `POST /social/instagram/connect` - Initiate Instagram OAuth
-- `POST /social/instagram/callback` - Handle Instagram callback
-- `POST /social/instagram/disconnect` - Disconnect Instagram
+- `POST /social/instagram/connect` - Initiate Instagram OAuth (currently disabled)
+- `POST /social/instagram/callback` - Handle Instagram callback (currently disabled)
+- `POST /social/instagram/disconnect` - Disconnect Instagram (currently disabled)
 - `POST /social/spotify/connect` - Initiate Spotify OAuth
 - `POST /social/spotify/callback` - Handle Spotify callback
 - `POST /social/spotify/disconnect` - Disconnect Spotify
-- `POST /social/appleMusic/connect` - Connect Apple Music
-- `POST /social/appleMusic/disconnect` - Disconnect Apple Music
+- `POST /social/appleMusic/connect` - Connect Apple Music (currently disabled)
+- `POST /social/appleMusic/disconnect` - Disconnect Apple Music (currently disabled)
 
 All endpoints require authentication via `Authorization: Bearer <token>` header.
 
