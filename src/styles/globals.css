@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
 @custom-variant dark (&:is(.dark *));
 
 /* Mobile optimizations */
@@ -91,9 +93,6 @@ body {
     overscroll-behavior: none;
   }
 }
-
-/* Bonded Typography - Satoshi font family */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
 /* Apply font family globally */
 * {

@@ -506,53 +506,54 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                 </div>
               ) : (
                 chats.map((chat) => {
-                if (!chat?.chatId || !chat?.otherUser) {
-                  console.warn('Invalid chat data:', chat);
-                  return null;
-                }
+                  if (!chat?.chatId || !chat?.otherUser) {
+                    console.warn('Invalid chat data:', chat);
+                    return null;
+                  }
 
-                return (
-                  <div
-                    key={chat.chatId}
-                    onClick={() => setSelectedChat(chat)}
-                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3"
-                  >
-                    <Avatar className="w-14 h-14">
-                      <AvatarImage src={chat.otherUser?.profilePicture} />
-                      <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
-                        {getInitials(chat.otherUser?.name || 'User')}
-                      </AvatarFallback>
-                    </Avatar>
+                  return (
+                    <div
+                      key={chat.chatId}
+                      onClick={() => setSelectedChat(chat)}
+                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3"
+                    >
+                      <Avatar className="w-14 h-14">
+                        <AvatarImage src={chat.otherUser?.profilePicture} />
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
+                          {getInitials(chat.otherUser?.name || 'User')}
+                        </AvatarFallback>
+                      </Avatar>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between mb-1">
-                        <h3 className="font-medium">{chat.otherUser?.name || 'Unknown'}</h3>
-                        <div className="flex items-center gap-2">
-                          {chat.unreadCount > 0 && (
-                            <span className="bg-indigo-600 text-white text-xs font-medium rounded-full px-2 py-0.5 min-w-[20px] text-center">
-                              {chat.unreadCount}
-                            </span>
-                          )}
-                          {chat.lastMessage && (
-                            <span className="text-xs text-gray-500">
-                              {formatTime(chat.lastMessageTimestamp || new Date().toISOString())}
-                            </span>
-                          )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between mb-1">
+                          <h3 className="font-medium">{chat.otherUser?.name || 'Unknown'}</h3>
+                          <div className="flex items-center gap-2">
+                            {chat.unreadCount > 0 && (
+                              <span className="bg-indigo-600 text-white text-xs font-medium rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                                {chat.unreadCount}
+                              </span>
+                            )}
+                            {chat.lastMessage && (
+                              <span className="text-xs text-gray-500">
+                                {formatTime(chat.lastMessageTimestamp || new Date().toISOString())}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        {chat.lastMessage ? (
+                          <p className={`text-sm truncate ${chat.unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
+                            {chat.lastMessage}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-400 italic">
+                            Start a conversation
+                          </p>
+                        )}
                       </div>
-                      {chat.lastMessage ? (
-                        <p className={`text-sm truncate ${chat.unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
-                          {chat.lastMessage}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-gray-400 italic">
-                          Start a conversation
-                        </p>
-                      )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           )}
         </div>

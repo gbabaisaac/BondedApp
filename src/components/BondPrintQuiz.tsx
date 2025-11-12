@@ -142,7 +142,6 @@ export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: 
       <div
         className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 overflow-y-auto p-4"
         style={{
-          height: '100vh',
           height: '100dvh',
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
@@ -251,7 +250,6 @@ export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: 
       <div
         className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 flex items-center justify-center p-4"
         style={{
-          height: '100vh',
           height: '100dvh',
           WebkitOverflowScrolling: 'touch'
         }}
@@ -287,7 +285,6 @@ export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: 
     <div
       className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 overflow-y-auto p-4"
       style={{
-        height: '100vh',
         height: '100dvh',
         WebkitOverflowScrolling: 'touch',
         overscrollBehavior: 'contain',
