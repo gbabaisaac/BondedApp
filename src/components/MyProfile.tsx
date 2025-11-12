@@ -25,7 +25,7 @@ import {
   Camera,
   ArrowLeft,
 } from 'lucide-react';
-import { ProfileSetup } from './ProfileSetup';
+import { EditProfile } from './EditProfile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
@@ -74,22 +74,12 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
   // Edit Profile View
   if (currentView === 'edit') {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => setCurrentView('profile')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors -ml-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="text-xl">Edit Profile</h2>
-        </div>
-        <ProfileSetup
-          accessToken={accessToken}
-          onComplete={handleEditComplete}
-          existingProfile={userProfile}
-        />
-      </div>
+      <EditProfile
+        userProfile={userProfile}
+        accessToken={accessToken}
+        onComplete={handleEditComplete}
+        onCancel={() => setCurrentView('profile')}
+      />
     );
   }
 

@@ -256,6 +256,13 @@ app.post("/profile", async (c) => {
       schoolUsers.push(userId);
       await kv.set(schoolKey, schoolUsers);
     }
+    
+    // Maintain list of all schools
+    const allSchools = await kv.get('schools:all') || [];
+    if (!allSchools.includes(school)) {
+      allSchools.push(school);
+      await kv.set('schools:all', allSchools);
+    }
 
     return c.json(profile);
   } catch (error: any) {
@@ -2144,19 +2151,49 @@ app.post("/ai-assistant/search", async (c) => {
       return c.json({ error: 'User profile not found' }, 404);
     }
 
-    // Get all profiles from user's school
+    // Get all profiles from user's school first
     const schoolKey = `school:${userProfile.school}:users`;
     const schoolUserIds = await kv.get(schoolKey) || [];
     
     // Filter out current user
-    const otherUserIds = schoolUserIds.filter((id: string) => id !== userId);
+    let otherUserIds = schoolUserIds.filter((id: string) => id !== userId);
     
-    // Get profiles
-    const profiles = [];
+    // Get profiles from user's school
+    let profiles = [];
     for (const otherUserId of otherUserIds.slice(0, 100)) { // Limit to 100 for performance
       const profile = await kv.get(`user:${otherUserId}`);
       if (profile && profile.id !== userId) {
         profiles.push(profile);
+      }
+    }
+    
+    // If no profiles found in user's school, branch out to other schools
+    if (profiles.length === 0) {
+      console.log(`No profiles found in ${userProfile.school}, searching other schools...`);
+      
+      // Get list of all schools
+      const allSchools = await kv.get('schools:all') || [];
+      
+      // Search through other schools
+      for (const otherSchool of allSchools) {
+        if (otherSchool === userProfile.school) continue; // Skip user's school (already searched)
+        
+        const otherSchoolKey = `school:${otherSchool}:users`;
+        const otherSchoolUserIds = await kv.get(otherSchoolKey) || [];
+        
+        // Get profiles from this school
+        for (const otherUserId of otherSchoolUserIds.slice(0, 50)) { // Limit per school
+          const profile = await kv.get(`user:${otherUserId}`);
+          if (profile && profile.id !== userId) {
+            profiles.push(profile);
+          }
+        }
+        
+        // If we found some profiles, stop searching (prioritize first school with matches)
+        if (profiles.length > 0) {
+          console.log(`Found ${profiles.length} profiles in ${otherSchool}`);
+          break;
+        }
       }
     }
 
