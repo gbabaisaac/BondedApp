@@ -622,6 +622,56 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
 
   // AI Chat View
   if (isAIChat) {
+    // If profile is selected, show ProfileDetailView instead
+    if (selectedProfile) {
+      // Find all profiles from all suggestion messages
+      const allProfiles: any[] = [];
+      aiMessages.forEach((msg: any) => {
+        if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
+          msg.metadata.profiles.forEach((p: any) => {
+            if (!allProfiles.find(prof => prof.id === p.id)) {
+              allProfiles.push(p);
+            }
+          });
+        }
+      });
+      
+      const currentIndex = allProfiles.findIndex(p => p.id === selectedProfile.id);
+      
+      // Map profile data to match ProfileDetailView interface
+      const mappedProfile = {
+        ...selectedProfile,
+        age: selectedProfile.age || 20, // Default age if not provided
+        school: selectedProfile.school || userProfile?.school || 'University',
+        imageUrl: selectedProfile.profilePicture || selectedProfile.imageUrl || selectedProfile.photos?.[0] || '',
+        photos: selectedProfile.photos || [selectedProfile.profilePicture].filter(Boolean),
+        bio: selectedProfile.bio || '',
+        interests: selectedProfile.interests || [],
+        lookingFor: selectedProfile.lookingFor || [],
+        personality: selectedProfile.personality || [],
+      };
+      
+      return (
+        <ProfileDetailView
+          profile={mappedProfile}
+          onClose={() => setSelectedProfile(null)}
+          onNext={() => {
+            if (currentIndex < allProfiles.length - 1) {
+              setSelectedProfile(allProfiles[currentIndex + 1]);
+            }
+          }}
+          onPrev={() => {
+            if (currentIndex > 0) {
+              setSelectedProfile(allProfiles[currentIndex - 1]);
+            }
+          }}
+          hasNext={currentIndex < allProfiles.length - 1}
+          hasPrev={currentIndex > 0}
+          accessToken={accessToken}
+        />
+      );
+    }
+    
     return (
       <div className="h-full flex flex-col bg-white">
         {/* AI Chat Header */}
@@ -712,38 +762,45 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                       </div>
                     </div>
 
-                    {/* Intro Request UI */}
+                    {/* Intro Request UI - Clean card design */}
                     {isIntroRequest && message.metadata?.introRequestId && (
-                      <div className="mt-2 ml-10 max-w-md">
-                        <Card className="border-2 border-[#2E7B91]/30">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex items-start gap-3">
-                              <Avatar className="w-10 h-10">
-                                <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
+                      <div className="mt-3 ml-10 max-w-md">
+                        <Card className="border-2 border-[#2E7B91]/20 bg-gradient-to-br from-white to-[#F9F6F3] shadow-md">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3 mb-4">
+                              <Avatar className="w-12 h-12 ring-2 ring-[#2E7B91]/30">
+                                <AvatarImage src={message.metadata.fromUserPhoto} />
+                                <AvatarFallback className="bg-gradient-to-br from-[#2E7B91] to-[#25658A] text-white font-semibold">
                                   {getInitials(message.metadata.fromUserName || 'U')}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="flex-1">
-                                <p className="text-sm font-medium">{message.metadata.fromUserName} wants to connect</p>
-                                <p className="text-xs text-gray-600 mt-1">{message.content}</p>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-base text-[#1E4F74] mb-0.5">
+                                  {message.metadata.fromUserName || 'Someone'} wants to connect
+                                </h4>
+                                {message.metadata.fromUserMajor && (
+                                  <p className="text-xs text-[#64748b]">
+                                    {message.metadata.fromUserMajor} • {message.metadata.fromUserYear || 'Student'}
+                                  </p>
+                                )}
                               </div>
                             </div>
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 onClick={() => handleIntroResponse(message.metadata.introRequestId, true)}
-                                className="flex-1 bg-[#2E7B91] hover:bg-[#25658A]"
+                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white font-medium shadow-sm min-w-[100px]"
                               >
-                                <UserPlus className="w-4 h-4 mr-1" />
+                                <UserPlus className="w-4 h-4 mr-1.5" />
                                 Accept
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleIntroResponse(message.metadata.introRequestId, false)}
-                                className="flex-1"
+                                className="flex-1 border-2 border-[#EAEAEA] hover:border-[#2E7B91]/30 hover:bg-[#F9F6F3] font-medium min-w-[100px]"
                               >
-                                <X className="w-4 h-4 mr-1" />
+                                <X className="w-4 h-4 mr-1.5" />
                                 Decline
                               </Button>
                             </div>
@@ -860,75 +917,6 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
             </Button>
           </div>
         </div>
-        
-        {/* Profile Detail View */}
-        {selectedProfile && (
-          <ProfileDetailView
-            profile={selectedProfile}
-            onClose={() => setSelectedProfile(null)}
-            onNext={() => {
-              // Find all profiles from all suggestion messages
-              const allProfiles: any[] = [];
-              aiMessages.forEach((msg: any) => {
-                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
-                  msg.metadata.profiles.forEach((p: any) => {
-                    if (!allProfiles.find(prof => prof.id === p.id)) {
-                      allProfiles.push(p);
-                    }
-                  });
-                }
-              });
-              const currentIndex = allProfiles.findIndex(p => p.id === selectedProfile.id);
-              if (currentIndex < allProfiles.length - 1) {
-                setSelectedProfile(allProfiles[currentIndex + 1]);
-              }
-            }}
-            onPrev={() => {
-              // Find all profiles from all suggestion messages
-              const allProfiles: any[] = [];
-              aiMessages.forEach((msg: any) => {
-                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
-                  msg.metadata.profiles.forEach((p: any) => {
-                    if (!allProfiles.find(prof => prof.id === p.id)) {
-                      allProfiles.push(p);
-                    }
-                  });
-                }
-              });
-              const currentIndex = allProfiles.findIndex(p => p.id === selectedProfile.id);
-              if (currentIndex > 0) {
-                setSelectedProfile(allProfiles[currentIndex - 1]);
-              }
-            }}
-            hasNext={(() => {
-              const allProfiles: any[] = [];
-              aiMessages.forEach((msg: any) => {
-                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
-                  msg.metadata.profiles.forEach((p: any) => {
-                    if (!allProfiles.find(prof => prof.id === p.id)) {
-                      allProfiles.push(p);
-                    }
-                  });
-                }
-              });
-              return allProfiles.findIndex(p => p.id === selectedProfile.id) < allProfiles.length - 1;
-            })()}
-            hasPrev={(() => {
-              const allProfiles: any[] = [];
-              aiMessages.forEach((msg: any) => {
-                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
-                  msg.metadata.profiles.forEach((p: any) => {
-                    if (!allProfiles.find(prof => prof.id === p.id)) {
-                      allProfiles.push(p);
-                    }
-                  });
-                }
-              });
-              return allProfiles.findIndex(p => p.id === selectedProfile.id) > 0;
-            })()}
-            accessToken={accessToken}
-          />
-        )}
       </div>
     );
   }

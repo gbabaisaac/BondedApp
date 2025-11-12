@@ -138,12 +138,10 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
   return (
     <div
-      className="fixed inset-0 bg-white z-[100] flex flex-col"
+      className="fixed inset-0 bg-white z-[9999] flex flex-col"
       style={{
-        height: '100vh',
         height: '100dvh',
         maxHeight: '100dvh',
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         position: 'fixed',
@@ -151,10 +149,10 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 100,
+        zIndex: 9999,
         WebkitTransform: 'translateZ(0)',
         transform: 'translateZ(0)',
-        overflow: 'visible', // Allow buttons to escape
+        overflow: 'hidden',
       }}
     >
       {/* Header */}

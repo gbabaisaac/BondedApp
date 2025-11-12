@@ -2473,12 +2473,15 @@ Be natural and conversational. Return ONLY the message text, no quotes or markdo
       content: introMessage,
       timestamp: new Date().toISOString(),
       type: 'ai',
-      metadata: {
-        type: 'soft-intro-request',
-        introRequestId: introRequest.id,
-        fromUserId: userId,
-        fromUserName: userProfile.name,
-      },
+        metadata: {
+          type: 'soft-intro-request',
+          introRequestId: introRequest.id,
+          fromUserId: userId,
+          fromUserName: userProfile.name,
+          fromUserPhoto: userProfile.profilePicture || userProfile.photos?.[0],
+          fromUserMajor: userProfile.major,
+          fromUserYear: userProfile.year,
+        },
     };
     aiChat.messages.push(aiNotificationMessage);
     await kv.set(aiChatId, aiChat);
