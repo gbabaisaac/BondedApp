@@ -1,6 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Home, Users, MessageCircle, User } from 'lucide-react';
-import { projectId } from '../utils/supabase/info';
+import { projectId } from '../utils/supabase/config';
+import { POLL_INTERVALS } from '../config/app-config';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -18,7 +19,7 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
   useEffect(() => {
     if (accessToken) {
       loadCounts();
-      const interval = setInterval(loadCounts, 5000); // Update every 5 seconds (reduced from 10 for better responsiveness)
+      const interval = setInterval(loadCounts, POLL_INTERVALS.CHAT_COUNTS);
       return () => clearInterval(interval);
     }
   }, [accessToken]);
@@ -69,7 +70,13 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
         setUnreadCount(totalUnread);
       }
     } catch (error) {
-      console.error('Error loading counts:', error);
+      // Error loading counts - will retry on next interval
+      if (error instanceof Error) {
+        // Only log in development
+        if (import.meta.env.DEV) {
+          console.error('Error loading counts:', error);
+        }
+      }
     }
   };
 
@@ -138,7 +145,6 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
                       </span>
                     )}
                   </div>
-                  <span className="text-xs mt-1">{tab.label}</span>
                 </button>
               );
             })}

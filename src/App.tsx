@@ -3,6 +3,10 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { getSupabaseClient } from './utils/supabase/client';
 import { projectId, publicAnonKey } from './utils/supabase/info';
+import { initSentry, setSentryUser, clearSentryUser } from './config/sentry';
+
+// Initialize Sentry for error tracking
+initSentry();
 
 // Lazy load heavy components
 const AuthFlow = lazy(() => import('./components/AuthFlow').then(module => ({ default: module.AuthFlow })));
@@ -12,10 +16,12 @@ const BondPrintQuiz = lazy(() => import('./components/BondPrintQuiz').then(modul
 const BondPrintResults = lazy(() => import('./components/BondPrintResults').then(module => ({ default: module.BondPrintResults })));
 const BetaAccessGate = lazy(() => import('./components/BetaAccessGate').then(module => ({ default: module.BetaAccessGate })));
 const Toaster = lazy(() => import('./components/ui/sonner').then(module => ({ default: module.Toaster })));
+const OfflineIndicator = lazy(() => import('./components/OfflineIndicator').then(module => ({ default: module.OfflineIndicator })));
+const InstallAppPrompt = lazy(() => import('./components/InstallAppPrompt').then(module => ({ default: module.InstallAppPrompt })));
 
 const supabase = getSupabaseClient();
 
-type AppState = 'loading' | 'auth' | 'profile-setup' | 'love-print-quiz' | 'love-print-results' | 'main';
+type AppState = 'loading' | 'auth' | 'profile-setup' | 'bond-print-quiz' | 'bond-print-results' | 'main';
 
 interface UserProfile {
   id: string;
@@ -63,19 +69,25 @@ export default function App() {
       
       if (session?.access_token) {
         setAccessToken(session.access_token);
+        // Set user context in Sentry for error tracking
+        setSentryUser(session.user.id, session.user.email);
         await loadUserProfile(session.user.id);
       } else {
         setTimeout(() => setAppState('auth'), 2000);
       }
     } catch (error) {
-      console.error('Session check error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Session check error:', error);
+      }
       setTimeout(() => setAppState('auth'), 2000);
     }
   };
 
   const loadUserProfile = async (userId: string) => {
     try {
-      console.log('Loading profile for user:', userId);
+      if (import.meta.env.DEV) {
+        console.log('Loading profile for user:', userId);
+      }
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/profile/${userId}`,
         {
@@ -85,11 +97,11 @@ export default function App() {
         }
       );
 
-      console.log('Profile response status:', response.status);
-
       if (response.ok) {
         const profile = await response.json();
-        console.log('Profile loaded:', profile);
+        if (import.meta.env.DEV) {
+          console.log('Profile loaded:', profile);
+        }
         setUserProfile(profile);
         
         // Check if user has completed Bond Print
@@ -99,11 +111,15 @@ export default function App() {
           setAppState('main');
         }
       } else {
-        console.log('Profile not found, going to profile setup');
+        if (import.meta.env.DEV) {
+          console.log('Profile not found, going to profile setup');
+        }
         setAppState('profile-setup');
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error loading profile:', error);
+      }
       setAppState('profile-setup');
     }
   };
@@ -148,12 +164,15 @@ export default function App() {
         console.error('Logout error:', error);
         // Continue with logout even if there's an error
       }
-      
+
       // Clear all state
       setAccessToken(null);
       setUserProfile(null);
       setBondPrintData(null);
-      
+
+      // Clear Sentry user context
+      clearSentryUser();
+
       // Clear localStorage (beta access, etc.)
       localStorage.removeItem('betaAccess');
       localStorage.removeItem('betaEmail');
@@ -192,37 +211,41 @@ export default function App() {
           {appState === 'loading' && <LoadingScreen />}
           <Suspense fallback={<LoadingScreen />}>
             {appState === 'auth' && <AuthFlow onAuthSuccess={handleAuthSuccess} />}
-            {appState === 'profile-setup' && (
-              <ProfileSetup
-                accessToken={accessToken!}
-                onComplete={handleProfileComplete}
-              />
-            )}
-            {appState === 'bond-print-quiz' && userProfile && (
-              <BondPrintQuiz
-                userProfile={userProfile}
-                accessToken={accessToken!}
-                onComplete={handleBondPrintComplete}
-                onSkip={handleSkipBondPrint}
-              />
-            )}
-            {appState === 'bond-print-results' && bondPrintData && (
-              <BondPrintResults
-                bondPrint={bondPrintData}
-                onContinue={handleBondPrintResultsContinue}
-              />
-            )}
-            {appState === 'main' && userProfile && (
-              <MainApp
-                userProfile={userProfile}
-                accessToken={accessToken!}
-                onLogout={handleLogout}
-              />
-            )}
+              {appState === 'profile-setup' && (
+                <ProfileSetup
+                  accessToken={accessToken!}
+                  onComplete={handleProfileComplete}
+                />
+              )}
+              {appState === 'bond-print-quiz' && userProfile && (
+                <BondPrintQuiz
+                  userProfile={userProfile}
+                  accessToken={accessToken!}
+                  onComplete={handleBondPrintComplete}
+                  onSkip={handleSkipBondPrint}
+                />
+              )}
+              {appState === 'bond-print-results' && bondPrintData && (
+                <BondPrintResults
+                  bondPrint={bondPrintData}
+                  onContinue={handleBondPrintResultsContinue}
+                />
+              )}
+              {appState === 'main' && userProfile && (
+                <MainApp
+                  userProfile={userProfile}
+                  accessToken={accessToken!}
+                  onLogout={handleLogout}
+                />
+              )}
           </Suspense>
           <Suspense fallback={null}>
             <Toaster />
           </Suspense>
+          <Suspense fallback={null}>
+            <OfflineIndicator />
+          </Suspense>
+          <InstallAppPrompt />
         </div>
       </BetaAccessGate>
     </Suspense>

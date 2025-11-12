@@ -2,6 +2,7 @@ import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { GraduationCap, MapPin } from 'lucide-react';
+import { getPhotoUrl, getLazyImageProps } from '../utils/image-optimization';
 
 interface ProfileCardProps {
   profile: any;
@@ -27,7 +28,10 @@ export function ProfileCard({ profile, onClick }: ProfileCardProps) {
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
         <div className="absolute bottom-4 left-4 right-4">
           <Avatar className="w-20 h-20 border-4 border-white">
-            <AvatarImage src={profile.profilePicture} />
+            <AvatarImage 
+              src={getPhotoUrl(profile.profilePicture || profile.photos?.[0], 'thumbnail')}
+              {...getLazyImageProps('', profile.name)}
+            />
             <AvatarFallback className="text-lg">
               {getInitials(profile.name)}
             </AvatarFallback>

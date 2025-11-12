@@ -19,6 +19,7 @@ import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
 import { ProfileDetailView } from './ProfileDetailView';
 import { ConnectionCardSkeleton } from './LoadingSkeletons';
+import { EmptyState } from './EmptyStates';
 
 interface MatchSuggestionsProps {
   userProfile: any;
@@ -265,15 +266,10 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
             {activeTab === 'pending' && (
               <>
                 {pendingIntros.length === 0 ? (
-                  <Card className="border-0 shadow-none">
-                    <CardContent className="p-8 text-center">
-                      <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No pending requests</h3>
-                      <p className="text-sm text-[#475569]">
-                        When someone sends you a connection request, it will appear here.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <EmptyState
+                    type="no-connections"
+                    description="When someone sends you a connection request, it will appear here."
+                  />
                 ) : (
                   pendingIntros.map((intro) => (
                     <Card key={intro.id} className="overflow-hidden hover:shadow-md transition-shadow">
@@ -347,15 +343,15 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
             {activeTab === 'sent' && (
               <>
                 {sentIntros.length === 0 ? (
-                  <Card className="border-0 shadow-none">
-                    <CardContent className="p-8 text-center">
-                      <Send className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No sent requests</h3>
-                      <p className="text-sm text-[#475569]">
-                        Find people on the Discover tab and send them connection requests!
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <EmptyState
+                    type="no-matches"
+                    description="Find people on the Discover tab and send them connection requests!"
+                    actionLabel="Discover People"
+                    onAction={() => {
+                      // This would need to be passed as a prop to navigate
+                      // For now, just show the message
+                    }}
+                  />
                 ) : (
                   sentIntros.map((intro) => (
                     <Card key={intro.id} className="overflow-hidden">
@@ -412,21 +408,12 @@ export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsP
             {activeTab === 'connections' && (
               <>
                 {connections.length === 0 ? (
-                  <Card className="border-0 shadow-none">
-                    <CardContent className="p-8 text-center">
-                      <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No connections yet</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Accept connection requests to start building your network!
-                      </p>
-                      <Button 
-                        onClick={() => setActiveTab('pending')}
-                        className="bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl"
-                      >
-                        Check Pending Requests
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <EmptyState
+                    type="no-connections"
+                    description="Accept connection requests to start building your network!"
+                    actionLabel="Check Pending Requests"
+                    onAction={() => setActiveTab('pending')}
+                  />
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {connections.map((connection) => {

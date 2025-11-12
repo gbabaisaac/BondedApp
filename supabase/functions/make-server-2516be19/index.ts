@@ -4,6 +4,8 @@ import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getFirstQuestion, getNextQuestion, generateLovePrint, tryCallGemini } from "./love-print-helpers.tsx";
+import { rateLimit, rateLimitConfigs } from "./rate-limiter.ts";
+import { moderateProfile, moderateMessage, logModerationAction } from "./content-moderator.ts";
 
 const app = new Hono();
 
@@ -36,16 +38,43 @@ initStorage();
 app.use('*', logger(console.log));
 
 // Enable CORS for all routes and methods
+// PRODUCTION: Update allowed origins to your actual domains
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://bonded.vercel.app',
+  'https://*.vercel.app', // Your Vercel preview deployments
+  // Add your production domain here
+];
+
 app.use(
   "/*",
   cors({
-    origin: "*",
+    origin: (origin) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return origin;
+
+      // Check if origin is in allowed list
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed.includes('*')) {
+          const pattern = new RegExp('^' + allowed.replace(/\*/g, '.*') + '$');
+          return pattern.test(origin);
+        }
+        return allowed === origin;
+      });
+
+      return isAllowed ? origin : allowedOrigins[0];
+    },
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
+    exposeHeaders: ["Content-Length", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
     maxAge: 600,
+    credentials: true,
   }),
 );
+
+// Apply general API rate limiting to all routes
+app.use("/*", rateLimit(rateLimitConfigs.api));
 
 // Middleware to verify auth and get user ID
 async function getUserId(authHeader: string | null): Promise<string | null> {
@@ -194,6 +223,23 @@ app.post("/profile", async (c) => {
 
     const profileData = await c.req.json();
 
+    // Content moderation check
+    const moderationResult = moderateProfile({
+      name: profileData.name,
+      bio: profileData.bio,
+      interests: profileData.interests,
+      major: profileData.major,
+    });
+
+    if (!moderationResult.isClean && moderationResult.severity === 'blocked') {
+      logModerationAction(userId, 'profile', moderationResult, JSON.stringify(profileData));
+      return c.json({
+        error: 'Content moderation failed',
+        reason: moderationResult.reason,
+        flaggedWords: moderationResult.flaggedWords,
+      }, 400);
+    }
+
     // Get user info from auth
     const { data: { user } } = await supabase.auth.getUser(
       c.req.header('Authorization')!.split(' ')[1]
@@ -228,8 +274,12 @@ app.post("/profile", async (c) => {
       additionalInfo: profileData.additionalInfo || undefined,
       settings: {
         readReceipts: profileData.settings?.readReceipts !== undefined ? profileData.settings.readReceipts : true, // Default to enabled
+        profileVisible: profileData.settings?.profileVisible !== undefined ? profileData.settings.profileVisible : true, // Default to visible
+        allowMessages: profileData.settings?.allowMessages !== undefined ? profileData.settings.allowMessages : true, // Default to allow
+        showOnlineStatus: profileData.settings?.showOnlineStatus !== undefined ? profileData.settings.showOnlineStatus : true, // Default to show
         ...profileData.settings,
       },
+      blockedUsers: profileData.blockedUsers || [],
       // Note: classSchedule will be added in a future update for study partner matching
       updatedAt: new Date().toISOString(),
     };
@@ -285,6 +335,87 @@ app.get("/profile/:userId", async (c) => {
   } catch (error: any) {
     console.error('Profile fetch error:', error);
     return c.json({ error: error.message }, 500);
+  }
+});
+
+// GDPR Data Export - Export all user data
+app.get("/export-data", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // Collect all user data
+    const profile = await kv.get(`user:${userId}`) || {};
+
+    // Get user's chats
+    const allChats = await kv.get('chats') || [];
+    const userChats = allChats.filter((chat: any) =>
+      chat.participants.includes(userId)
+    );
+
+    // Get messages from user's chats
+    const userMessages = await Promise.all(
+      userChats.map(async (chat: any) => {
+        const messages = await kv.get(`chat:${chat.id}:messages`) || [];
+        return {
+          chatId: chat.id,
+          messages: messages.filter((msg: any) => msg.senderId === userId),
+        };
+      })
+    );
+
+    // Get soft intros (connection requests)
+    const incomingIntros = await kv.get(`user:${userId}:soft-intros:incoming`) || [];
+    const outgoingIntros = await kv.get(`user:${userId}:soft-intros:outgoing`) || [];
+
+    // Get connections
+    const connections = await kv.get(`user:${userId}:connections`) || [];
+
+    // Get Bond Print sessions
+    const bondPrintSession = await kv.get(`bond-print-session:${userId}`);
+
+    // Compile complete data export
+    const dataExport = {
+      exportDate: new Date().toISOString(),
+      userId: userId,
+      profile: {
+        ...profile,
+        // Remove sensitive system fields
+        updatedAt: profile.updatedAt,
+        createdAt: profile.createdAt || new Date().toISOString(),
+      },
+      chats: userChats.map((chat: any) => ({
+        id: chat.id,
+        participants: chat.participants,
+        createdAt: chat.createdAt,
+        lastMessage: chat.lastMessage,
+      })),
+      messages: userMessages.flatMap(chat => chat.messages),
+      connectionRequests: {
+        sent: outgoingIntros,
+        received: incomingIntros,
+      },
+      connections: connections,
+      bondPrint: {
+        session: bondPrintSession,
+        results: profile.bondPrint,
+      },
+      dataRetention: {
+        note: 'This export includes all personal data we store about you.',
+        deletion: 'To delete your account and all data, go to Settings > Account > Delete Account',
+      },
+    };
+
+    // Set headers for file download
+    c.header('Content-Type', 'application/json');
+    c.header('Content-Disposition', `attachment; filename="bonded-data-export-${userId}-${Date.now()}.json"`);
+
+    return c.json(dataExport);
+  } catch (error: any) {
+    console.error('Data export error:', error);
+    return c.json({ error: 'Failed to export data', details: error.message }, 500);
   }
 });
 
@@ -1456,6 +1587,16 @@ app.post("/chat/:chatId/message", async (c) => {
 
     const chatId = c.req.param('chatId');
     const { content } = await c.req.json();
+
+    // Content moderation check
+    const moderationResult = moderateMessage(content);
+    if (!moderationResult.isClean && moderationResult.severity === 'blocked') {
+      logModerationAction(userId, 'message', moderationResult, content);
+      return c.json({
+        error: 'Message contains inappropriate content',
+        reason: moderationResult.reason,
+      }, 400);
+    }
 
     const chat = await kv.get(`chat:${chatId}`);
     if (!chat || !chat.participants.includes(userId)) {
@@ -3697,6 +3838,142 @@ app.post("/love-mode/request-reveal", async (c) => {
     }
   } catch (error: any) {
     console.error('Request reveal error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Report user endpoint
+app.post("/user/:userId/report", async (c) => {
+  try {
+    const reporterId = await getUserId(c.req.header('Authorization'));
+    if (!reporterId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const reportedUserId = c.req.param('userId');
+    const body = await c.req.json();
+    const { reason, details } = body;
+
+    if (!reason) {
+      return c.json({ error: 'Reason is required' }, 400);
+    }
+
+    // Store report
+    const reportId = `report:${Date.now()}:${reporterId}`;
+    const report = {
+      id: reportId,
+      reporterId,
+      reportedUserId,
+      reason,
+      details: details || '',
+      timestamp: new Date().toISOString(),
+      status: 'pending',
+    };
+
+    // Store in reports list
+    const reports = await kv.get('reports:all') || [];
+    reports.push(report);
+    await kv.set('reports:all', reports);
+
+    // Also store individual report
+    await kv.set(reportId, report);
+
+    return c.json({ success: true, message: 'Report submitted. We will review it shortly.' });
+  } catch (error: any) {
+    console.error('Report user error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Block user endpoint
+app.post("/user/:userId/block", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const blockedUserId = c.req.param('userId');
+
+    if (userId === blockedUserId) {
+      return c.json({ error: 'Cannot block yourself' }, 400);
+    }
+
+    // Get user profile
+    const userProfile = await kv.get(`user:${userId}`);
+    if (!userProfile) {
+      return c.json({ error: 'User profile not found' }, 404);
+    }
+
+    // Add to blocked users list
+    const blockedUsers = userProfile.blockedUsers || [];
+    if (!blockedUsers.includes(blockedUserId)) {
+      blockedUsers.push(blockedUserId);
+      userProfile.blockedUsers = blockedUsers;
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    return c.json({ success: true, message: 'User blocked successfully' });
+  } catch (error: any) {
+    console.error('Block user error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Unblock user endpoint
+app.post("/user/:userId/unblock", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const unblockedUserId = c.req.param('userId');
+
+    // Get user profile
+    const userProfile = await kv.get(`user:${userId}`);
+    if (!userProfile) {
+      return c.json({ error: 'User profile not found' }, 404);
+    }
+
+    // Remove from blocked users list
+    const blockedUsers = (userProfile.blockedUsers || []).filter((id: string) => id !== unblockedUserId);
+    userProfile.blockedUsers = blockedUsers;
+    await kv.set(`user:${userId}`, userProfile);
+
+    return c.json({ success: true, message: 'User unblocked successfully' });
+  } catch (error: any) {
+    console.error('Unblock user error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get blocked users list
+app.get("/user/blocked", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userProfile = await kv.get(`user:${userId}`);
+    if (!userProfile) {
+      return c.json({ error: 'User profile not found' }, 404);
+    }
+
+    const blockedUserIds = userProfile.blockedUsers || [];
+    
+    // Get blocked user profiles
+    const blockedProfiles = await Promise.all(
+      blockedUserIds.map(async (id: string) => {
+        const profile = await kv.get(`user:${id}`);
+        return profile ? { id, name: profile.name, profilePicture: profile.profilePicture } : null;
+      })
+    );
+
+    return c.json({ blockedUsers: blockedProfiles.filter(Boolean) });
+  } catch (error: any) {
+    console.error('Get blocked users error:', error);
     return c.json({ error: error.message }, 500);
   }
 });

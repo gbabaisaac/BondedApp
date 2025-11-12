@@ -16,9 +16,12 @@ import {
   UserPlus,
   X
 } from 'lucide-react';
-import { projectId } from '../utils/supabase/info';
+import { projectId } from '../utils/supabase/config';
+import { POLL_INTERVALS } from '../config/app-config';
 import { toast } from 'sonner';
+import { logger } from '../utils/logger';
 import { ChatListSkeleton, MessagesSkeleton } from './LoadingSkeletons';
+import { EmptyState } from './EmptyStates';
 import { ProfileDetailView } from './ProfileDetailView';
 import './ChatView.css';
 import { isFeatureEnabled } from '../config/features';
@@ -50,7 +53,7 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
 
   useEffect(() => {
     loadChats();
-    const interval = setInterval(loadChats, 3000); // Poll every 3 seconds
+    const interval = setInterval(loadChats, POLL_INTERVALS.MESSAGES);
     return () => clearInterval(interval);
   }, []);
 
@@ -72,8 +75,8 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       loadMessages();
       checkTypingStatus();
       markMessagesAsRead(); // Mark messages as read when opening chat
-      const messageInterval = setInterval(loadMessages, 3000); // Poll every 3 seconds
-      const typingInterval = setInterval(checkTypingStatus, 1000); // Check typing every second
+      const messageInterval = setInterval(loadMessages, POLL_INTERVALS.MESSAGES);
+      const typingInterval = setInterval(checkTypingStatus, POLL_INTERVALS.TYPING_STATUS);
       return () => {
         clearInterval(messageInterval);
         clearInterval(typingInterval);
@@ -592,15 +595,14 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
 
               {/* Regular Chats */}
               {chats.length === 0 ? (
-                <div className="flex items-center justify-center p-8">
-                  <p className="text-sm text-gray-500 text-center">
-                    No messages yet. Start a conversation!
-                  </p>
-                </div>
+                <EmptyState
+                  type="no-chats"
+                  description="Your conversations will appear here once you start messaging."
+                />
               ) : (
                 chats.map((chat) => {
                   if (!chat?.chatId || !chat?.otherUser) {
-                    console.warn('Invalid chat data:', chat);
+                    logger.warn('Invalid chat data:', chat);
                     return null;
                   }
 
@@ -608,7 +610,16 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                     <div
                       key={chat.chatId}
                       onClick={() => setSelectedChat(chat)}
-                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedChat(chat);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Chat with ${chat.otherUser?.name || 'user'}`}
+                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-[#2E7B91]"
                     >
                       <Avatar className="w-14 h-14">
                         <AvatarImage src={chat.otherUser?.profilePicture} />

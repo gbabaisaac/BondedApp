@@ -31,6 +31,8 @@ import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
+import { apiPost } from '../utils/api-client';
+import { ProfileCompleteness } from './ProfileCompleteness';
 
 interface MyProfileProps {
   userProfile: any;
@@ -301,6 +303,12 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
 
       {/* Profile Content */}
       <div className="p-4 space-y-4">
+        {/* Profile Completeness */}
+        <ProfileCompleteness
+          userProfile={userProfile}
+          onComplete={() => setCurrentView('edit')}
+        />
+
         {/* Profile Header Card */}
         <Card>
           <div className="relative">

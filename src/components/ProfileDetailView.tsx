@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronLeft, ChevronRight, Heart, Sparkles, Instagram, Send } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart, Sparkles, Instagram, Send, Share2, MoreVertical } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { SoftIntroFlow } from './SoftIntroFlow';
-import { projectId } from '../utils/supabase/info';
+import { projectId } from '../utils/supabase/config';
 import { theme } from '../utils/theme';
+import { shareProfile } from '../utils/deep-linking';
+import { ReportBlockModal } from './ReportBlockModal';
 import './ProfileDetailView.css';
 
 interface Profile {
@@ -41,10 +43,13 @@ interface ProfileDetailViewProps {
 export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, hasPrev, accessToken }: ProfileDetailViewProps) {
   const [showSoftIntro, setShowSoftIntro] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [showReportBlock, setShowReportBlock] = useState(false);
   
-  // Debug: Ensure buttons are rendered
+  // Debug: Ensure buttons are rendered (development only)
   useEffect(() => {
-    console.log('ProfileDetailView: Buttons should be visible at bottom');
+    if (import.meta.env.DEV) {
+      console.log('ProfileDetailView: Buttons should be visible at bottom');
+    }
     // Force a re-render check after a short delay
     setTimeout(() => {
       const buttonElement = document.querySelector('[data-action-buttons]');
@@ -164,7 +169,27 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           <h3 className="font-semibold text-lg">{profile.name}, {profile.age}</h3>
           <p className="text-sm text-[#64748b]">{profile.school}</p>
         </div>
-        <div className="w-10" /> {/* Spacer for centering */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              shareProfile(profile.id, profile.name);
+              toast.success('Profile link copied!');
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Share profile"
+          >
+            <Share2 className="w-5 h-5 text-[#2E7B91]" />
+          </button>
+          {accessToken && (
+            <button
+              onClick={() => setShowReportBlock(true)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="More options"
+            >
+              <MoreVertical className="w-5 h-5 text-[#2E7B91]" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Scrollable Content */}
@@ -418,7 +443,8 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
                 }
                 setShowSoftIntro(true);
               }}
-              className="flex-1 gap-2 font-semibold h-12 shadow-lg text-base rounded-2xl flex items-center justify-center"
+              aria-label={`Send soft intro to ${profile.name}`}
+              className="flex-1 gap-2 font-semibold h-12 shadow-lg text-base rounded-2xl flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#2E7B91]"
               style={{ 
                 color: '#ffffff',
                 backgroundColor: '#2E7B91',
@@ -427,7 +453,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
                 border: 'none',
               }}
             >
-              <Sparkles className="w-5 h-5" style={{ color: '#ffffff', fill: 'none', stroke: '#ffffff' }} />
+              <Sparkles className="w-5 h-5" style={{ color: '#ffffff', fill: 'none', stroke: '#ffffff' }} aria-hidden="true" />
               <span style={{ color: '#ffffff', fontWeight: 600 }}>Soft Intro</span>
             </button>
           </div>
@@ -441,6 +467,21 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
           profile={profile}
           onClose={() => setShowSoftIntro(false)}
           accessToken={accessToken}
+        />
+      )}
+      
+      {/* Report/Block Modal */}
+      {accessToken && (
+        <ReportBlockModal
+          userId={profile.id}
+          userName={profile.name}
+          accessToken={accessToken}
+          open={showReportBlock}
+          onClose={() => setShowReportBlock(false)}
+          onBlock={() => {
+            toast.success('User blocked. They will no longer appear in your feed.');
+            onClose();
+          }}
         />
       )}
     </div>

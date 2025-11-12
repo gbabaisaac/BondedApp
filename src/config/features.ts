@@ -6,12 +6,12 @@
  */
 
 export const FEATURES = {
-  // Love Mode - Disabled for initial beta, will roll out next quarter
-  LOVE_MODE_ENABLED: false,
-  
-  // AI Assistant (Link) - Disabled for initial beta, will roll out after user acquisition
-  AI_ASSISTANT_ENABLED: false,
-  
+  // Love Mode - ENABLED with new design
+  LOVE_MODE_ENABLED: true,
+
+  // AI Assistant (Link) - ENABLED for Love Mode
+  AI_ASSISTANT_ENABLED: true,
+
   // Other features can be added here
   // EXAMPLE_FEATURE: true,
 } as const;

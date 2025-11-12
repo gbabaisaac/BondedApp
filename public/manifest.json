@@ -5,8 +5,10 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4F46E5",
+  "theme_color": "#2E7B91",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/Bonded_transparent_icon.png",

@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
-import { projectId } from '../utils/supabase/info';
+import { projectId } from '../utils/supabase/config';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
+import { EmptyState } from './EmptyStates';
+import { apiGet } from '../utils/api-client';
+import { EnhancedSearch } from './EnhancedSearch';
+import { toast } from 'sonner';
 
 interface InstagramGridProps {
   userProfile?: any;
@@ -35,7 +39,14 @@ interface Profile {
 export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }: InstagramGridProps) {
   const [selectedProfileIndex, setSelectedProfileIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterLookingFor, setFilterLookingFor] = useState<string>('All');
+  const [filters, setFilters] = useState({
+    major: 'all',
+    year: 'all',
+    lookingFor: 'all',
+    academicGoal: 'all',
+    leisureGoal: 'all',
+    sortBy: 'newest' as 'newest' | 'compatibility' | 'name',
+  });
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [bondPrintScores, setBondPrintScores] = useState<Record<string, number>>({});
@@ -51,35 +62,34 @@ export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }:
     }
 
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/profiles?school=${encodeURIComponent(userProfile.school)}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
+      const data = await apiGet<Profile[]>(
+        `/profiles?school=${encodeURIComponent(userProfile.school)}`,
+        accessToken,
+        { maxRetries: 2 }
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        // Filter out current user and map to expected format
-        const otherProfiles = data
-          .filter((p: any) => p.id !== userProfile.id)
-          .map((p: any) => ({
-            ...p,
-            imageUrl: p.profilePicture || p.photos?.[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
-            age: p.age || 20, // Default age if not provided
-          }));
-        
-        setProfiles(otherProfiles);
-        
-        // Load Bond Print compatibility scores for all profiles
-        if (userProfile.bondPrint) {
-          loadBondPrintScores(otherProfiles);
-        }
+      
+      // Filter out current user and blocked users, map to expected format
+      const userBlocked = userProfile.blockedUsers || [];
+      const otherProfiles = data
+        .filter((p: any) => p.id !== userProfile.id && !userBlocked.includes(p.id))
+        .map((p: any) => ({
+          ...p,
+          imageUrl: p.profilePicture || p.photos?.[0] || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
+          age: p.age || 20, // Default age if not provided
+        }));
+      
+      setProfiles(otherProfiles);
+      
+      // Load Bond Print compatibility scores for all profiles
+      if (userProfile.bondPrint) {
+        loadBondPrintScores(otherProfiles);
       }
-    } catch (error) {
-      console.error('Error loading profiles:', error);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to load profiles';
+      if (import.meta.env.DEV) {
+        console.error('Error loading profiles:', error);
+      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -91,7 +101,8 @@ export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }:
     const scores: Record<string, number> = {};
     
     // Batch fetch compatibility scores (limit to avoid too many requests)
-    const profilesToCheck = profileList.slice(0, 20); // Check first 20
+    const { BOND_PRINT_LIMITS } = await import('../config/app-config');
+    const profilesToCheck = profileList.slice(0, BOND_PRINT_LIMITS.MAX_PARALLEL_CHECKS);
     
     await Promise.all(
       profilesToCheck.map(async (profile) => {
@@ -125,27 +136,84 @@ export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }:
     setBondPrintScores(scores);
   };
 
-  const filteredProfiles = profiles
-    .filter(profile => {
-      const matchesSearch = searchQuery === '' || 
-        profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.major.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.interests.some(i => i.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      const matchesFilter = filterLookingFor === 'All' || 
-        profile.lookingFor.some(lf => lf.toLowerCase().includes(filterLookingFor.toLowerCase()));
-      
-      return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      // Sort by Bond Print score (highest first), then by name
-      const scoreA = bondPrintScores[a.id] || 0;
-      const scoreB = bondPrintScores[b.id] || 0;
-      if (scoreB !== scoreA) {
-        return scoreB - scoreA;
-      }
-      return a.name.localeCompare(b.name);
+  // Extract unique values for filter options
+  const availableMajors = useMemo(() => {
+    const majors = new Set<string>();
+    profiles.forEach(p => {
+      if (p.major) majors.add(p.major);
     });
+    return Array.from(majors).sort();
+  }, [profiles]);
+
+  const availableAcademicGoals = useMemo(() => {
+    const goals = new Set<string>();
+    profiles.forEach(p => {
+      p.goals?.academic?.forEach((g: string) => goals.add(g));
+    });
+    return Array.from(goals).sort();
+  }, [profiles]);
+
+  const availableLeisureGoals = useMemo(() => {
+    const goals = new Set<string>();
+    profiles.forEach(p => {
+      p.goals?.leisure?.forEach((g: string) => goals.add(g));
+    });
+    return Array.from(goals).sort();
+  }, [profiles]);
+
+  const filteredProfiles = useMemo(() => {
+    let filtered = profiles.filter((profile) => {
+      // Search filter
+      const matchesSearch = searchQuery === '' ||
+        profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        profile.major?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        profile.interests?.some((interest: string) =>
+          interest.toLowerCase().includes(searchQuery.toLowerCase())
+        ) ||
+        profile.bio?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Major filter
+      const matchesMajor = filters.major === 'all' || profile.major === filters.major;
+
+      // Year filter
+      const matchesYear = filters.year === 'all' || profile.year === filters.year;
+
+      // Looking For filter
+      const lookingForValue = filters.lookingFor.toLowerCase().replace(/\s+/g, '-');
+      const matchesLookingFor = filters.lookingFor === 'all' ||
+        profile.lookingFor?.includes(lookingForValue);
+
+      // Academic Goal filter
+      const academicGoalValue = filters.academicGoal.toLowerCase().replace(/\s+/g, '-');
+      const matchesAcademicGoal = filters.academicGoal === 'all' ||
+        profile.goals?.academic?.some((g: string) => g.toLowerCase().includes(academicGoalValue));
+
+      // Leisure Goal filter
+      const leisureGoalValue = filters.leisureGoal.toLowerCase().replace(/\s+/g, '-');
+      const matchesLeisureGoal = filters.leisureGoal === 'all' ||
+        profile.goals?.leisure?.some((g: string) => g.toLowerCase().includes(leisureGoalValue));
+
+      return matchesSearch && matchesMajor && matchesYear && matchesLookingFor &&
+        matchesAcademicGoal && matchesLeisureGoal;
+    });
+
+    // Sort
+    filtered = [...filtered].sort((a, b) => {
+      if (filters.sortBy === 'compatibility') {
+        const scoreA = bondPrintScores[a.id] || 0;
+        const scoreB = bondPrintScores[b.id] || 0;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+      } else if (filters.sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      // 'newest' - keep original order (already sorted by load order)
+      return 0;
+    });
+
+    return filtered;
+  }, [profiles, searchQuery, filters, bondPrintScores]);
 
   const handleProfileClick = (index: number) => {
     // Map back to original index
@@ -209,40 +277,17 @@ export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }:
 
   return (
     <div className="min-h-screen bg-[#F9F6F3]">
-      {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <img 
-            src="/Bonded_transparent_icon.png" 
-            alt="bonded logo" 
-            className="w-8 h-8"
-          />
-          <h1 className="text-2xl text-[#1E4F74] lowercase font-bold tracking-wide">
-            bonded
-          </h1>
-        </div>
-        
-        {/* Search and Filter */}
-        <div className="flex gap-2 items-center">
-          <input
-            type="text"
-            placeholder="Search students..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 px-3 py-2 border border-[#EAEAEA] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2E7B91] bg-[#F9F6F3]"
-          />
-          <select
-            value={filterLookingFor}
-            onChange={(e) => setFilterLookingFor(e.target.value)}
-            className="px-3 py-2 border border-[#EAEAEA] rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2E7B91] bg-[#F9F6F3]"
-          >
-            <option value="All">All</option>
-            <option value="Friends">Friends</option>
-            <option value="Roommate">Roommate</option>
-            <option value="Study Buddies">Study Buddies</option>
-          </select>
-        </div>
+      {/* Enhanced Search and Filter Bar - positioned below top banner */}
+      <div className="sticky top-[60px] bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
+        <EnhancedSearch
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableMajors={availableMajors}
+          availableAcademicGoals={availableAcademicGoals}
+          availableLeisureGoals={availableLeisureGoals}
+        />
       </div>
 
       {/* Stats Bar */}
@@ -272,7 +317,14 @@ export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }:
             <button
               key={profile.id}
               onClick={() => handleProfileClick(index)}
-              className={`relative overflow-hidden bg-white rounded-2xl shadow-sm hover:shadow-md active:scale-95 transition-all ${
+              onKeyDown={(e) => handleGridKeyDown(
+                e,
+                () => handleProfileClick(index),
+                index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
+                index > 0 ? () => handleProfileClick(index - 1) : undefined
+              )}
+              aria-label={getProfileCardAriaLabel(profile)}
+              className={`relative overflow-hidden bg-white rounded-2xl shadow-sm hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-[#2E7B91] focus:ring-offset-2 ${
                 isHighMatch 
                   ? 'ring-2 ring-[#2E7B91] ring-offset-2' 
                   : isMediumMatch 
