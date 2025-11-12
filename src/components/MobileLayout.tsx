@@ -1,12 +1,12 @@
 import { ReactNode, useState, useEffect } from 'react';
-import { Home, Users, MessageCircle, User } from 'lucide-react';
+import { Home, Users, MessageCircle, User, MessageSquare } from 'lucide-react';
 import { projectId } from '../utils/supabase/config';
 import { POLL_INTERVALS } from '../config/app-config';
 
 interface MobileLayoutProps {
   children: ReactNode;
-  activeTab: 'discover' | 'matches' | 'messages' | 'profile';
-  onTabChange: (tab: 'discover' | 'matches' | 'messages' | 'profile') => void;
+  activeTab: 'discover' | 'matches' | 'messages' | 'forum' | 'profile';
+  onTabChange: (tab: 'discover' | 'matches' | 'messages' | 'forum' | 'profile') => void;
   accessToken?: string;
   hideNavigation?: boolean; // Hide bottom nav when profile detail is open
   onUnreadCountChange?: (count: number) => void; // Callback to expose unread count
@@ -93,6 +93,7 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
     { id: 'discover' as const, icon: Home, label: 'Discover', badge: 0 },
     { id: 'matches' as const, icon: Users, label: 'Connections', badge: pendingCount },
     { id: 'messages' as const, icon: MessageCircle, label: 'Messages', badge: unreadCount },
+    { id: 'forum' as const, icon: MessageSquare, label: 'Forum', badge: 0 },
     { id: 'profile' as const, icon: User, label: 'Profile', badge: 0 },
   ];
 

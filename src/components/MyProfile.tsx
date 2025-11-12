@@ -33,6 +33,7 @@ import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
 import { apiPost } from '../utils/api-client';
 import { ProfileCompleteness } from './ProfileCompleteness';
+import { SocialConnections } from './SocialConnections';
 
 interface MyProfileProps {
   userProfile: any;
@@ -356,6 +357,13 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
             </div>
           </div>
         </Card>
+
+        {/* Social Connections */}
+        <SocialConnections
+          userProfile={userProfile}
+          accessToken={accessToken}
+          onUpdate={() => window.location.reload()}
+        />
 
         {/* Bond Print */}
         {userProfile.bondPrint && (

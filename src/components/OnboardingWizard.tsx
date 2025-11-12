@@ -236,41 +236,22 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
   const progress = (step / totalSteps) * 100;
 
   const handleNext = () => {
-    // Validation
+    // Only validate essential steps - rest are optional
     if (step === 1 && !school) {
       toast.error('Please select your school');
       return;
     }
     if (step === 2 && (!name || !age || !major || !year)) {
-      toast.error('Please fill in all fields');
+      toast.error('Please fill in all required fields');
       return;
     }
+    // Step 3 (Photos) - make optional but show warning
     if (step === 3 && photos.length === 0) {
-      toast.error('Please upload at least one photo');
-      return;
+      const proceed = window.confirm('Add a photo later? You can skip for now and add photos in your profile.');
+      if (!proceed) return;
     }
-    if (step === 4 && selectedInterests.length < 3) {
-      toast.error('Please select at least 3 interests');
-      return;
-    }
-    if (step === 5 && selectedTraits.length < 3) {
-      toast.error('Please select at least 3 personality traits');
-      return;
-    }
-    if (step === 6 && (!sleepSchedule || !cleanliness || !guests || !noise)) {
-      toast.error('Please answer all living habit questions');
-      return;
-    }
-    if (step === 7 && bio.length < 20) {
-      toast.error('Please write a bio (at least 20 characters)');
-      return;
-    }
-    if (step === 8 && lookingFor.length === 0) {
-      toast.error('Please select what you\'re looking for');
-      return;
-    }
-    // Step 9 is optional, no validation needed
-    // Step 10 (Bond Print) is mandatory - handled separately
+    // Steps 4-9 are all optional - no validation needed
+    // Step 10 (Bond Print) is optional - can skip
 
     if (step < totalSteps) {
       // If moving to step 10, show quiz instead
@@ -282,6 +263,19 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
       setStep(step + 1);
     } else {
       handleComplete();
+    }
+  };
+
+  const handleSkip = () => {
+    // Allow skipping optional steps (4-10)
+    if (step >= 4 && step < totalSteps) {
+      if (step === 9) {
+        // Skip Bond Print quiz
+        handleComplete();
+      } else {
+        setDirection(1);
+        setStep(step + 1);
+      }
     }
   };
 
@@ -1116,6 +1110,15 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
               Back
             </Button>
           )}
+          {step >= 4 && step < totalSteps && (
+            <Button
+              variant="ghost"
+              onClick={handleSkip}
+              className="gap-2 text-gray-600"
+            >
+              Skip for now
+            </Button>
+          )}
           <Button
             onClick={handleNext}
             className="flex-1 gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
@@ -1149,10 +1152,10 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
               }}
               accessToken={accessToken}
               onComplete={handleBondPrintComplete}
-              onSkip={existingProfile ? () => {
+              onSkip={() => {
                 setShowQuiz(false);
                 handleComplete();
-              } : undefined}
+              }}
             />
           </div>
         </div>

@@ -3948,6 +3948,790 @@ app.post("/user/:userId/unblock", async (c) => {
   }
 });
 
+// ============================================
+// FORUM ENDPOINTS
+// ============================================
+
+// Get all forum posts
+app.get("/forum/posts", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { data: posts, error } = await supabase
+      .from('forum_posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Get forum posts error:', error);
+      return c.json({ error: 'Failed to load posts' }, 500);
+    }
+
+    // Transform posts to include user like/dislike status
+    const transformedPosts = await Promise.all((posts || []).map(async (post: any) => {
+      // Get user's like/dislike status
+      const { data: userLike } = await supabase
+        .from('forum_post_likes')
+        .select('is_like')
+        .eq('post_id', post.id)
+        .eq('user_id', userId)
+        .single();
+
+      // Get author info (only if not anonymous)
+      let authorName = 'Anonymous Student';
+      let authorAvatar = null;
+      if (!post.is_anonymous) {
+        const authorProfile = await kv.get(`user:${post.author_id}`);
+        if (authorProfile) {
+          authorName = authorProfile.name || 'Student';
+          authorAvatar = authorProfile.profilePicture || authorProfile.photos?.[0];
+        }
+      }
+
+      return {
+        id: post.id,
+        content: post.content,
+        mediaUrl: post.media_url,
+        mediaType: post.media_type,
+        authorId: post.author_id,
+        authorName,
+        authorAvatar,
+        likes: post.likes_count || 0,
+        dislikes: post.dislikes_count || 0,
+        comments: post.comments_count || 0,
+        userLiked: userLike?.is_like === true,
+        userDisliked: userLike?.is_like === false,
+        createdAt: post.created_at,
+        isAnonymous: post.is_anonymous,
+      };
+    }));
+
+    return c.json({ posts: transformedPosts });
+  } catch (error: any) {
+    console.error('Get forum posts error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Create a forum post
+app.post("/forum/posts", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const body = await c.req.json();
+    const { content, mediaUrl, mediaType, isAnonymous = true } = body;
+
+    if (!content || content.trim().length === 0) {
+      return c.json({ error: 'Post content is required' }, 400);
+    }
+
+    // Moderate content
+    const moderationResult = await moderateMessage(content);
+    if (moderationResult.isBlocked) {
+      return c.json({ 
+        error: 'Post blocked', 
+        reason: moderationResult.reason 
+      }, 400);
+    }
+
+    const { data: post, error } = await supabase
+      .from('forum_posts')
+      .insert({
+        author_id: userId,
+        content: content.trim(),
+        media_url: mediaUrl || null,
+        media_type: mediaType || null,
+        is_anonymous: isAnonymous,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Create forum post error:', error);
+      return c.json({ error: 'Failed to create post' }, 500);
+    }
+
+    return c.json({ 
+      success: true, 
+      post: {
+        id: post.id,
+        content: post.content,
+        mediaUrl: post.media_url,
+        mediaType: post.media_type,
+        authorId: post.author_id,
+        authorName: isAnonymous ? 'Anonymous Student' : null,
+        likes: 0,
+        dislikes: 0,
+        comments: 0,
+        userLiked: false,
+        userDisliked: false,
+        createdAt: post.created_at,
+        isAnonymous: post.is_anonymous,
+      }
+    });
+  } catch (error: any) {
+    console.error('Create forum post error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Like a forum post
+app.post("/forum/posts/:postId/like", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+
+    // Check if user already liked/disliked
+    const { data: existing } = await supabase
+      .from('forum_post_likes')
+      .select('*')
+      .eq('post_id', postId)
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      if (existing.is_like) {
+        // Already liked, remove like
+        await supabase
+          .from('forum_post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', userId);
+      } else {
+        // Was disliked, change to like
+        await supabase
+          .from('forum_post_likes')
+          .update({ is_like: true })
+          .eq('post_id', postId)
+          .eq('user_id', userId);
+      }
+    } else {
+      // New like
+      await supabase
+        .from('forum_post_likes')
+        .insert({
+          post_id: postId,
+          user_id: userId,
+          is_like: true,
+        });
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Like forum post error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Dislike a forum post
+app.post("/forum/posts/:postId/dislike", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+
+    // Check if user already liked/disliked
+    const { data: existing } = await supabase
+      .from('forum_post_likes')
+      .select('*')
+      .eq('post_id', postId)
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      if (!existing.is_like) {
+        // Already disliked, remove dislike
+        await supabase
+          .from('forum_post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', userId);
+      } else {
+        // Was liked, change to dislike
+        await supabase
+          .from('forum_post_likes')
+          .update({ is_like: false })
+          .eq('post_id', postId)
+          .eq('user_id', userId);
+      }
+    } else {
+      // New dislike
+      await supabase
+        .from('forum_post_likes')
+        .insert({
+          post_id: postId,
+          user_id: userId,
+          is_like: false,
+        });
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Dislike forum post error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get comments for a post
+app.get("/forum/posts/:postId/comments", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+
+    const { data: comments, error } = await supabase
+      .from('forum_comments')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Get comments error:', error);
+      return c.json({ error: 'Failed to load comments' }, 500);
+    }
+
+    // Transform comments
+    const transformedComments = await Promise.all((comments || []).map(async (comment: any) => {
+      let authorName = 'Anonymous Student';
+      let authorAvatar = null;
+      if (!comment.is_anonymous) {
+        const authorProfile = await kv.get(`user:${comment.author_id}`);
+        if (authorProfile) {
+          authorName = authorProfile.name || 'Student';
+          authorAvatar = authorProfile.profilePicture || authorProfile.photos?.[0];
+        }
+      }
+
+      return {
+        id: comment.id,
+        content: comment.content,
+        authorId: comment.author_id,
+        authorName,
+        authorAvatar,
+        createdAt: comment.created_at,
+        isAnonymous: comment.is_anonymous,
+      };
+    }));
+
+    return c.json({ comments: transformedComments });
+  } catch (error: any) {
+    console.error('Get comments error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Add a comment to a post
+app.post("/forum/posts/:postId/comments", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+    const body = await c.req.json();
+    const { content, isAnonymous = true } = body;
+
+    if (!content || content.trim().length === 0) {
+      return c.json({ error: 'Comment content is required' }, 400);
+    }
+
+    // Moderate content
+    const moderationResult = await moderateMessage(content);
+    if (moderationResult.isBlocked) {
+      return c.json({ 
+        error: 'Comment blocked', 
+        reason: moderationResult.reason 
+      }, 400);
+    }
+
+    const { data: comment, error } = await supabase
+      .from('forum_comments')
+      .insert({
+        post_id: postId,
+        author_id: userId,
+        content: content.trim(),
+        is_anonymous: isAnonymous,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Create comment error:', error);
+      return c.json({ error: 'Failed to create comment' }, 500);
+    }
+
+    return c.json({ success: true, comment });
+  } catch (error: any) {
+    console.error('Create comment error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============================================
+// SOCIAL MEDIA CONNECTION ENDPOINTS
+// ============================================
+
+// LinkedIn OAuth - Initiate connection
+app.post("/social/linkedin/connect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const clientId = Deno.env.get('LINKEDIN_CLIENT_ID');
+    const redirectUri = `${Deno.env.get('APP_URL') || 'http://localhost:5173'}/auth/linkedin/callback`;
+    const state = `${userId}:${Date.now()}`;
+    
+    // Store state for verification
+    await kv.set(`oauth:linkedin:${userId}`, { state, timestamp: Date.now() });
+
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=r_liteprofile%20r_emailaddress`;
+
+    return c.json({ authUrl });
+  } catch (error: any) {
+    console.error('LinkedIn connect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// LinkedIn OAuth - Handle callback
+app.post("/social/linkedin/callback", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { code, state } = body;
+
+    if (!code || !state) {
+      return c.json({ error: 'Missing code or state' }, 400);
+    }
+
+    const [userId] = state.split(':');
+    const storedState = await kv.get(`oauth:linkedin:${userId}`);
+    
+    if (!storedState || storedState.state !== state) {
+      return c.json({ error: 'Invalid state' }, 400);
+    }
+
+    // Exchange code for access token
+    const clientId = Deno.env.get('LINKEDIN_CLIENT_ID');
+    const clientSecret = Deno.env.get('LINKEDIN_CLIENT_SECRET');
+    const redirectUri = `${Deno.env.get('APP_URL') || 'http://localhost:5173'}/auth/linkedin/callback`;
+
+    const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId!,
+        client_secret: clientSecret!,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      return c.json({ error: 'Failed to get access token' }, 400);
+    }
+
+    const { access_token } = await tokenResponse.json();
+
+    // Get LinkedIn profile data
+    const profileResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { 'Authorization': `Bearer ${access_token}` },
+    });
+
+    if (!profileResponse.ok) {
+      return c.json({ error: 'Failed to get LinkedIn profile' }, 400);
+    }
+
+    const linkedinProfile = await profileResponse.json();
+
+    // Update user profile with LinkedIn connection
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile) {
+      userProfile.socialConnections = userProfile.socialConnections || {};
+      userProfile.socialConnections.linkedin = {
+        connected: true,
+        username: linkedinProfile.sub || linkedinProfile.preferred_username,
+        profileUrl: `https://www.linkedin.com/in/${linkedinProfile.sub}`,
+        accessToken: access_token, // In production, encrypt this
+        scrapedData: {
+          name: linkedinProfile.name,
+          email: linkedinProfile.email,
+          picture: linkedinProfile.picture,
+        },
+      };
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    // Clean up state
+    await kv.delete(`oauth:linkedin:${userId}`);
+
+    return c.json({ success: true, message: 'LinkedIn connected successfully' });
+  } catch (error: any) {
+    console.error('LinkedIn callback error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// LinkedIn - Disconnect
+app.post("/social/linkedin/disconnect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile && userProfile.socialConnections) {
+      delete userProfile.socialConnections.linkedin;
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    return c.json({ success: true, message: 'LinkedIn disconnected' });
+  } catch (error: any) {
+    console.error('LinkedIn disconnect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Instagram OAuth - Initiate connection
+app.post("/social/instagram/connect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const clientId = Deno.env.get('INSTAGRAM_CLIENT_ID');
+    const redirectUri = `${Deno.env.get('APP_URL') || 'http://localhost:5173'}/auth/instagram/callback`;
+    const state = `${userId}:${Date.now()}`;
+    
+    await kv.set(`oauth:instagram:${userId}`, { state, timestamp: Date.now() });
+
+    const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user_profile,user_media&response_type=code&state=${state}`;
+
+    return c.json({ authUrl });
+  } catch (error: any) {
+    console.error('Instagram connect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Instagram OAuth - Handle callback
+app.post("/social/instagram/callback", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { code, state } = body;
+
+    if (!code || !state) {
+      return c.json({ error: 'Missing code or state' }, 400);
+    }
+
+    const [userId] = state.split(':');
+    const storedState = await kv.get(`oauth:instagram:${userId}`);
+    
+    if (!storedState || storedState.state !== state) {
+      return c.json({ error: 'Invalid state' }, 400);
+    }
+
+    // Exchange code for access token
+    const clientId = Deno.env.get('INSTAGRAM_CLIENT_ID');
+    const clientSecret = Deno.env.get('INSTAGRAM_CLIENT_SECRET');
+    const redirectUri = `${Deno.env.get('APP_URL') || 'http://localhost:5173'}/auth/instagram/callback`;
+
+    const tokenResponse = await fetch('https://api.instagram.com/oauth/access_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId!,
+        client_secret: clientSecret!,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+        code,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      return c.json({ error: 'Failed to get access token' }, 400);
+    }
+
+    const { access_token, user_id } = await tokenResponse.json();
+
+    // Get Instagram profile data
+    const profileResponse = await fetch(`https://graph.instagram.com/${user_id}?fields=id,username,account_type&access_token=${access_token}`);
+    
+    if (!profileResponse.ok) {
+      return c.json({ error: 'Failed to get Instagram profile' }, 400);
+    }
+
+    const instagramProfile = await profileResponse.json();
+
+    // Update user profile
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile) {
+      userProfile.socialConnections = userProfile.socialConnections || {};
+      userProfile.socialConnections.instagram = {
+        connected: true,
+        username: instagramProfile.username,
+        profileUrl: `https://instagram.com/${instagramProfile.username}`,
+        accessToken: access_token, // In production, encrypt this
+        scrapedData: {
+          userId: instagramProfile.id,
+          accountType: instagramProfile.account_type,
+        },
+      };
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    await kv.delete(`oauth:instagram:${userId}`);
+
+    return c.json({ success: true, message: 'Instagram connected successfully' });
+  } catch (error: any) {
+    console.error('Instagram callback error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Instagram - Disconnect
+app.post("/social/instagram/disconnect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile && userProfile.socialConnections) {
+      delete userProfile.socialConnections.instagram;
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    return c.json({ success: true, message: 'Instagram disconnected' });
+  } catch (error: any) {
+    console.error('Instagram disconnect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Spotify OAuth - Initiate connection
+app.post("/social/spotify/connect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const clientId = Deno.env.get('SPOTIFY_CLIENT_ID');
+    const redirectUri = `${Deno.env.get('APP_URL') || 'http://localhost:5173'}/auth/spotify/callback`;
+    const state = `${userId}:${Date.now()}`;
+    const scopes = 'user-read-private user-read-email user-top-read user-read-recently-played';
+    
+    await kv.set(`oauth:spotify:${userId}`, { state, timestamp: Date.now() });
+
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`;
+
+    return c.json({ authUrl });
+  } catch (error: any) {
+    console.error('Spotify connect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Spotify OAuth - Handle callback
+app.post("/social/spotify/callback", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { code, state } = body;
+
+    if (!code || !state) {
+      return c.json({ error: 'Missing code or state' }, 400);
+    }
+
+    const [userId] = state.split(':');
+    const storedState = await kv.get(`oauth:spotify:${userId}`);
+    
+    if (!storedState || storedState.state !== state) {
+      return c.json({ error: 'Invalid state' }, 400);
+    }
+
+    // Exchange code for access token
+    const clientId = Deno.env.get('SPOTIFY_CLIENT_ID');
+    const clientSecret = Deno.env.get('SPOTIFY_CLIENT_SECRET');
+    const redirectUri = `${Deno.env.get('APP_URL') || 'http://localhost:5173'}/auth/spotify/callback`;
+
+    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      return c.json({ error: 'Failed to get access token' }, 400);
+    }
+
+    const { access_token, refresh_token } = await tokenResponse.json();
+
+    // Get Spotify profile
+    const profileResponse = await fetch('https://api.spotify.com/v1/me', {
+      headers: { 'Authorization': `Bearer ${access_token}` },
+    });
+
+    if (!profileResponse.ok) {
+      return c.json({ error: 'Failed to get Spotify profile' }, 400);
+    }
+
+    const spotifyProfile = await profileResponse.json();
+
+    // Get top artists and tracks
+    const [topArtistsRes, topTracksRes] = await Promise.all([
+      fetch('https://api.spotify.com/v1/me/top/artists?limit=5', {
+        headers: { 'Authorization': `Bearer ${access_token}` },
+      }),
+      fetch('https://api.spotify.com/v1/me/top/tracks?limit=5', {
+        headers: { 'Authorization': `Bearer ${access_token}` },
+      }),
+    ]);
+
+    const topArtists = topArtistsRes.ok ? await topArtistsRes.json() : { items: [] };
+    const topTracks = topTracksRes.ok ? await topTracksRes.json() : { items: [] };
+
+    // Update user profile
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile) {
+      userProfile.socialConnections = userProfile.socialConnections || {};
+      userProfile.socialConnections.spotify = {
+        connected: true,
+        username: spotifyProfile.display_name || spotifyProfile.id,
+        profileUrl: spotifyProfile.external_urls?.spotify,
+        accessToken: access_token, // In production, encrypt this
+        refreshToken: refresh_token, // In production, encrypt this
+        topArtists: topArtists.items?.map((a: any) => ({
+          name: a.name,
+          image: a.images?.[0]?.url,
+        })) || [],
+        topTracks: topTracks.items?.map((t: any) => ({
+          name: t.name,
+          artist: t.artists?.[0]?.name,
+          image: t.album?.images?.[0]?.url,
+        })) || [],
+      };
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    await kv.delete(`oauth:spotify:${userId}`);
+
+    return c.json({ success: true, message: 'Spotify connected successfully' });
+  } catch (error: any) {
+    console.error('Spotify callback error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Spotify - Disconnect
+app.post("/social/spotify/disconnect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile && userProfile.socialConnections) {
+      delete userProfile.socialConnections.spotify;
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    return c.json({ success: true, message: 'Spotify disconnected' });
+  } catch (error: any) {
+    console.error('Spotify disconnect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Apple Music - Connect (requires MusicKit JS on frontend)
+app.post("/social/appleMusic/connect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const body = await c.req.json();
+    const { userToken, musicUserToken } = body;
+
+    if (!userToken) {
+      return c.json({ error: 'User token is required' }, 400);
+    }
+
+    // Apple Music uses MusicKit JS on the frontend
+    // The frontend should get the userToken and pass it here
+    // We store it for future API calls
+
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile) {
+      userProfile.socialConnections = userProfile.socialConnections || {};
+      userProfile.socialConnections.appleMusic = {
+        connected: true,
+        userToken, // In production, encrypt this
+        musicUserToken: musicUserToken || null,
+      };
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    return c.json({ success: true, message: 'Apple Music connected successfully' });
+  } catch (error: any) {
+    console.error('Apple Music connect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Apple Music - Disconnect
+app.post("/social/appleMusic/disconnect", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userProfile = await kv.get(`user:${userId}`);
+    if (userProfile && userProfile.socialConnections) {
+      delete userProfile.socialConnections.appleMusic;
+      await kv.set(`user:${userId}`, userProfile);
+    }
+
+    return c.json({ success: true, message: 'Apple Music disconnected' });
+  } catch (error: any) {
+    console.error('Apple Music disconnect error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Get blocked users list
 app.get("/user/blocked", async (c) => {
   try {

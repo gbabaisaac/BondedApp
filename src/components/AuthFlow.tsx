@@ -182,8 +182,8 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
             </CardTitle>
             <CardDescription>
               {mode === 'login'
-                ? 'Sign in to connect with your campus community'
-                : 'Create your account to get started'}
+                ? 'Connect with students on your campus'
+                : 'The social connection app for college students'}
             </CardDescription>
           </CardHeader>
         <CardContent>

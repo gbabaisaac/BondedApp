@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MobileLayout } from './MobileLayout';
 import { InstagramGrid } from './InstagramGrid';
 import { ChatView } from './ChatView';
@@ -6,6 +6,8 @@ import { MatchSuggestions } from './MatchSuggestions';
 import { MyProfile } from './MyProfile';
 import { ModeToggle } from './ModeToggle';
 import { LoveModeNew } from './LoveModeNew';
+import { AppTutorial } from './AppTutorial';
+import { Forum } from './Forum';
 import { isFeatureEnabled } from '../config/features';
 import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimization';
 
@@ -15,14 +17,23 @@ interface MainAppProps {
   onLogout: () => void;
 }
 
-type View = 'discover' | 'matches' | 'messages' | 'profile';
+type View = 'discover' | 'matches' | 'messages' | 'forum' | 'profile';
 type AppMode = 'friend' | 'love';
 
 export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
   const [currentView, setCurrentView] = useState<View>('discover');
   const [mode, setMode] = useState<AppMode>('friend');
   const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const loveModeEnabled = isFeatureEnabled('LOVE_MODE_ENABLED');
+
+  useEffect(() => {
+    // Check if user has seen tutorial
+    const hasSeen = localStorage.getItem('hasSeenAppTutorial');
+    if (!hasSeen) {
+      setShowTutorial(true);
+    }
+  }, []);
 
   // Love Mode has its own full-screen view (no mode toggle inside)
   // Only show if feature is enabled
@@ -43,13 +54,20 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
   );
   
   return (
-    <div
-      className="fixed inset-0 flex flex-col bg-white"
-        style={{
-          height: '100dvh',
-          overflow: 'hidden'
-        }}
-    >
+    <>
+      {showTutorial && (
+        <AppTutorial
+          onComplete={() => setShowTutorial(false)}
+          onSkip={() => setShowTutorial(false)}
+        />
+      )}
+      <div
+        className="fixed inset-0 flex flex-col bg-white"
+          style={{
+            height: '100dvh',
+            overflow: 'hidden'
+          }}
+      >
       {/* Top Banner with Profile Picture */}
       <div className="sticky top-0 z-50 bg-white border-b border-[#EAEAEA] px-4 py-3 flex items-center justify-between">
         <button
@@ -95,11 +113,15 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
           {currentView === 'messages' && (
             <ChatView userProfile={userProfile} accessToken={accessToken} />
           )}
+          {currentView === 'forum' && (
+            <Forum userProfile={userProfile} accessToken={accessToken} />
+          )}
           {currentView === 'profile' && (
             <MyProfile userProfile={userProfile} accessToken={accessToken} onLogout={onLogout} />
           )}
         </MobileLayout>
       </div>
     </div>
+    </>
   );
 }
