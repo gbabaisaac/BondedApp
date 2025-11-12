@@ -2343,6 +2343,46 @@ If no good matches, return an empty array: []`;
     }
 
     console.log(`[SEARCH] Returning ${matchedProfiles.length} matches`);
+    
+    // Store search results in AI chat history
+    const aiChatId = `ai-assistant:${userId}`;
+    let aiChat = await kv.get(aiChatId);
+    if (!aiChat) {
+      aiChat = {
+        chatId: aiChatId,
+        userId,
+        messages: [],
+        createdAt: new Date().toISOString(),
+      };
+    }
+    
+    // Add a message about the search results
+    if (matchedProfiles.length > 0) {
+      const suggestionMsg = {
+        id: `${aiChatId}:search:${Date.now()}`,
+        senderId: 'ai-assistant',
+        content: `I found ${matchedProfiles.length} person${matchedProfiles.length > 1 ? 's' : ''} that might be a great match! Check them out below.`,
+        timestamp: new Date().toISOString(),
+        type: 'ai',
+        metadata: { 
+          type: 'profile-suggestions',
+          profiles: matchedProfiles.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            major: p.major,
+            year: p.year,
+            bio: p.bio,
+            profilePicture: p.profilePicture,
+            interests: p.interests,
+            lookingFor: p.lookingFor,
+            goals: p.goals,
+          }))
+        },
+      };
+      aiChat.messages.push(suggestionMsg);
+      await kv.set(aiChatId, aiChat);
+    }
+    
     return c.json({
       matches: matchedProfiles,
       count: matchedProfiles.length,

@@ -19,6 +19,7 @@ import {
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
 import { ChatListSkeleton, MessagesSkeleton } from './LoadingSkeletons';
+import { ProfileDetailView } from './ProfileDetailView';
 
 interface ChatViewProps {
   userProfile: any;
@@ -43,6 +44,7 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
   const [suggestedProfiles, setSuggestedProfiles] = useState<any[]>([]);
   const [pendingIntroRequest, setPendingIntroRequest] = useState<any>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
 
   useEffect(() => {
     loadChats();
@@ -295,7 +297,25 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
 
       if (response.ok) {
         const data = await response.json();
-        setAiMessages(data.messages || []);
+        const messages = data.messages || [];
+        setAiMessages(messages);
+        
+        // Extract suggested profiles from message history
+        const profilesFromHistory: any[] = [];
+        messages.forEach((msg: any) => {
+          if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
+            // Add profiles from this message (avoid duplicates)
+            msg.metadata.profiles.forEach((profile: any) => {
+              if (!profilesFromHistory.find(p => p.id === profile.id)) {
+                profilesFromHistory.push(profile);
+              }
+            });
+          }
+        });
+        
+        if (profilesFromHistory.length > 0) {
+          setSuggestedProfiles(profilesFromHistory);
+        }
       }
     } catch (error) {
       console.error('Load AI chat error:', error);
@@ -393,20 +413,22 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       const data = await response.json();
       console.log('[SEARCH] Search results:', data);
       
-      setSuggestedProfiles(data.matches || []);
+      // Update suggested profiles (merge with existing to avoid duplicates)
+      setSuggestedProfiles(prev => {
+        const newProfiles = data.matches || [];
+        const combined = [...prev];
+        newProfiles.forEach((profile: any) => {
+          if (!combined.find(p => p.id === profile.id)) {
+            combined.push(profile);
+          }
+        });
+        return combined;
+      });
       
-      // Add AI message about found profiles
-      if (data.matches && data.matches.length > 0) {
-        const suggestionMsg = {
-          id: `ai-msg-${Date.now()}`,
-          senderId: 'ai-assistant',
-          content: `I found ${data.matches.length} person${data.matches.length > 1 ? 's' : ''} that might be a great match! Check them out below.`,
-          timestamp: new Date().toISOString(),
-          type: 'ai',
-          metadata: { type: 'profile-suggestions' },
-        };
-        setAiMessages(prev => [...prev, suggestionMsg]);
-      } else {
+      // Reload AI chat to get the message with profiles from backend
+      await loadAIChat();
+      
+      if (data.matches && data.matches.length === 0) {
         // No matches found
         const noMatchMsg = {
           id: `ai-msg-${Date.now()}`,
@@ -730,11 +752,15 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                       </div>
                     )}
 
-                    {/* Profile Suggestions - Show after suggestion message or if we have profiles */}
-                    {((message.metadata?.type === 'profile-suggestions' || index === aiMessages.length - 1) && suggestedProfiles.length > 0 && message.senderId === 'ai-assistant') && (
+                    {/* Profile Suggestions - Show after suggestion message */}
+                    {message.metadata?.type === 'profile-suggestions' && message.metadata?.profiles && message.metadata.profiles.length > 0 && (
                       <div className="mt-2 ml-10 space-y-3 max-w-md">
-                        {suggestedProfiles.map((profile) => (
-                          <Card key={profile.id} className="border border-gray-200">
+                        {message.metadata.profiles.map((profile: any) => (
+                          <Card 
+                            key={profile.id} 
+                            className="border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => setSelectedProfile(profile)}
+                          >
                             <CardContent className="p-3">
                               <div className="flex items-start gap-3">
                                 <Avatar className="w-12 h-12">
@@ -751,7 +777,8 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                                   )}
                                   <Button
                                     size="sm"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // Prevent card click
                                       const reason = messageText || 'I think we could be a great connection!';
                                       requestSoftIntro(profile.id, reason);
                                     }}
@@ -833,6 +860,75 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
             </Button>
           </div>
         </div>
+        
+        {/* Profile Detail View */}
+        {selectedProfile && (
+          <ProfileDetailView
+            profile={selectedProfile}
+            onClose={() => setSelectedProfile(null)}
+            onNext={() => {
+              // Find all profiles from all suggestion messages
+              const allProfiles: any[] = [];
+              aiMessages.forEach((msg: any) => {
+                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
+                  msg.metadata.profiles.forEach((p: any) => {
+                    if (!allProfiles.find(prof => prof.id === p.id)) {
+                      allProfiles.push(p);
+                    }
+                  });
+                }
+              });
+              const currentIndex = allProfiles.findIndex(p => p.id === selectedProfile.id);
+              if (currentIndex < allProfiles.length - 1) {
+                setSelectedProfile(allProfiles[currentIndex + 1]);
+              }
+            }}
+            onPrev={() => {
+              // Find all profiles from all suggestion messages
+              const allProfiles: any[] = [];
+              aiMessages.forEach((msg: any) => {
+                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
+                  msg.metadata.profiles.forEach((p: any) => {
+                    if (!allProfiles.find(prof => prof.id === p.id)) {
+                      allProfiles.push(p);
+                    }
+                  });
+                }
+              });
+              const currentIndex = allProfiles.findIndex(p => p.id === selectedProfile.id);
+              if (currentIndex > 0) {
+                setSelectedProfile(allProfiles[currentIndex - 1]);
+              }
+            }}
+            hasNext={(() => {
+              const allProfiles: any[] = [];
+              aiMessages.forEach((msg: any) => {
+                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
+                  msg.metadata.profiles.forEach((p: any) => {
+                    if (!allProfiles.find(prof => prof.id === p.id)) {
+                      allProfiles.push(p);
+                    }
+                  });
+                }
+              });
+              return allProfiles.findIndex(p => p.id === selectedProfile.id) < allProfiles.length - 1;
+            })()}
+            hasPrev={(() => {
+              const allProfiles: any[] = [];
+              aiMessages.forEach((msg: any) => {
+                if (msg.metadata?.type === 'profile-suggestions' && msg.metadata?.profiles) {
+                  msg.metadata.profiles.forEach((p: any) => {
+                    if (!allProfiles.find(prof => prof.id === p.id)) {
+                      allProfiles.push(p);
+                    }
+                  });
+                }
+              });
+              return allProfiles.findIndex(p => p.id === selectedProfile.id) > 0;
+            })()}
+            accessToken={accessToken}
+          />
+        )}
       </div>
     );
   }
