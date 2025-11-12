@@ -17,6 +17,8 @@ import {
   ArrowLeft,
   Lock,
   Unlock,
+  Star,
+  X,
 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
@@ -36,10 +38,13 @@ type LoveModeView =
   | 'chat'
   | 'reveal';
 
+type LoveModeTab = 'discover' | 'matches' | 'profile';
+
 export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewProps) {
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<LoveModeView>('onboarding');
+  const [currentTab, setCurrentTab] = useState<LoveModeTab>('matches');
   const [relationships, setRelationships] = useState<any[]>([]);
   const [activeRelationship, setActiveRelationship] = useState<any>(null);
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
@@ -68,6 +73,7 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
           if (!userProfile.lovePrint) {
             setCurrentView('lovePrintQuiz');
           } else {
+            setCurrentTab('matches');
             setCurrentView('matches');
             loadRelationships();
           }
@@ -102,6 +108,7 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
         if (!userProfile.lovePrint) {
           setCurrentView('lovePrintQuiz');
         } else {
+          setCurrentTab('discover');
           setCurrentView('rating');
         }
 
@@ -132,6 +139,7 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
 
       if (response.ok) {
         toast.success('Love Print complete! Now let\'s find your matches.');
+        setCurrentTab('discover');
         setCurrentView('rating');
       }
     } catch (error) {
@@ -141,6 +149,7 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
   };
 
   const skipLovePrint = () => {
+    setCurrentTab('discover');
     setCurrentView('rating');
   };
 
@@ -166,6 +175,7 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
 
   const handleRatingComplete = () => {
     loadRelationships();
+    setCurrentTab('matches');
     setCurrentView('matches');
   };
 
@@ -241,22 +251,51 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
     return <LoveModeOnboarding onActivate={activateLoveMode} />;
   }
 
+  // Full-screen views with exit button
   if (currentView === 'lovePrintQuiz') {
     return (
-      <LovePrintQuizNew
-        onComplete={handleLovePrintComplete}
-        onSkip={skipLovePrint}
-      />
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        {/* Exit Button */}
+        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-50 safe-top">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onExit}
+            className="bg-white/80 backdrop-blur-sm hover:bg-white shadow-lg touch-manipulation"
+            style={{ minWidth: '44px', minHeight: '44px' }}
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+        <LovePrintQuizNew
+          onComplete={handleLovePrintComplete}
+          onSkip={skipLovePrint}
+        />
+      </div>
     );
   }
 
   if (currentView === 'rating') {
     return (
-      <LoveModeRatingNew
-        userProfile={userProfile}
-        accessToken={accessToken}
-        onRatingComplete={handleRatingComplete}
-      />
+      <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
+        {/* Exit Button */}
+        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-50 safe-top">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onExit}
+            className="bg-white/80 backdrop-blur-sm hover:bg-white shadow-lg touch-manipulation"
+            style={{ minWidth: '44px', minHeight: '44px' }}
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+        <LoveModeRatingNew
+          userProfile={userProfile}
+          accessToken={accessToken}
+          onRatingComplete={handleRatingComplete}
+        />
+      </div>
     );
   }
 
@@ -268,6 +307,7 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
         accessToken={accessToken}
         onBack={() => {
           setActiveRelationship(null);
+          setCurrentTab('matches');
           setCurrentView('matches');
           loadRelationships();
         }}
@@ -278,75 +318,121 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
 
   if (currentView === 'reveal' && activeRelationship && partnerProfile) {
     return (
-      <BondRevealReport
-        relationship={activeRelationship}
-        userProfile={userProfile}
-        partnerProfile={partnerProfile}
-        accessToken={accessToken}
-        onContinueChat={() => setCurrentView('chat')}
-      />
+      <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-red-50">
+        {/* Exit Button */}
+        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-50 safe-top">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setCurrentTab('matches');
+              setCurrentView('matches');
+              setActiveRelationship(null);
+              loadRelationships();
+            }}
+            className="bg-white/80 backdrop-blur-sm hover:bg-white shadow-lg touch-manipulation"
+            style={{ minWidth: '44px', minHeight: '44px' }}
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+        <BondRevealReport
+          relationship={activeRelationship}
+          userProfile={userProfile}
+          partnerProfile={partnerProfile}
+          accessToken={accessToken}
+          onContinueChat={() => setCurrentView('chat')}
+        />
+      </div>
     );
   }
 
-  // Matches View (default)
+  // Main Love Mode Layout with Navigation
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+    <div
+      className="fixed inset-0 flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50"
+      style={{
+        height: '100dvh',
+        overflow: 'hidden'
+      }}
+    >
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-pink-100 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={onExit}>
+      <div className="bg-white/80 backdrop-blur-sm border-b border-pink-100 z-10 flex-shrink-0 safe-top">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onExit}
+                className="hover:bg-pink-50 flex-shrink-0 touch-manipulation"
+                style={{ minWidth: '44px', minHeight: '44px' }}
+              >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <div>
-                <div className="flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-pink-500" />
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500 flex-shrink-0" />
+                  <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent truncate">
                     Love Mode
                   </h1>
                 </div>
-                <p className="text-xs text-gray-600">
+                <p className="text-[10px] sm:text-xs text-gray-600 truncate">
                   Where hearts connect first
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {currentTab === 'matches' && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentView('rating')}
+                onClick={() => {
+                  setCurrentTab('discover');
+                  setCurrentView('rating');
+                }}
+                className="border-pink-200 hover:bg-pink-50 flex-shrink-0 touch-manipulation hidden sm:flex"
+                style={{ minHeight: '36px' }}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                Rate More
+                <span className="hidden sm:inline">Rate More</span>
               </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div className="h-full overflow-y-auto overflow-x-hidden" style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))'
+        }}>
+          <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 w-full">
         {relationships.length === 0 ? (
-          <Card className="p-12 text-center">
-            <Heart className="w-16 h-16 text-pink-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">No Matches Yet</h2>
-            <p className="text-gray-600 mb-6">
-              Keep rating profiles to help our AI understand your type.<br />
-              We'll notify you when you have a match!
+          <Card className="p-6 sm:p-12 text-center">
+            <Heart className="w-12 h-12 sm:w-16 sm:h-16 text-pink-300 mx-auto mb-4" />
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">No Matches Yet</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-6 px-2">
+              Keep rating profiles to help our AI understand your type.<br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>We'll notify you when you have a match!
             </p>
             <Button
-              onClick={() => setCurrentView('rating')}
-              className="bg-gradient-to-r from-pink-500 to-purple-500"
+              onClick={() => {
+                setCurrentTab('discover');
+                setCurrentView('rating');
+              }}
+              className="bg-gradient-to-r from-pink-500 to-purple-500 touch-manipulation"
+              style={{ minHeight: '44px' }}
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Start Rating
             </Button>
           </Card>
         ) : (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold mb-4">Your Connections</h2>
+          <div className="space-y-3 sm:space-y-4">
+            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 px-1">Your Connections</h2>
 
             {relationships.map((relationship) => (
               <motion.div
@@ -355,34 +441,35 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
                 animate={{ opacity: 1, y: 0 }}
               >
                 <Card
-                  className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 hover:border-pink-200"
+                  className="p-4 sm:p-6 cursor-pointer hover:shadow-lg active:scale-[0.98] transition-all border-2 hover:border-pink-200 touch-manipulation"
                   onClick={() => handleOpenChat(relationship)}
+                  style={{ minHeight: '80px' }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                       {relationship.revealed ? (
-                        <Avatar className="w-16 h-16 border-2 border-pink-200">
+                        <Avatar className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-pink-200 flex-shrink-0">
                           <AvatarImage src={relationship.partnerPhoto} />
-                          <AvatarFallback className="bg-pink-100 text-pink-700">
+                          <AvatarFallback className="bg-pink-100 text-pink-700 text-base sm:text-lg">
                             {relationship.partnerName?.[0]}
                           </AvatarFallback>
                         </Avatar>
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-200 to-purple-200 flex items-center justify-center">
-                          <Lock className="w-8 h-8 text-gray-500" />
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0">
+                          <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />
                         </div>
                       )}
 
-                      <div>
-                        <h3 className="font-semibold text-lg">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-base sm:text-lg truncate">
                           {relationship.revealed
                             ? relationship.partnerName
                             : relationship.anonymousName || 'Mystery Match'}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge
                             variant="secondary"
-                            className={`text-xs ${
+                            className={`text-[10px] sm:text-xs ${
                               relationship.bondStrength >= 75 ? 'bg-pink-100 text-pink-700' :
                               relationship.bondStrength >= 50 ? 'bg-purple-100 text-purple-700' :
                               'bg-blue-100 text-blue-700'
@@ -391,7 +478,7 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
                             Bond: {relationship.bondStrength}%
                           </Badge>
                           {relationship.unreadCount > 0 && (
-                            <Badge className="bg-red-500 text-white">
+                            <Badge className="bg-red-500 text-white text-[10px] sm:text-xs">
                               {relationship.unreadCount} new
                             </Badge>
                           )}
@@ -399,13 +486,13 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       {relationship.revealed ? (
-                        <Unlock className="w-6 h-6 text-pink-500" />
+                        <Unlock className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" />
                       ) : (
-                        <Lock className="w-6 h-6 text-gray-400" />
+                        <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
                       )}
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2 whitespace-nowrap">
                         {relationship.lastMessage
                           ? new Date(relationship.lastMessageAt).toLocaleDateString()
                           : 'Start chatting'}
@@ -417,6 +504,79 @@ export function LoveModeNew({ userProfile, accessToken, onExit }: LoveModeNewPro
             ))}
           </div>
         )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Navigation */}
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex-shrink-0 safe-bottom"
+        style={{
+          paddingTop: '4px',
+          paddingBottom: 'max(4px, env(safe-area-inset-bottom))',
+          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)'
+        }}
+      >
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-around h-16 px-2">
+            <button
+              onClick={() => {
+                setCurrentTab('discover');
+                setCurrentView('rating');
+              }}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors touch-manipulation relative ${
+                currentTab === 'discover'
+                  ? 'text-pink-600'
+                  : 'text-gray-500 active:text-gray-700'
+              }`}
+              style={{ minHeight: '44px' }}
+            >
+              <Star className={`w-6 h-6 ${currentTab === 'discover' ? 'fill-current' : ''}`} />
+              <span className="text-[10px] sm:text-xs font-medium mt-0.5">Discover</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setCurrentTab('matches');
+                setCurrentView('matches');
+                loadRelationships();
+              }}
+              className={`relative flex flex-col items-center justify-center flex-1 h-full transition-colors touch-manipulation ${
+                currentTab === 'matches'
+                  ? 'text-pink-600'
+                  : 'text-gray-500 active:text-gray-700'
+              }`}
+              style={{ minHeight: '44px' }}
+            >
+              <div className="relative">
+                <MessageCircle className={`w-6 h-6 ${currentTab === 'matches' ? 'fill-current' : ''}`} />
+                {relationships.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center min-w-[20px]">
+                    {relationships.length > 9 ? '9+' : relationships.length}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] sm:text-xs font-medium mt-0.5">Matches</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setCurrentTab('profile');
+                // TODO: Add profile view
+                toast.info('Profile view coming soon!');
+              }}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors touch-manipulation ${
+                currentTab === 'profile'
+                  ? 'text-pink-600'
+                  : 'text-gray-500 active:text-gray-700'
+              }`}
+              style={{ minHeight: '44px' }}
+            >
+              <User className={`w-6 h-6 ${currentTab === 'profile' ? 'fill-current' : ''}`} />
+              <span className="text-[10px] sm:text-xs font-medium mt-0.5">Profile</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -44,6 +44,10 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
 /* Safari and iOS-specific fixes */
 @supports (-webkit-touch-callout: none) {
   /* iOS Safari specific */
