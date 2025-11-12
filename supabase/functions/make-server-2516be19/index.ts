@@ -2096,10 +2096,47 @@ Respond as Link:`;
 
     const aiResponseText = await tryCallGemini(prompt);
     
+    // Smart fallback if Gemini fails
     if (!aiResponseText) {
+      console.error('Gemini API failed, using smart fallback');
+      
+      const lowerMessage = message.toLowerCase();
+      let fallbackResponse = "I'd love to help you find someone!";
+      let shouldSearch = false;
+      
+      // Detect what they're looking for
+      if (lowerMessage.includes('co-founder') || lowerMessage.includes('cofounder') || lowerMessage.includes('founder')) {
+        fallbackResponse = "That's exciting! I can help you find a co-founder on campus. Let me search through profiles to find someone who might be a great match for your project. What kind of skills or background are you looking for?";
+        shouldSearch = true;
+      } else if (lowerMessage.includes('study partner') || lowerMessage.includes('study buddy')) {
+        fallbackResponse = "I can help you find a study partner! Let me search through profiles to find someone who might be a good match for studying together.";
+        shouldSearch = true;
+      } else if (lowerMessage.includes('roommate')) {
+        fallbackResponse = "I can help you find a roommate! Let me search through profiles to find someone who might be compatible for living together.";
+        shouldSearch = true;
+      } else if (lowerMessage.includes('find') || lowerMessage.includes('looking for')) {
+        fallbackResponse = "I can help you find someone! What are you looking for? A co-founder, study partner, roommate, or friend?";
+        shouldSearch = true;
+      } else {
+        fallbackResponse = "I'm here to help you find connections on campus! You can ask me to find co-founders, study partners, roommates, or friends. What are you looking for?";
+      }
+      
+      // Add AI response to chat history even with fallback
+      const fallbackMessage = {
+        id: `${aiChatId}:${Date.now() + 1}`,
+        senderId: 'ai-assistant',
+        content: fallbackResponse,
+        timestamp: new Date().toISOString(),
+        type: 'ai',
+      };
+      aiChat.messages.push(fallbackMessage);
+      await kv.set(aiChatId, aiChat);
+      
       return c.json({
-        response: "I'm having trouble processing that right now. Could you try rephrasing?",
-        suggestions: ["Find a co-founder", "Find a study partner", "Find a roommate"],
+        response: fallbackResponse,
+        suggestions: shouldSearch ? ["Search profiles now", "Tell me more about what you're looking for"] : 
+                     ["Find a co-founder", "Find a study partner", "Find a roommate"],
+        shouldSearch: shouldSearch,
       });
     }
 

@@ -7,11 +7,17 @@ export async function tryCallGemini(prompt: string): Promise<string | null> {
   try {
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
-      console.log('GEMINI_API_KEY not configured');
+      console.error('[GEMINI] GEMINI_API_KEY not configured in environment variables');
+      console.error('[GEMINI] Please set GEMINI_API_KEY in Supabase Dashboard > Project Settings > Edge Functions > Secrets');
       return null;
     }
 
-    console.log('Calling Gemini API...');
+    if (apiKey.length < 20) {
+      console.error('[GEMINI] GEMINI_API_KEY appears to be invalid (too short)');
+      return null;
+    }
+
+    console.log('[GEMINI] Calling Gemini API...');
     
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -31,21 +37,32 @@ export async function tryCallGemini(prompt: string): Promise<string | null> {
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Gemini API error:', response.status, error);
+      const errorText = await response.text();
+      console.error(`[GEMINI] API error (${response.status}):`, errorText);
+      
+      if (response.status === 401) {
+        console.error('[GEMINI] Authentication failed - check your API key');
+      } else if (response.status === 429) {
+        console.error('[GEMINI] Rate limit exceeded');
+      } else if (response.status === 400) {
+        console.error('[GEMINI] Bad request - check prompt format');
+      }
+      
       return null;
     }
 
     const data = await response.json();
     if (!data.candidates || !data.candidates[0]?.content?.parts[0]?.text) {
-      console.error('Invalid Gemini response structure');
+      console.error('[GEMINI] Invalid response structure:', JSON.stringify(data).substring(0, 200));
       return null;
     }
     
-    console.log('Gemini API success');
-    return data.candidates[0].content.parts[0].text;
+    const responseText = data.candidates[0].content.parts[0].text;
+    console.log('[GEMINI] API success, response length:', responseText.length);
+    return responseText;
   } catch (error: any) {
-    console.error('Gemini call failed:', error.message);
+    console.error('[GEMINI] Call failed:', error.message);
+    console.error('[GEMINI] Error stack:', error.stack);
     return null;
   }
 }
