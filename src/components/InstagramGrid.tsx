@@ -303,11 +303,17 @@ export function InstagramGrid({ userProfile, accessToken, onProfileDetailOpen }:
                   <p className="text-sm font-semibold truncate">{profile.name}</p>
                   <p className="text-xs text-gray-200 truncate">{profile.major}</p>
                   <div className="flex gap-1 mt-1 flex-wrap">
-                    {profile.lookingFor?.slice(0, 2).map((item: string, i: number) => (
-                      <span key={i} className="text-[10px] bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                        {item}
-                      </span>
-                    ))}
+                    {profile.lookingFor?.slice(0, 2).map((item: string, i: number) => {
+                      // Convert normalized format (study-partner) to display format (Study Partner)
+                      const displayText = item.split('-').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ');
+                      return (
+                        <span key={i} className="text-[10px] bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full whitespace-nowrap">
+                          {displayText}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

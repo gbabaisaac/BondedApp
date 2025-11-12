@@ -55,11 +55,17 @@ export function ProfileCard({ profile, onClick }: ProfileCardProps) {
 
         {profile.lookingFor && profile.lookingFor.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {profile.lookingFor.slice(0, 3).map((item: string) => (
-              <Badge key={item} variant="secondary" className="text-xs">
-                {item}
-              </Badge>
-            ))}
+            {profile.lookingFor.slice(0, 3).map((item: string) => {
+              // Convert normalized format (study-partner) to display format (Study Partner)
+              const displayText = item.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+              ).join(' ');
+              return (
+                <Badge key={item} variant="secondary" className="text-xs whitespace-nowrap">
+                  {displayText}
+                </Badge>
+              );
+            })}
           </div>
         )}
 

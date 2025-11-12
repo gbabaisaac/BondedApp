@@ -404,11 +404,17 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
             <CardContent className="pt-6">
               <h3 className="text-sm text-gray-500 mb-3">Looking For</h3>
               <div className="flex flex-wrap gap-2">
-                {userProfile.lookingFor.map((item: string) => (
-                  <Badge key={item} className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
-                    {item}
-                  </Badge>
-                ))}
+                {userProfile.lookingFor.map((item: string) => {
+                  // Convert normalized format (study-partner) to display format (Study Partner)
+                  const displayText = item.split('-').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ');
+                  return (
+                    <Badge key={item} className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 whitespace-nowrap">
+                      {displayText}
+                    </Badge>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

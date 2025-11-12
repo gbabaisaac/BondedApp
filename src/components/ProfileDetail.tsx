@@ -130,11 +130,17 @@ export function ProfileDetail({
               <div>
                 <h3 className="text-lg mb-2">Looking For</h3>
                 <div className="flex flex-wrap gap-2">
-                  {profile.lookingFor.map((item: string) => (
-                    <Badge key={item} variant="secondary">
-                      {item}
-                    </Badge>
-                  ))}
+                  {profile.lookingFor.map((item: string) => {
+                    // Convert normalized format (study-partner) to display format (Study Partner)
+                    const displayText = item.split('-').map(word => 
+                      word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ');
+                    return (
+                      <Badge key={item} variant="secondary" className="whitespace-nowrap">
+                        {displayText}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
             )}

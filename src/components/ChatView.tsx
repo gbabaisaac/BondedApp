@@ -20,6 +20,8 @@ import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
 import { ChatListSkeleton, MessagesSkeleton } from './LoadingSkeletons';
 import { ProfileDetailView } from './ProfileDetailView';
+import './ChatView.css';
+import { isFeatureEnabled } from '../config/features';
 
 interface ChatViewProps {
   userProfile: any;
@@ -52,15 +54,21 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Load AI chat when AI chat is selected
+  // Load AI chat when AI chat is selected (only if feature is enabled)
   useEffect(() => {
-    if (isAIChat) {
+    if (isAIChat && isFeatureEnabled('AI_ASSISTANT_ENABLED')) {
       loadAIChat();
+    } else if (isAIChat && !isFeatureEnabled('AI_ASSISTANT_ENABLED')) {
+      // Redirect to chat list if feature is disabled
+      setIsAIChat(false);
     }
   }, [isAIChat]);
 
   useEffect(() => {
     if (selectedChat) {
+      // Clear typing indicator when switching chats
+      setIsTyping(false);
+      
       loadMessages();
       checkTypingStatus();
       markMessagesAsRead(); // Mark messages as read when opening chat
@@ -69,7 +77,12 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       return () => {
         clearInterval(messageInterval);
         clearInterval(typingInterval);
+        // Clear typing when leaving chat
+        setIsTyping(false);
       };
+    } else {
+      // Clear typing when no chat is selected
+      setIsTyping(false);
     }
   }, [selectedChat]);
 
@@ -157,7 +170,10 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
   };
 
   const checkTypingStatus = async () => {
-    if (!selectedChat?.chatId) return;
+    if (!selectedChat?.chatId) {
+      setIsTyping(false);
+      return;
+    }
     
     try {
       const response = await fetch(
@@ -171,10 +187,14 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       
       if (response.ok) {
         const data = await response.json();
-        setIsTyping(data.typing || false);
+        setIsTyping(data.typing === true); // Explicitly check for true
+      } else {
+        // If request fails, assume not typing
+        setIsTyping(false);
       }
     } catch (error) {
-      // Silently fail - typing indicator is not critical
+      // On error, clear typing indicator
+      setIsTyping(false);
     }
   };
 
@@ -197,18 +217,20 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
       clearTimeout(typingTimeout);
     }
     
-    // Set timeout to stop typing after 2 seconds of inactivity
+    // Set timeout to stop typing after 3 seconds of inactivity (matches backend TTL)
     const timeout = setTimeout(() => {
-      fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chat/${selectedChat.chatId}/typing/stop`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      ).catch(() => {}); // Silently fail
-    }, 2000);
+      if (selectedChat?.chatId) {
+        fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chat/${selectedChat.chatId}/typing/stop`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        ).catch(() => {}); // Silently fail
+      }
+    }, 3000); // Match backend TTL of 3 seconds
     
     setTypingTimeout(timeout);
   };
@@ -548,29 +570,31 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
             <ChatListSkeleton />
           ) : (
             <div className="divide-y">
-              {/* AI Assistant Option */}
-              <div
-                onClick={() => setIsAIChat(true)}
-                className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 border-b-2 border-[#2E7B91]/20"
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center">
-                  <Sparkles className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline justify-between mb-1">
-                    <h3 className="font-medium">Link - AI Assistant</h3>
+              {/* AI Assistant Option - Only show if feature is enabled */}
+              {isFeatureEnabled('AI_ASSISTANT_ENABLED') && (
+                <div
+                  onClick={() => setIsAIChat(true)}
+                  className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 border-b-2 border-[#2E7B91]/20"
+                >
+                  <div className="w-14 h-14 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 text-white" />
                   </div>
-                  <p className="text-sm text-gray-600 truncate">
-                    Find co-founders, study partners, and connections
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between mb-1">
+                      <h3 className="font-medium">Link - AI Assistant</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 truncate">
+                      Find co-founders, study partners, and connections
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Regular Chats */}
               {chats.length === 0 ? (
                 <div className="flex items-center justify-center p-8">
                   <p className="text-sm text-gray-500 text-center">
-                    No messages yet. Start a conversation or chat with Link!
+                    No messages yet. Start a conversation!
                   </p>
                 </div>
               ) : (
@@ -630,8 +654,8 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
     );
   }
 
-  // AI Chat View
-  if (isAIChat) {
+  // AI Chat View - Only accessible if feature is enabled
+  if (isAIChat && isFeatureEnabled('AI_ASSISTANT_ENABLED')) {
     // If profile is selected, show ProfileDetailView instead
     if (selectedProfile) {
       // Find all profiles from all suggestion messages
@@ -796,15 +820,18 @@ export function ChatView({ userProfile, accessToken }: ChatViewProps) {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <Button
-                                size="sm"
+                              <button
                                 onClick={() => handleIntroResponse(message.metadata.introRequestId, true)}
-                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] font-medium shadow-sm min-w-[100px]"
-                                style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] font-medium shadow-sm min-w-[100px] rounded-md px-4 py-2 flex items-center justify-center gap-1.5 text-sm transition-colors"
+                                style={{ 
+                                  border: 'none',
+                                  cursor: 'pointer'
+                                }}
+                                data-accept-button
                               >
-                                <UserPlus className="w-4 h-4 mr-1.5" style={{ color: '#ffffff', stroke: '#ffffff' }} />
-                                <span style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}>Accept</span>
-                              </Button>
+                                <UserPlus className="w-4 h-4" />
+                                <span>Accept</span>
+                              </button>
                               <Button
                                 size="sm"
                                 variant="outline"

@@ -278,11 +278,17 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
             <div>
               <h3 className="text-sm text-[#64748b] mb-2 font-medium">Looking For</h3>
               <div className="flex flex-wrap gap-2">
-                {profile.lookingFor.map((item) => (
-                  <Badge key={item} className="bg-[#2E7B9120] text-[#1E4F74]">
-                    {item}
-                  </Badge>
-                ))}
+                {profile.lookingFor.map((item) => {
+                  // Convert normalized format (study-partner) to display format (Study Partner)
+                  const displayText = item.split('-').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ');
+                  return (
+                    <Badge key={item} className="bg-[#2E7B9120] text-[#1E4F74] whitespace-nowrap">
+                      {displayText}
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -1596,7 +1596,10 @@ app.get("/chat/:chatId/typing", async (c) => {
     }
 
     const typingStatus = await kv.get(`chat:${chatId}:typing:${otherUserId}`);
-    return c.json({ typing: !!typingStatus, userId: typingStatus?.userId });
+    // If typingStatus exists and is not null/undefined, user is typing
+    // The TTL will automatically expire after 3 seconds, so if it exists, they're actively typing
+    const isTyping = typingStatus !== null && typingStatus !== undefined;
+    return c.json({ typing: isTyping, userId: typingStatus?.userId });
   } catch (error: any) {
     console.error('Get typing error:', error);
     return c.json({ error: error.message }, 500);
