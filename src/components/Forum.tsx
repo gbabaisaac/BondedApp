@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import {
   Heart,
   MessageCircle,
+  ThumbsUp,
   ThumbsDown,
   Share2,
   Send,
@@ -475,7 +476,27 @@ export function Forum() {
         <h1 className="text-2xl font-bold text-gradient">
           The Quad
         </h1>
-        <p className="text-xs text-soft-cream/60 mt-0.5">Anonymous posts from your campus</p>
+        <p className="text-xs text-soft-cream/60 mt-0.5">Post anonymous messages, pictures or videos to everyone on campus</p>
+      </div>
+
+      {/* Trending Now Section */}
+      <div className="px-4 py-4">
+        <div className="glass-card rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🔥</span>
+            <h2 className="text-lg font-bold text-soft-cream">Trending Now</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {['#Finals', '#CampusEvents', '#StudySpots', '#FoodRecs', '#Housing'].map((tag) => (
+              <button
+                key={tag}
+                className="px-3 py-1.5 rounded-full text-sm font-medium bg-teal-blue/20 text-teal-blue border border-teal-blue/30 hover:bg-teal-blue/30 transition-colors"
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Create Post - Bonded Design */}
@@ -630,124 +651,137 @@ export function Forum() {
                 className="relative"
               >
                 <Card
-                  className={`glass-card rounded-3xl overflow-hidden transition-all ${
+                  className={`bg-midnight-indigo/60 backdrop-blur-sm rounded-2xl border border-soft-cream/10 overflow-hidden transition-all ${
                     isExpanded ? 'ring-2 ring-teal-blue' : ''
                   }`}
                 >
                   <CardContent className="p-4">
                     {/* Post Header */}
                     <div className="flex items-start justify-between mb-3">
-                             <div
-                               className={`flex items-center gap-2 flex-1 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
-                               onClick={() => !post.isAnonymous && handleProfileClick(post.authorId)}
-                             >
-                               <Avatar className="w-10 h-10 ring-2 ring-teal-blue/30">
-                                 <AvatarImage src={post.authorAvatar} />
-                                 <AvatarFallback className="bg-gradient-to-br from-teal-blue to-lavender-mist text-soft-cream">
-                                   {post.isAnonymous ? '?' : post.authorName[0]}
-                                 </AvatarFallback>
-                               </Avatar>
-                               <div>
-                                 <p className="text-sm font-semibold text-soft-cream">
-                                   {post.isAnonymous ? 'Anonymous Student' : post.authorName}
-                                 </p>
-                                 <p className="text-xs text-soft-cream/60">
-                                   {formatTimeAgo(post.createdAt)}
-                                 </p>
-                               </div>
-                             </div>
-                             <div className="relative">
-                               <Button
-                                 variant="ghost"
-                                 size="icon"
-                                 className="btn-icon"
-                                 onClick={() => setShowPostMenu(showPostMenu === post.id ? null : post.id)}
-                               >
-                                 <MoreVertical className="w-4 h-4" />
-                               </Button>
-                               {showPostMenu === post.id && (
-                                 <div className="absolute right-0 top-10 glass-card rounded-2xl py-2 z-50 min-w-[120px]">
-                                   {isPostAuthor(post) && (
-                                     <button
-                                       onClick={() => handleDeletePost(post.id)}
-                                       className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 rounded-lg"
-                                     >
-                                       <Trash2 className="w-4 h-4" />
-                                       Delete
-                                     </button>
-                                   )}
-                                   <button
-                                     onClick={() => {
-                                       openShareDialog(post.id);
-                                       setShowPostMenu(null);
-                                     }}
-                                     className="w-full px-4 py-2 text-left text-sm text-soft-cream hover:bg-soft-cream/10 flex items-center gap-2 rounded-lg"
-                                   >
-                                     <Share2 className="w-4 h-4" />
-                                     Share
-                                   </button>
-                                 </div>
-                               )}
-                             </div>
-                           </div>
+                      <div
+                        className={`flex items-center gap-3 flex-1 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        onClick={() => !post.isAnonymous && handleProfileClick(post.authorId)}
+                      >
+                        <Avatar className="w-12 h-12 flex-shrink-0">
+                          <AvatarImage src={post.authorAvatar} />
+                          <AvatarFallback className="bg-gradient-to-br from-lavender-mist to-peach-glow text-midnight-indigo font-bold">
+                            {post.isAnonymous ? '?' : post.authorName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-soft-cream truncate">
+                            {post.isAnonymous ? 'Anonymous Student' : post.authorName}
+                          </p>
+                          {!post.isAnonymous && (
+                            <p className="text-xs text-soft-cream/50">
+                              {formatTimeAgo(post.createdAt)}
+                            </p>
+                          )}
+                          {post.isAnonymous && (
+                            <p className="text-xs text-soft-cream/50">
+                              {formatTimeAgo(post.createdAt)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-soft-cream/60 hover:text-soft-cream hover:bg-soft-cream/10"
+                          onClick={() => setShowPostMenu(showPostMenu === post.id ? null : post.id)}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                        {showPostMenu === post.id && (
+                          <div className="absolute right-0 top-10 glass-card rounded-2xl py-2 z-50 min-w-[120px]">
+                            {isPostAuthor(post) && (
+                              <button
+                                onClick={() => handleDeletePost(post.id)}
+                                className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 rounded-lg"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                openShareDialog(post.id);
+                                setShowPostMenu(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-soft-cream hover:bg-soft-cream/10 flex items-center gap-2 rounded-lg"
+                            >
+                              <Share2 className="w-4 h-4" />
+                              Share
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                           {/* Post Content */}
-                           <p className="text-sm mb-3 whitespace-pre-wrap text-soft-cream">{post.content}</p>
+                    {/* Post Title (if exists) */}
+                    {post.title && (
+                      <h3 className="text-base font-bold text-soft-cream mb-2">
+                        {post.title}
+                      </h3>
+                    )}
+
+                    {/* Post Content */}
+                    <p className="text-sm text-soft-cream/80 mb-3 whitespace-pre-wrap leading-relaxed">
+                      {post.content}
+                    </p>
+
+                    {/* Post Tags */}
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {post.tags.map((tag: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 rounded-full text-xs font-medium bg-lavender-mist/20 text-lavender-mist border border-lavender-mist/30"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Media */}
                     {post.mediaUrl && (
-                      <div className="mb-3 rounded-2xl overflow-hidden">
+                      <div className="mb-3 rounded-xl overflow-hidden">
                         {post.mediaType === 'video' ? (
-                          <video src={post.mediaUrl} controls className="w-full" />
+                          <video src={post.mediaUrl} controls className="w-full max-h-64 object-cover" />
                         ) : (
-                          <img src={post.mediaUrl} alt="Post media" className="w-full" />
+                          <img src={post.mediaUrl} alt="Post media" className="w-full max-h-96 object-cover" />
                         )}
                       </div>
                     )}
 
-                           {/* Actions - Bonded Design */}
-                           <div className="flex items-center gap-4 pt-3 border-t border-soft-cream/10">
-                             <button
-                               onClick={() => handleLike(post.id)}
-                               className={`flex items-center gap-1.5 transition-all ${
-                                 post.userLiked ? 'text-peach-glow scale-110' : 'text-soft-cream/60 hover:text-peach-glow'
-                               }`}
-                             >
-                               <Heart className={`w-5 h-5 ${post.userLiked ? 'fill-current' : ''}`} />
-                               <span className="text-sm font-medium">{post.likes}</span>
-                             </button>
+                    {/* Engagement Metrics */}
+                    <div className="flex items-center gap-4 pt-3 border-t border-soft-cream/10">
+                      <button
+                        onClick={() => {
+                          const newShowState = showComments === post.id ? null : post.id;
+                          setShowComments(newShowState);
+                          if (newShowState && !postComments[post.id]) {
+                            loadComments(post.id);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 text-soft-cream/60 hover:text-teal-blue transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span className="text-sm font-medium">{post.comments} replies</span>
+                      </button>
 
-                             <button
-                               onClick={() => handleDislike(post.id)}
-                               className={`flex items-center gap-1.5 transition-all ${
-                                 post.userDisliked ? 'text-red-400 scale-110' : 'text-soft-cream/60 hover:text-red-400'
-                               }`}
-                             >
-                               <ThumbsDown className={`w-5 h-5 ${post.userDisliked ? 'fill-current' : ''}`} />
-                               <span className="text-sm font-medium">{post.dislikes}</span>
-                             </button>
-
-                             <button
-                               onClick={() => {
-                                 const newShowState = showComments === post.id ? null : post.id;
-                                 setShowComments(newShowState);
-                                 if (newShowState && !postComments[post.id]) {
-                                   loadComments(post.id);
-                                 }
-                               }}
-                               className="flex items-center gap-1.5 text-soft-cream/60 hover:text-teal-blue transition-colors"
-                             >
-                               <MessageCircle className="w-5 h-5" />
-                               <span className="text-sm font-medium">{post.comments}</span>
-                             </button>
-
-                             <button
-                               onClick={() => openShareDialog(post.id)}
-                               className="flex items-center gap-1.5 text-soft-cream/60 hover:text-teal-blue transition-colors ml-auto"
-                             >
-                               <Share2 className="w-5 h-5" />
-                             </button>
-                           </div>
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-1.5 transition-all ${
+                          post.userLiked ? 'text-peach-glow' : 'text-soft-cream/60 hover:text-peach-glow'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-4 h-4 ${post.userLiked ? 'fill-current' : ''}`} />
+                        <span className="text-sm font-medium">{post.likes}</span>
+                      </button>
+                    </div>
 
                     {/* Preview Comments (1-2 comments) - Bonded Design */}
                     {!isExpanded && previewComments.length > 0 && (
