@@ -482,8 +482,8 @@ export function Forum() {
         <p className="text-sm text-soft-cream/60">Anonymous campus-wide posts.</p>
       </div>
 
-      {/* Floating Create Post Button */}
-      <div className="fixed bottom-20 right-4 z-40">
+      {/* Floating Create Post Button - Above Bottom Nav */}
+      <div className="fixed bottom-20 right-4 z-40" style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}>
         <button
           onClick={() => setShowPostComposer(true)}
           className="w-14 h-14 bg-gradient-to-r from-teal-blue to-ocean-blue rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"

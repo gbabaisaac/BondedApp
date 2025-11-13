@@ -132,7 +132,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
           }}
         >
           <div className="max-w-2xl mx-auto">
-            <div className="bg-gray-900/90 backdrop-blur-2xl rounded-2xl border border-gray-700/30 shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+            <div className="bg-midnight-indigo/95 backdrop-blur-2xl rounded-2xl border border-teal-blue/30 shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
               <div className="flex items-center justify-around h-14 px-1">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
@@ -145,7 +145,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                       className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-300 relative ${
                         isActive 
                           ? 'text-teal-blue' 
-                          : 'text-gray-400'
+                          : 'text-soft-cream/60'
                       }`}
                     >
                       {/* Active Tab Indicator */}
@@ -159,7 +159,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                           className={`w-5 h-5 transition-all duration-300 ${
                             isActive 
                               ? 'fill-teal-blue text-teal-blue scale-110' 
-                              : 'text-gray-400'
+                              : 'text-soft-cream/60'
                           }`} 
                         />
                         {tab.badge > 0 && (
@@ -173,7 +173,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                       <span className={`text-[9px] font-medium z-10 transition-all duration-300 leading-tight ${
                         isActive 
                           ? 'text-teal-blue' 
-                          : 'text-gray-400'
+                          : 'text-soft-cream/60'
                       }`}>
                         {tab.label}
                       </span>
