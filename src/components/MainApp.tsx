@@ -56,14 +56,14 @@ export function MainApp() {
         />
       )}
       <div
-        className="fixed inset-0 flex flex-col bg-white"
+        className="fixed inset-0 flex flex-col bg-gradient-to-br from-[#1E4F74] via-[#2E7B91] to-[#1E4F74]"
           style={{
             height: '100dvh',
             overflow: 'hidden'
           }}
       >
       {/* Top Banner with Profile Picture */}
-      <div className="sticky top-0 z-50 bg-white border-b border-[#EAEAEA] px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => {
             // Profile is now accessed via top-left avatar, so just show profile view
@@ -84,7 +84,7 @@ export function MainApp() {
             alt="bonded logo" 
             className="w-6 h-6"
           />
-          <h1 className="text-xl text-[#1E4F74] lowercase font-bold tracking-wide">
+          <h1 className="text-xl text-white lowercase font-bold tracking-wide">
             bonded
           </h1>
         </div>

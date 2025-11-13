@@ -712,8 +712,6 @@ export function ChatView() {
           hasNext={currentIndex < allProfiles.length - 1}
           hasPrev={currentIndex > 0}
           accessToken={accessToken}
-          currentIndex={currentIndex}
-          totalProfiles={allProfiles.length}
         />
       );
     }

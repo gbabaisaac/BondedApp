@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Heart, MessageCircle, ThumbsDown, Share2, Send, Image as ImageIcon, Video, X, Loader2, Trash2, MoreVertical } from 'lucide-react';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -7,13 +7,28 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import {
+  Heart,
+  MessageCircle,
+  ThumbsDown,
+  Share2,
+  Send,
+  Image as ImageIcon,
+  Video,
+  MoreVertical,
+  Flag,
+  X,
+  Loader2,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { projectId } from '../utils/supabase/info';
 import { motion, AnimatePresence } from 'motion/react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
-import { getProfilePictureUrl } from '../utils/image-optimization';
 
 interface ForumPost {
   id: string;
@@ -30,7 +45,6 @@ interface ForumPost {
   userDisliked: boolean;
   createdAt: string;
   isAnonymous: boolean;
-  canDelete?: boolean;
 }
 
 interface ForumComment {
@@ -50,10 +64,11 @@ export function Forum() {
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
-  const [postTitle, setPostTitle] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
+  const [selectedPost, setSelectedPost] = useState<string | null>(null);
+  const [expandedPost, setExpandedPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [showComments, setShowComments] = useState<string | null>(null);
   const [postComments, setPostComments] = useState<Record<string, ForumComment[]>>({});
   const [selectedProfile, setSelectedProfile] = useState<any | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<{ file: File; type: 'image' | 'video'; preview: string } | null>(null);
@@ -63,8 +78,6 @@ export function Forum() {
   const [friends, setFriends] = useState<any[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [trendingTopics, setTrendingTopics] = useState<string[]>(['#Finals', '#CampusEvents', '#StudySpots', '#FoodRecs', '#Housing']);
 
   useEffect(() => {
     loadPosts();
@@ -98,6 +111,7 @@ export function Forum() {
     if (!accessToken) return;
     setLoadingFriends(true);
     try {
+      // Load chats to get friends list
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/chats`,
         {
@@ -109,6 +123,7 @@ export function Forum() {
 
       if (response.ok) {
         const chats = await response.json();
+        // Extract unique friends from chats
         const friendMap = new Map();
         chats.forEach((chat: any) => {
           if (chat.otherUser) {
@@ -212,10 +227,8 @@ export function Forum() {
       if (response.ok) {
         toast.success('Post created!');
         setNewPost('');
-        setPostTitle('');
         setSelectedMedia(null);
         setIsAnonymous(true);
-        setShowCreatePost(false);
         loadPosts();
       } else {
         throw new Error('Failed to create post');
@@ -246,7 +259,6 @@ export function Forum() {
         toast.success('Post deleted');
         loadPosts();
         setShowPostMenu(null);
-        setSelectedPost(null);
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to delete post');
@@ -297,13 +309,6 @@ export function Forum() {
 
       if (response.ok) {
         loadPosts();
-        if (selectedPost?.id === postId) {
-          const updatedPost = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/forum/posts/${postId}`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` } }
-          ).then(res => res.json());
-          setSelectedPost(updatedPost.post);
-        }
       }
     } catch (error) {
       console.error('Like error:', error);
@@ -324,13 +329,6 @@ export function Forum() {
 
       if (response.ok) {
         loadPosts();
-        if (selectedPost?.id === postId) {
-          const updatedPost = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/forum/posts/${postId}`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` } }
-          ).then(res => res.json());
-          setSelectedPost(updatedPost.post);
-        }
       }
     } catch (error) {
       console.error('Dislike error:', error);
@@ -371,7 +369,7 @@ export function Forum() {
           },
           body: JSON.stringify({
             content: commentText,
-            isAnonymous: false,
+            isAnonymous: true,
           }),
         }
       );
@@ -381,13 +379,6 @@ export function Forum() {
         setCommentText('');
         loadComments(postId);
         loadPosts();
-        if (selectedPost?.id === postId) {
-          const updatedPost = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/forum/posts/${postId}`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` } }
-          ).then(res => res.json());
-          setSelectedPost(updatedPost.post);
-        }
       }
     } catch (error) {
       console.error('Comment error:', error);
@@ -468,322 +459,48 @@ export function Forum() {
     return `${days}d ago`;
   };
 
-  // Extract title from content (first sentence or first 50 chars)
-  const getPostTitle = (content: string) => {
-    if (!content) return '';
-    const firstSentence = content.split(/[.!?]/)[0];
-    if (firstSentence.length > 50) {
-      return firstSentence.substring(0, 50) + '...';
-    }
-    return firstSentence || content.substring(0, 50);
+  const isPostAuthor = (post: ForumPost) => {
+    return userProfile?.id === post.authorId;
   };
 
-  // Extract tags from content
-  const extractTags = (content: string) => {
-    const hashtagRegex = /#(\w+)/g;
-    const matches = content.match(hashtagRegex);
-    return matches || [];
+  const getPreviewComments = (postId: string) => {
+    const comments = postComments[postId] || [];
+    return comments.slice(0, 2); // Show first 2 comments in preview
   };
-
-  // Full post view (expanded)
-  if (selectedPost) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="fixed inset-0 bg-white flex flex-col z-50"
-        style={{
-          fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        }}
-      >
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedPost(null)} className="text-gray-600">
-            <X className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-bold text-gray-900">Post Details</h1>
-          <div className="w-10" />
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[20px] border border-gray-200 p-5 mb-4 shadow-sm"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <Avatar
-                className={`w-11 h-11 ${!selectedPost.isAnonymous ? 'cursor-pointer' : ''}`}
-                onClick={() => !selectedPost.isAnonymous && handleProfileClick(selectedPost.authorId)}
-              >
-                <AvatarImage src={getProfilePictureUrl(selectedPost.authorAvatar, 'small')} />
-                <AvatarFallback className="bg-[#2E7B91] text-white">
-                  {selectedPost.isAnonymous ? '?' : selectedPost.authorName[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div
-                  className={`text-[15px] font-bold text-gray-900 mb-0.5 ${!selectedPost.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
-                  onClick={() => !selectedPost.isAnonymous && handleProfileClick(selectedPost.authorId)}
-                >
-                  {selectedPost.isAnonymous ? 'Anonymous Student' : selectedPost.authorName}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {userProfile?.year || 'Student'} • {formatTimeAgo(selectedPost.createdAt)}
-                </div>
-              </div>
-              {selectedPost.canDelete && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeletePost(selectedPost.id)}
-                  className="text-gray-600 hover:text-red-500"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-
-            <h2 className="text-lg font-bold text-gray-900 mb-2">
-              {getPostTitle(selectedPost.content)}
-            </h2>
-
-            <p className="text-[15px] leading-relaxed text-gray-700 mb-4">
-              {selectedPost.content}
-            </p>
-
-            {selectedPost.mediaUrl && (
-              <div className="mb-4 rounded-xl overflow-hidden">
-                {selectedPost.mediaType === 'video' ? (
-                  <video src={selectedPost.mediaUrl} controls className="w-full" />
-                ) : (
-                  <img src={selectedPost.mediaUrl} alt="Post media" className="w-full rounded-xl" />
-                )}
-              </div>
-            )}
-
-            {extractTags(selectedPost.content).length > 0 && (
-              <div className="flex gap-2 flex-wrap mb-4">
-                {extractTags(selectedPost.content).map((tag, i) => (
-                  <span
-                    key={i}
-                    className="px-3 py-1 rounded-xl bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-semibold"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div className="flex gap-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => handleLike(selectedPost.id)}
-                className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
-                  selectedPost.userLiked ? 'text-pink-500' : 'text-gray-600 active:text-pink-500'
-                }`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <Heart className={`w-5 h-5 ${selectedPost.userLiked ? 'fill-current' : ''}`} />
-                <span className="text-sm font-semibold">{selectedPost.likes}</span>
-              </button>
-
-              <button
-                onClick={() => handleDislike(selectedPost.id)}
-                className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
-                  selectedPost.userDisliked ? 'text-red-500' : 'text-gray-600 active:text-red-500'
-                }`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <ThumbsDown className={`w-5 h-5 ${selectedPost.userDisliked ? 'fill-current' : ''}`} />
-                <span className="text-sm font-semibold">{selectedPost.dislikes}</span>
-              </button>
-
-              <button className="flex items-center gap-1.5 text-gray-600 touch-manipulation active:scale-95 min-h-[44px]">
-                <MessageCircle className="w-5 h-5" />
-                <span className="text-sm font-semibold">{selectedPost.comments}</span>
-              </button>
-
-              <button
-                onClick={() => openShareDialog(selectedPost.id)}
-                className="flex items-center gap-1.5 text-gray-600 active:text-[#2E7B91] ml-auto touch-manipulation active:scale-95 min-h-[44px]"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Comments Section */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Comments</h3>
-            <div className="flex gap-2 mb-3">
-              <Input
-                placeholder="Add a comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleComment(selectedPost.id);
-                  }
-                }}
-                className="flex-1 h-9 text-sm rounded-full border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-[#2E7B91]"
-              />
-              <Button
-                onClick={() => handleComment(selectedPost.id)}
-                size="sm"
-                className="h-9 rounded-full bg-[#2E7B91] hover:bg-[#25658A]"
-              >
-                <Send className="w-3 h-3" />
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {postComments[selectedPost.id]?.length === 0 ? (
-                <p className="text-xs text-gray-500 text-center py-2">
-                  No comments yet. Be the first!
-                </p>
-              ) : (
-                postComments[selectedPost.id]?.map((comment: ForumComment) => (
-                  <div key={comment.id} className="flex gap-2 text-sm items-start bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-                    <Avatar className="w-7 h-7 flex-shrink-0">
-                      <AvatarImage src={getProfilePictureUrl(comment.authorAvatar, 'small')} />
-                      <AvatarFallback className="bg-[#2E7B91] text-white text-xs">
-                        {comment.isAnonymous ? '?' : comment.authorName[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs text-gray-900 mb-1">
-                        {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
-                        <span className="text-[10px] text-gray-500 ml-2">
-                          {formatTimeAgo(comment.createdAt)}
-                        </span>
-                      </p>
-                      <p className="text-gray-700">{comment.content}</p>
-                    </div>
-                    {comment.canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-gray-400 hover:text-red-500"
-                        onClick={() => handleDeleteComment(selectedPost.id, comment.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
-    <div
-      className="min-h-screen flex flex-col relative overflow-x-hidden bg-gray-50"
-      style={{
-        fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
-      {/* Fixed Header */}
-      <div
-        className="fixed top-0 left-0 right-0 z-[1000] bg-white border-b border-gray-200"
-        style={{
-          paddingTop: 'env(safe-area-inset-top, 0)',
-        }}
-      >
-        <div className="max-w-[800px] mx-auto px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-bold text-white bg-[#667eea]">
-              Q
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-[#3b82f6] rounded"></div>
-              <h1 className="text-lg sm:text-xl font-bold text-[#3b82f6]">
-                bonded
-              </h1>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-[20px] border-none font-semibold text-xs sm:text-sm cursor-pointer transition-all duration-300 text-white touch-manipulation active:scale-95 min-h-[44px] bg-[#2E7B91] hover:bg-[#25658A]"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            + New Post
-          </button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-yellow-50 pb-20">
+      {/* Header - YikYak style */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-purple-200/50 px-4 py-3 shadow-sm">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          The Quad
+        </h1>
+        <p className="text-xs text-gray-600 mt-0.5">Anonymous posts from your campus</p>
       </div>
 
-      {/* Main Content */}
-      <div 
-        className="flex-1 pt-20 pb-24 max-w-[800px] mx-auto w-full px-4 sm:px-5"
-        style={{
-          paddingTop: 'calc(80px + env(safe-area-inset-top, 0))',
-          paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0))',
-        }}
-      >
-        {/* Trending Topics */}
+      {/* Create Post - Snapchat style rounded card */}
+      <div className="p-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[20px] border border-gray-200 p-4 sm:p-5 mb-4 sm:mb-6 shadow-sm"
+          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-purple-100 p-4"
         >
-          <div className="text-sm sm:text-base font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-            Trending Now
-          </div>
-          <div className="flex gap-2 sm:gap-2.5 flex-wrap overflow-x-auto pb-2 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {trendingTopics.map((topic, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setNewPost(topic + ' ');
-                  setShowCreatePost(true);
-                }}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-[20px] border border-gray-300 cursor-pointer transition-all duration-300 text-xs sm:text-[13px] font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 touch-manipulation active:scale-95 whitespace-nowrap min-h-[36px]"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                {topic}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Create Post Dialog */}
-        <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
-          <DialogContent className="w-[95vw] sm:max-w-[600px] rounded-3xl bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-gray-900">Create New Post</DialogTitle>
-              <DialogDescription className="text-gray-600">
-                Share what's on your mind with your campus
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="post-title" className="text-gray-700 mb-2 block">
-                  Title (optional)
-                </Label>
-                <Input
-                  id="post-title"
-                  placeholder="Give your post a title..."
-                  value={postTitle}
-                  onChange={(e) => setPostTitle(e.target.value)}
-                  className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                />
-              </div>
-              <div>
-                <Label htmlFor="post-content" className="text-gray-700 mb-2 block">
-                  Content
-                </Label>
-                <Textarea
-                  id="post-content"
-                  placeholder="What's on your mind? Share with your campus..."
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  className="min-h-[120px] bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                />
-              </div>
+          <div className="flex gap-3">
+            <Avatar className="w-10 h-10 ring-2 ring-purple-200">
+              <AvatarImage src={userProfile?.profilePicture} />
+              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                {userProfile?.name?.[0] || 'A'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <Textarea
+                placeholder="What's on your mind? Share with your campus..."
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                className="min-h-[80px] resize-none rounded-2xl border-purple-200 focus:border-purple-400"
+              />
               {selectedMedia && (
-                <div className="relative rounded-xl overflow-hidden">
+                <div className="mt-2 relative rounded-2xl overflow-hidden">
                   {selectedMedia.type === 'image' ? (
                     <img
                       src={selectedMedia.preview}
@@ -808,17 +525,17 @@ export function Forum() {
                   </Button>
                 </div>
               )}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <Switch
                       id="anonymous"
                       checked={isAnonymous}
                       onCheckedChange={setIsAnonymous}
-                      className="data-[state=checked]:bg-[#2E7B91]"
+                      className="data-[state=checked]:bg-purple-600"
                     />
                     <Label htmlFor="anonymous" className="text-xs text-gray-600 cursor-pointer">
-                      Post anonymously
+                      Anonymous
                     </Label>
                   </div>
                   <div className="flex gap-2">
@@ -834,11 +551,11 @@ export function Forum() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-full hover:bg-gray-100 cursor-pointer text-gray-600"
+                        className="h-9 w-9 rounded-full hover:bg-purple-100 cursor-pointer"
                         asChild
                       >
                         <span>
-                          <ImageIcon className="w-5 h-5" />
+                          <ImageIcon className="w-5 h-5 text-purple-600" />
                         </span>
                       </Button>
                     </label>
@@ -854,11 +571,11 @@ export function Forum() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-full hover:bg-gray-100 cursor-pointer text-gray-600"
+                        className="h-9 w-9 rounded-full hover:bg-pink-100 cursor-pointer"
                         asChild
                       >
                         <span>
-                          <Video className="w-5 h-5" />
+                          <Video className="w-5 h-5 text-pink-600" />
                         </span>
                       </Button>
                     </label>
@@ -866,8 +583,9 @@ export function Forum() {
                 </div>
                 <Button
                   onClick={handleCreatePost}
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-full px-6 shadow-lg"
                   disabled={uploadingMedia}
-                  className="bg-[#2E7B91] hover:bg-[#25658A] text-white rounded-full px-6"
                 >
                   {uploadingMedia ? (
                     <>
@@ -883,199 +601,295 @@ export function Forum() {
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Posts Feed */}
-        {loading ? (
-          <div className="p-8 text-center text-gray-600">Loading posts...</div>
-        ) : posts.length === 0 ? (
-          <div className="p-8 text-center text-gray-600">
-            <div className="text-6xl mb-5">💬</div>
-            <h3 className="text-lg font-semibold mb-2 text-gray-900">No posts yet</h3>
-            <p className="text-gray-600">Be the first to share something!</p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {posts.map((post) => {
-              const tags = extractTags(post.content);
-              const title = getPostTitle(post.content);
-              
-              return (
-                <motion.div
-                  key={post.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -2 }}
-                  className="bg-white rounded-[20px] border border-gray-200 p-4 sm:p-5 cursor-pointer transition-all duration-300 active:scale-[0.98] touch-manipulation shadow-sm hover:shadow-md"
-                  onClick={() => {
-                    setSelectedPost(post);
-                    loadComments(post.id);
-                  }}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <Avatar
-                      className={`w-11 h-11 ${!post.isAnonymous ? 'cursor-pointer' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        !post.isAnonymous && handleProfileClick(post.authorId);
-                      }}
-                    >
-                      <AvatarImage src={getProfilePictureUrl(post.authorAvatar, 'small')} />
-                      <AvatarFallback className="bg-[#2E7B91] text-white">
-                        {post.isAnonymous ? '?' : post.authorName[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div
-                        className={`text-[15px] font-bold text-gray-900 mb-0.5 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          !post.isAnonymous && handleProfileClick(post.authorId);
-                        }}
-                      >
-                        {post.isAnonymous ? 'Anonymous Student' : post.authorName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {userProfile?.year || 'Student'} • {formatTimeAgo(post.createdAt)}
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-gray-100 text-gray-600"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowPostMenu(showPostMenu === post.id ? null : post.id);
-                        }}
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                      {showPostMenu === post.id && (
-                        <div className="absolute right-0 top-10 bg-white rounded-2xl border border-gray-200 shadow-lg py-2 z-50 min-w-[120px]">
-                          {post.canDelete && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeletePost(post.id);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 flex items-center gap-2"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openShareDialog(post.id);
-                              setShowPostMenu(null);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                          >
-                            <Share2 className="w-4 h-4" />
-                            Share
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-                    {title}
-                  </h2>
-
-                  <p className="text-sm sm:text-[15px] leading-relaxed text-gray-700 mb-4 line-clamp-3">
-                    {post.content}
-                  </p>
-
-                  {post.mediaUrl && (
-                    <div className="mb-4 rounded-xl overflow-hidden">
-                      {post.mediaType === 'video' ? (
-                        <video src={post.mediaUrl} controls className="w-full" />
-                      ) : (
-                        <img src={post.mediaUrl} alt="Post media" className="w-full rounded-xl" />
-                      )}
-                    </div>
-                  )}
-
-                  {tags.length > 0 && (
-                    <div className="flex gap-2 flex-wrap mb-4">
-                      {tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1 rounded-xl bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-semibold"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex gap-3 sm:gap-4 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLike(post.id);
-                      }}
-                      className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
-                        post.userLiked ? 'text-pink-500' : 'text-gray-600 active:text-pink-500'
-                      }`}
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <Heart className={`w-5 h-5 ${post.userLiked ? 'fill-current' : ''}`} />
-                      <span className="text-xs sm:text-sm font-semibold">{post.likes}</span>
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDislike(post.id);
-                      }}
-                      className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
-                        post.userDisliked ? 'text-red-500' : 'text-gray-600 active:text-red-500'
-                      }`}
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <ThumbsDown className={`w-5 h-5 ${post.userDisliked ? 'fill-current' : ''}`} />
-                      <span className="text-xs sm:text-sm font-semibold">{post.dislikes}</span>
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedPost(post);
-                        loadComments(post.id);
-                      }}
-                      className="flex items-center gap-1.5 text-gray-600 active:text-[#2E7B91] touch-manipulation active:scale-95 min-h-[44px]"
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      <span className="text-xs sm:text-sm font-semibold">{post.comments} replies</span>
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
+        </motion.div>
       </div>
 
-      {/* Share Dialog */}
+      {/* Posts Feed - YikYak style */}
+      {loading ? (
+        <div className="p-8 text-center text-gray-500">Loading posts...</div>
+      ) : posts.length === 0 ? (
+        <div className="p-8 text-center">
+          <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
+          <p className="text-gray-600">Be the first to share something!</p>
+        </div>
+      ) : (
+        <div className="space-y-3 px-4 pb-4">
+          {posts.map((post) => {
+            const isExpanded = expandedPost === post.id;
+            const previewComments = getPreviewComments(post.id);
+            const allComments = postComments[post.id] || [];
+            const showAllComments = showComments === post.id;
+
+            return (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative"
+              >
+                <Card
+                  className={`bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-purple-100/50 overflow-hidden transition-all ${
+                    isExpanded ? 'ring-2 ring-purple-300' : ''
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    {/* Post Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div
+                        className={`flex items-center gap-2 flex-1 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        onClick={() => !post.isAnonymous && handleProfileClick(post.authorId)}
+                      >
+                        <Avatar className="w-10 h-10 ring-2 ring-purple-200">
+                          <AvatarImage src={post.authorAvatar} />
+                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                            {post.isAnonymous ? '?' : post.authorName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {post.isAnonymous ? 'Anonymous Student' : post.authorName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatTimeAgo(post.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-purple-100"
+                          onClick={() => setShowPostMenu(showPostMenu === post.id ? null : post.id)}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                        {showPostMenu === post.id && (
+                          <div className="absolute right-0 top-10 bg-white rounded-2xl shadow-xl border border-purple-100 py-2 z-50 min-w-[120px]">
+                            {isPostAuthor(post) && (
+                              <button
+                                onClick={() => handleDeletePost(post.id)}
+                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                openShareDialog(post.id);
+                                setShowPostMenu(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-purple-50 flex items-center gap-2"
+                            >
+                              <Share2 className="w-4 h-4" />
+                              Share
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Post Content */}
+                    <p className="text-sm mb-3 whitespace-pre-wrap text-gray-900">{post.content}</p>
+
+                    {/* Media */}
+                    {post.mediaUrl && (
+                      <div className="mb-3 rounded-2xl overflow-hidden">
+                        {post.mediaType === 'video' ? (
+                          <video src={post.mediaUrl} controls className="w-full" />
+                        ) : (
+                          <img src={post.mediaUrl} alt="Post media" className="w-full" />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-4 pt-3 border-t border-purple-100">
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-1.5 transition-all ${
+                          post.userLiked ? 'text-pink-600 scale-110' : 'text-gray-600 hover:text-pink-500'
+                        }`}
+                      >
+                        <Heart className={`w-5 h-5 ${post.userLiked ? 'fill-current' : ''}`} />
+                        <span className="text-sm font-medium">{post.likes}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDislike(post.id)}
+                        className={`flex items-center gap-1.5 transition-all ${
+                          post.userDisliked ? 'text-red-600 scale-110' : 'text-gray-600 hover:text-red-500'
+                        }`}
+                      >
+                        <ThumbsDown className={`w-5 h-5 ${post.userDisliked ? 'fill-current' : ''}`} />
+                        <span className="text-sm font-medium">{post.dislikes}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const newShowState = showComments === post.id ? null : post.id;
+                          setShowComments(newShowState);
+                          if (newShowState && !postComments[post.id]) {
+                            loadComments(post.id);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 text-gray-600 hover:text-purple-600 transition-colors"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="text-sm font-medium">{post.comments}</span>
+                      </button>
+
+                      <button
+                        onClick={() => openShareDialog(post.id)}
+                        className="flex items-center gap-1.5 text-gray-600 hover:text-purple-600 transition-colors ml-auto"
+                      >
+                        <Share2 className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Preview Comments (1-2 comments) */}
+                    {!isExpanded && previewComments.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-purple-100">
+                        <div className="space-y-2">
+                          {previewComments.map((comment) => (
+                            <div key={comment.id} className="flex gap-2 text-sm">
+                              <Avatar className="w-6 h-6 flex-shrink-0">
+                                <AvatarImage src={comment.authorAvatar} />
+                                <AvatarFallback className="bg-purple-200 text-purple-700 text-xs">
+                                  {comment.isAnonymous ? '?' : comment.authorName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-xs text-gray-900">
+                                  {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
+                                </p>
+                                <p className="text-gray-700">{comment.content}</p>
+                              </div>
+                              {comment.canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-gray-400 hover:text-red-600"
+                                  onClick={() => handleDeleteComment(post.id, comment.id)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {allComments.length > 2 && (
+                          <button
+                            onClick={() => {
+                              setExpandedPost(post.id);
+                              if (!postComments[post.id]) {
+                                loadComments(post.id);
+                              }
+                            }}
+                            className="text-xs text-purple-600 font-medium mt-2 flex items-center gap-1"
+                          >
+                            View all {allComments.length} comments
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Expanded View / Full Comments */}
+                    {(isExpanded || showAllComments) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-3 pt-3 border-t border-purple-100"
+                      >
+                        {isExpanded && (
+                          <button
+                            onClick={() => setExpandedPost(null)}
+                            className="text-xs text-purple-600 font-medium mb-3 flex items-center gap-1"
+                          >
+                            Show less
+                            <ChevronUp className="w-3 h-3" />
+                          </button>
+                        )}
+                        <div className="flex gap-2 mb-3">
+                          <Input
+                            placeholder="Add a comment..."
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleComment(post.id);
+                              }
+                            }}
+                            className="flex-1 h-9 text-sm rounded-full border-purple-200 focus:border-purple-400"
+                          />
+                          <Button
+                            onClick={() => handleComment(post.id)}
+                            size="sm"
+                            className="h-9 rounded-full bg-gradient-to-r from-purple-600 to-pink-600"
+                          >
+                            <Send className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {allComments.map((comment) => (
+                            <div key={comment.id} className="flex gap-2 text-sm group">
+                              <Avatar className="w-6 h-6 flex-shrink-0">
+                                <AvatarImage src={comment.authorAvatar} />
+                                <AvatarFallback className="bg-purple-200 text-purple-700 text-xs">
+                                  {comment.isAnonymous ? '?' : comment.authorName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-xs text-gray-900">
+                                  {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
+                                </p>
+                                <p className="text-gray-700">{comment.content}</p>
+                                <p className="text-[10px] text-gray-500 mt-0.5">
+                                  {formatTimeAgo(comment.createdAt)}
+                                </p>
+                              </div>
+                              {comment.canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => handleDeleteComment(post.id, comment.id)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          {allComments.length === 0 && (
+                            <p className="text-xs text-gray-500 text-center py-4">
+                              No comments yet. Be the first!
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Share Dialog - Instagram style */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <DialogContent className="sm:max-w-md rounded-3xl bg-white border-gray-200">
+        <DialogContent className="sm:max-w-md rounded-3xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900">Share Post</DialogTitle>
-            <DialogDescription className="text-gray-600">
-              Share this post with a friend
-            </DialogDescription>
+            <DialogTitle className="text-xl font-bold">Share Post</DialogTitle>
           </DialogHeader>
           <div className="max-h-96 overflow-y-auto">
             {loadingFriends ? (
               <div className="p-8 text-center">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#2E7B91]" />
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-purple-600" />
                 <p className="text-sm text-gray-600">Loading friends...</p>
               </div>
             ) : friends.length === 0 ? (
@@ -1088,21 +902,21 @@ export function Forum() {
                   <button
                     key={friend.id}
                     onClick={() => handleSharePost(friend.id)}
-                    className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-purple-50 transition-colors"
                   >
                     <Avatar className="w-12 h-12">
-                      <AvatarImage src={getProfilePictureUrl(friend.profilePicture, 'small')} />
-                      <AvatarFallback className="bg-[#2E7B91] text-white">
+                      <AvatarImage src={friend.profilePicture} />
+                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
                         {friend.name?.[0] || 'F'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left">
-                      <p className="font-medium text-sm text-gray-900">{friend.name}</p>
+                      <p className="font-medium text-sm">{friend.name}</p>
                       <p className="text-xs text-gray-500">{friend.major || 'Student'}</p>
                     </div>
                     <Button
                       size="sm"
-                      className="rounded-full bg-[#2E7B91] hover:bg-[#25658A]"
+                      className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600"
                     >
                       Send
                     </Button>
@@ -1124,8 +938,6 @@ export function Forum() {
           hasNext={false}
           hasPrev={false}
           accessToken={accessToken}
-          currentIndex={0}
-          totalProfiles={1}
         />
       )}
     </div>

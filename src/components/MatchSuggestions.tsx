@@ -1,44 +1,53 @@
 import { useState, useEffect } from 'react';
-import { Search, UserCheck, UserX, Users, Send, CheckCircle2, XCircle } from 'lucide-react';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { 
+  UserCheck, 
+  UserX, 
+  Users, 
+  Send, 
+  Clock, 
+  CheckCircle2,
+  XCircle,
+  Sparkles,
+  RefreshCw,
+  MessageCircle
+} from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
 import { ProfileDetailView } from './ProfileDetailView';
 import { ConnectionCardSkeleton } from './LoadingSkeletons';
 import { EmptyState } from './EmptyStates';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
-import { motion, AnimatePresence } from 'motion/react';
-import { getProfilePictureUrl } from '../utils/image-optimization';
 
-type Tab = 'friends' | 'requests' | 'suggestions';
+type Tab = 'pending' | 'sent' | 'connections';
 
 export function MatchSuggestions() {
   const userProfile = useUserProfile();
   const accessToken = useAccessToken();
-  const [activeTab, setActiveTab] = useState<Tab>('friends');
+  const [activeTab, setActiveTab] = useState<Tab>('pending');
   const [pendingIntros, setPendingIntros] = useState<any[]>([]);
+  const [sentIntros, setSentIntros] = useState<any[]>([]);
   const [connections, setConnections] = useState<any[]>([]);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [processing, setProcessing] = useState<string | null>(null);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadData();
-  }, [activeTab, accessToken]);
+  }, [activeTab]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      if (activeTab === 'friends') {
-        await loadConnections();
-      } else if (activeTab === 'requests') {
+      if (activeTab === 'pending') {
         await loadPendingIntros();
+      } else if (activeTab === 'sent') {
+        await loadSentIntros();
       } else {
-        await loadSuggestions();
+        await loadConnections();
       }
     } finally {
       setLoading(false);
@@ -66,6 +75,27 @@ export function MatchSuggestions() {
     }
   };
 
+  const loadSentIntros = async () => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/soft-intros/outgoing`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to load sent intros');
+
+      const intros = await response.json();
+      setSentIntros(intros);
+    } catch (error) {
+      console.error('Load sent intros error:', error);
+      toast.error('Failed to load sent requests');
+    }
+  };
+
   const loadConnections = async () => {
     try {
       const response = await fetch(
@@ -78,48 +108,20 @@ export function MatchSuggestions() {
       );
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to load connections:', response.status, errorText);
         throw new Error(`Failed to load connections: ${response.status}`);
       }
 
       const data = await response.json();
+      // Ensure data is an array
       const connectionsArray = Array.isArray(data) ? data : (data.connections || data.data || []);
       setConnections(connectionsArray);
     } catch (error) {
       console.error('Load connections error:', error);
       toast.error('Failed to load connections');
+      // Set empty array on error to prevent crashes
       setConnections([]);
-    }
-  };
-
-  const loadSuggestions = async () => {
-    try {
-      // Load profiles from same school, excluding connections
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/profiles?school=${encodeURIComponent(userProfile?.school || '')}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const allProfiles = await response.json();
-        const connectionIds = new Set(connections.map((c: any) => c.id));
-        const pendingIds = new Set(pendingIntros.map((i: any) => i.senderProfile?.id || i.receiverProfile?.id));
-        
-        const suggested = allProfiles
-          .filter((p: any) => 
-            p.id !== userProfile?.id &&
-            !connectionIds.has(p.id) &&
-            !pendingIds.has(p.id)
-          )
-          .slice(0, 20);
-        
-        setSuggestions(suggested);
-      }
-    } catch (error) {
-      console.error('Load suggestions error:', error);
     }
   };
 
@@ -138,9 +140,8 @@ export function MatchSuggestions() {
 
       if (!response.ok) throw new Error('Failed to accept intro');
 
-      toast.success('Friend request accepted! ✅');
+      toast.success('Connection accepted! You can now chat.');
       loadPendingIntros();
-      loadConnections();
     } catch (error) {
       console.error('Accept intro error:', error);
       toast.error('Failed to accept connection');
@@ -149,7 +150,7 @@ export function MatchSuggestions() {
     }
   };
 
-  const handleDecline = async (introId: string) => {
+  const handleDeny = async (introId: string) => {
     setProcessing(introId);
     try {
       const response = await fetch(
@@ -167,40 +168,10 @@ export function MatchSuggestions() {
       toast.success('Request declined');
       loadPendingIntros();
     } catch (error) {
-      console.error('Decline intro error:', error);
+      console.error('Deny intro error:', error);
       toast.error('Failed to decline request');
     } finally {
       setProcessing(null);
-    }
-  };
-
-  const handleConnect = async (profileId: string) => {
-    try {
-      // Send soft intro request
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/soft-intro`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            targetUserId: profileId,
-            reason: 'I think we could be a great connection!',
-          }),
-        }
-      );
-
-      if (response.ok) {
-        toast.success('Connection request sent! 📤');
-        loadSuggestions();
-      } else {
-        throw new Error('Failed to send request');
-      }
-    } catch (error) {
-      console.error('Connect error:', error);
-      toast.error('Failed to send connection request');
     }
   };
 
@@ -213,394 +184,278 @@ export function MatchSuggestions() {
       .slice(0, 2);
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case 'denied':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'pending':
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      default:
+        return null;
+    }
+  };
+
   if (selectedProfile) {
     return (
       <ProfileDetailView
         profile={selectedProfile}
         accessToken={accessToken}
         onClose={() => setSelectedProfile(null)}
-        onNext={() => {}}
-        onPrev={() => {}}
+        onNext={() => {}} // Not used in connections view
+        onPrev={() => {}} // Not used in connections view
         hasNext={false}
         hasPrev={false}
-        currentIndex={0}
-        totalProfiles={1}
       />
     );
   }
 
-  const filteredConnections = connections.filter((c: any) =>
-    searchQuery === '' || c.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredRequests = pendingIntros.filter((intro: any) =>
-    searchQuery === '' || intro.senderProfile?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredSuggestions = suggestions.filter((s: any) =>
-    searchQuery === '' || s.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
-    <div
-      className="min-h-screen flex flex-col relative overflow-x-hidden bg-gray-50"
-      style={{
-        fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
-
-      {/* Fixed Header */}
-      <div
-        className="fixed top-0 left-0 right-0 z-[1000] bg-white border-b border-gray-200"
-        style={{
-          paddingTop: 'env(safe-area-inset-top, 0)',
-        }}
-      >
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-bold text-white bg-[#667eea]">
-              MF
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-[#3b82f6] rounded"></div>
-              <h1 className="text-lg sm:text-xl font-bold text-[#3b82f6]">
-                bonded
-              </h1>
-            </div>
-          </div>
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() => setShowSearch(!showSearch)}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 touch-manipulation text-gray-600 hover:bg-gray-100"
-              style={{
-                WebkitTapHighlightColor: 'transparent',
-              }}
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          </div>
+    <div className="h-full flex flex-col bg-white">
+      {/* Header */}
+      <div className="bg-white border-b px-4 py-4">
+        <h1 className="text-xl font-semibold mb-4">Connections</h1>
+        
+        {/* Tabs */}
+        <div className="flex gap-2">
+          <Button
+            variant={activeTab === 'pending' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('pending')}
+            className={activeTab === 'pending' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+          >
+            <UserCheck className="w-4 h-4 mr-2" />
+            Pending
+            {pendingIntros.length > 0 && (
+              <Badge className="ml-2 bg-red-500 text-white">{pendingIntros.length}</Badge>
+            )}
+          </Button>
+          <Button
+            variant={activeTab === 'sent' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('sent')}
+            className={activeTab === 'sent' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Sent
+          </Button>
+          <Button
+            variant={activeTab === 'connections' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('connections')}
+            className={activeTab === 'connections' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Friends
+          </Button>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <AnimatePresence>
-        {showSearch && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="fixed top-[64px] left-0 right-0 z-[999] px-4 sm:px-5 py-3 bg-white border-b border-gray-200"
-            style={{
-              paddingTop: 'env(safe-area-inset-top, 0)',
-            }}
-          >
-            <div className="max-w-[1200px] mx-auto">
-              <input
-                type="text"
-                placeholder="Search friends..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2E7B91]"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Tabs */}
-      <div
-        className="fixed left-0 right-0 z-[999] bg-white border-b border-gray-200 overflow-x-auto"
-        style={{
-          top: showSearch ? 'calc(64px + 48px + env(safe-area-inset-top, 0))' : 'calc(64px + env(safe-area-inset-top, 0))',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-      >
-        <style>{`
-          .tabs-container::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
-        <div className="max-w-[1200px] mx-auto flex px-4 sm:px-5 min-w-max">
-          <button
-            onClick={() => setActiveTab('friends')}
-            className={`px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm sm:text-[15px] cursor-pointer transition-all duration-300 border-b-2 touch-manipulation whitespace-nowrap ${
-              activeTab === 'friends'
-                ? 'text-[#2E7B91] border-[#2E7B91]'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
-            }`}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            My Friends ({connections.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={`px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm sm:text-[15px] cursor-pointer transition-all duration-300 border-b-2 touch-manipulation whitespace-nowrap ${
-              activeTab === 'requests'
-                ? 'text-[#2E7B91] border-[#2E7B91]'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
-            }`}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            Requests ({pendingIntros.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('suggestions')}
-            className={`px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm sm:text-[15px] cursor-pointer transition-all duration-300 border-b-2 touch-manipulation whitespace-nowrap ${
-              activeTab === 'suggestions'
-                ? 'text-[#2E7B91] border-[#2E7B91]'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
-            }`}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            Suggestions
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div
-        className="flex-1 pt-[120px] pb-24 relative z-[1] max-w-[1200px] mx-auto w-full px-4 sm:px-5 bg-gray-50"
-        style={{
-          marginTop: showSearch ? '48px' : '0',
-          paddingTop: 'calc(120px + env(safe-area-inset-top, 0))',
-          paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0))',
-        }}
-      >
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-4">
             <ConnectionCardSkeleton />
           </div>
         ) : (
-          <>
-            {/* Friends Tab */}
-            {activeTab === 'friends' && (
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-5 flex items-center gap-2">
-                  My Friends ({filteredConnections.length})
-                </h2>
-                {filteredConnections.length === 0 ? (
-                  <div className="text-center py-16 text-gray-600">
-                    <div className="text-6xl mb-5">👥</div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900">No friends yet</h3>
-                    <p className="text-[15px] text-gray-600 mb-6">
-                      Accept connection requests to start building your network!
-                    </p>
-                    <Button
-                      onClick={() => setActiveTab('requests')}
-                      className="bg-[#2E7B91] hover:bg-[#25658A] text-white"
-                    >
-                      Check Requests
-                    </Button>
-                  </div>
+          <div className="p-4 space-y-3">
+            {/* Pending Requests */}
+            {activeTab === 'pending' && (
+              <>
+                {pendingIntros.length === 0 ? (
+                  <EmptyState
+                    type="no-connections"
+                    description="When someone sends you a connection request, it will appear here."
+                  />
                 ) : (
-                  <div
-                    className="grid gap-3 sm:gap-4 w-full"
-                    style={{
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                    }}
-                  >
-                    <style>{`
-                      @media (max-width: 640px) {
-                        .friends-grid {
-                          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
-                        }
-                      }
-                    `}</style>
-                    {filteredConnections.map((connection: any) => (
-                      <motion.div
-                        key={connection.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-2xl border border-gray-200 p-3 sm:p-4 text-center cursor-pointer transition-all duration-300 active:scale-95 touch-manipulation shadow-sm hover:shadow-md"
-                        onClick={() => setSelectedProfile(connection)}
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                      >
-                        <Avatar className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 border-2 border-gray-200">
-                          <AvatarImage src={getProfilePictureUrl(connection.profilePicture || connection.imageUrl, 'small')} />
-                          <AvatarFallback className="bg-[#2E7B91] text-white text-xl">
-                            {getInitials(connection.name || 'U')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="font-bold text-sm sm:text-[15px] text-gray-900 mb-1 truncate w-full">
-                          {connection.name || 'Unknown'}
-                        </div>
-                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center justify-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-green-400" />
-                          <span>Online</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Requests Tab */}
-            {activeTab === 'requests' && (
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-5 flex items-center gap-2">
-                  Friend Requests ({filteredRequests.length})
-                </h2>
-                {filteredRequests.length === 0 ? (
-                  <div className="text-center py-16 text-gray-600">
-                    <div className="text-6xl mb-5">📭</div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900">No requests</h3>
-                    <p className="text-[15px] text-gray-600">
-                      When someone sends you a connection request, it will appear here.
-                    </p>
-                  </div>
-                ) : (
-                  <div
-                    className="grid gap-3 sm:gap-4 w-full"
-                    style={{
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    }}
-                  >
-                    <style>{`
-                      @media (max-width: 640px) {
-                        .requests-grid {
-                          grid-template-columns: 1fr !important;
-                        }
-                      }
-                    `}</style>
-                    {filteredRequests.map((intro: any) => {
-                      const profile = intro.senderProfile || intro;
-                      return (
-                        <motion.div
-                          key={intro.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-white rounded-2xl border border-gray-200 p-4 transition-all duration-300 shadow-sm hover:shadow-md"
-                        >
-                          <div className="flex items-center gap-3 mb-3">
-                            <Avatar
-                              className="w-12 h-12 cursor-pointer"
-                              onClick={() => setSelectedProfile(profile)}
+                  pendingIntros.map((intro) => (
+                    <Card key={intro.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          <Avatar 
+                            className="w-16 h-16 cursor-pointer"
+                            onClick={() => setSelectedProfile(intro.senderProfile)}
+                          >
+                            <AvatarImage src={intro.senderProfile?.profilePicture} />
+                            <AvatarFallback className="bg-gradient-to-br from-[#2E7B91] to-[#25658A] text-white">
+                              {getInitials(intro.senderProfile?.name || 'U')}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h3 
+                              className="font-medium mb-1 cursor-pointer hover:text-[#2E7B91]"
+                              onClick={() => setSelectedProfile(intro.senderProfile)}
                             >
-                              <AvatarImage src={getProfilePictureUrl(profile?.profilePicture, 'small')} />
-                              <AvatarFallback className="bg-[#2E7B91] text-white">
-                                {getInitials(profile?.name || 'U')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div
-                                className="font-bold text-base text-gray-900 mb-0.5 cursor-pointer hover:opacity-80"
-                                onClick={() => setSelectedProfile(profile)}
+                              {intro.senderProfile?.name}
+                            </h3>
+                            <p className="text-xs text-[#475569] mb-2">
+                              {intro.senderProfile?.school} • {intro.senderProfile?.major}
+                            </p>
+                            
+                            {intro.analysis && (
+                              <div className="bg-[#2E7B9115] rounded-2xl p-3 mb-3">
+                                <div className="flex items-start gap-2">
+                                  <Sparkles className="w-4 h-4 text-[#2E7B91] flex-shrink-0 mt-0.5" />
+                                  <p className="text-xs text-[#1E4F74] leading-relaxed">
+                                    {typeof intro.analysis === 'string' 
+                                      ? intro.analysis 
+                                      : intro.analysis?.analysis || intro.analysis?.recommendation || 'You have a great match!'}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleAccept(intro.id)}
+                                disabled={processing === intro.id}
+                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl"
                               >
-                                {profile?.name || 'Unknown'}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {profile?.age || ''} {profile?.age && '•'} {profile?.year || ''} {profile?.year && '•'} {intro.mutualFriends || 0} mutual friends
-                              </div>
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeny(intro.id)}
+                                disabled={processing === intro.id}
+                                className="flex-1"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Decline
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={() => handleAccept(intro.id)}
-                              disabled={processing === intro.id}
-                              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 rounded-[10px] border-none font-semibold text-xs sm:text-[13px] cursor-pointer transition-all duration-300 text-white touch-manipulation active:scale-95 min-h-[44px] bg-[#10b981] hover:bg-[#059669]"
-                              style={{ WebkitTapHighlightColor: 'transparent' }}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </>
+            )}
+
+            {/* Sent Requests */}
+            {activeTab === 'sent' && (
+              <>
+                {sentIntros.length === 0 ? (
+                  <EmptyState
+                    type="no-matches"
+                    description="Find people on the Discover tab and send them connection requests!"
+                    actionLabel="Discover People"
+                    onAction={() => {
+                      // This would need to be passed as a prop to navigate
+                      // For now, just show the message
+                    }}
+                  />
+                ) : (
+                  sentIntros.map((intro) => (
+                    <Card key={intro.id} className="overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          <Avatar 
+                            className="w-16 h-16 cursor-pointer"
+                            onClick={() => setSelectedProfile(intro.receiverProfile)}
+                          >
+                            <AvatarImage src={intro.receiverProfile?.profilePicture} />
+                            <AvatarFallback className="bg-gradient-to-br from-[#2E7B91] to-[#25658A] text-white">
+                              {getInitials(intro.receiverProfile?.name || 'U')}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between mb-1">
+                              <h3 
+                                className="font-medium cursor-pointer hover:text-indigo-600"
+                                onClick={() => setSelectedProfile(intro.receiverProfile)}
+                              >
+                                {intro.receiverProfile?.name}
+                              </h3>
+                              <div className="flex items-center gap-1">
+                                {getStatusIcon(intro.status)}
+                              </div>
+                            </div>
+                            <p className="text-xs text-[#475569] mb-2">
+                              {intro.receiverProfile?.school} • {intro.receiverProfile?.major}
+                            </p>
+                            
+                            <Badge 
+                              variant="secondary"
+                              className={
+                                intro.status === 'accepted' 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : intro.status === 'denied'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-yellow-100 text-yellow-700'
+                              }
                             >
-                              Accept
-                            </button>
-                            <button
-                              onClick={() => handleDecline(intro.id)}
-                              disabled={processing === intro.id}
-                              className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 rounded-[10px] border border-gray-300 font-semibold text-xs sm:text-[13px] cursor-pointer transition-all duration-300 text-gray-700 bg-white hover:bg-gray-50 touch-manipulation active:scale-95 min-h-[44px]"
-                              style={{ WebkitTapHighlightColor: 'transparent' }}
-                            >
-                              Decline
-                            </button>
+                              {intro.status === 'pending' ? 'Waiting for response' : intro.status}
+                            </Badge>
                           </div>
-                        </motion.div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </>
+            )}
+
+            {/* Connections */}
+            {activeTab === 'connections' && (
+              <>
+                {connections.length === 0 ? (
+                  <EmptyState
+                    type="no-connections"
+                    description="Accept connection requests to start building your network!"
+                    actionLabel="Check Pending Requests"
+                    onAction={() => setActiveTab('pending')}
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {connections.map((connection) => {
+                      // Ensure connection has required fields
+                      if (!connection || !connection.id) {
+                        console.warn('Invalid connection data:', connection);
+                        return null;
+                      }
+                      
+                      return (
+                        <Card 
+                          key={connection.id} 
+                          className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => {
+                            // Ensure profile has required fields before setting
+                            if (connection.name) {
+                              setSelectedProfile(connection);
+                            }
+                          }}
+                        >
+                          <CardContent className="p-0">
+                            <div className="h-32 bg-gradient-to-br from-[#2E7B91] to-[#25658A] relative">
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Avatar className="w-20 h-20 border-4 border-white">
+                                  <AvatarImage src={connection.profilePicture || connection.imageUrl} />
+                                  <AvatarFallback className="text-xl bg-white text-[#2E7B91]">
+                                    {getInitials(connection.name || 'U')}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
+                            </div>
+                            <div className="p-3 text-center">
+                              <h3 className="font-medium text-sm mb-1">{connection.name || 'Unknown'}</h3>
+                              <p className="text-xs text-[#475569]">{connection.major || ''}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
                       );
                     })}
                   </div>
                 )}
-              </div>
+              </>
             )}
-
-            {/* Suggestions Tab */}
-            {activeTab === 'suggestions' && (
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-5 flex items-center gap-2">
-                  People You May Know
-                </h2>
-                {filteredSuggestions.length === 0 ? (
-                  <div className="text-center py-16 text-gray-600">
-                    <div className="text-6xl mb-5">✨</div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900">No suggestions</h3>
-                    <p className="text-[15px] text-gray-600">
-                      Check back later for new connection suggestions!
-                    </p>
-                  </div>
-                ) : (
-                  <div
-                    className="grid gap-3 sm:gap-4 w-full"
-                    style={{
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    }}
-                  >
-                    {filteredSuggestions.map((suggestion: any) => (
-                      <motion.div
-                        key={suggestion.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md"
-                      >
-                        <div
-                          className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center text-6xl relative overflow-hidden"
-                        >
-                          {suggestion.profilePicture || suggestion.imageUrl ? (
-                            <img
-                              src={getProfilePictureUrl(suggestion.profilePicture || suggestion.imageUrl, 'medium')}
-                              alt={suggestion.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div>👤</div>
-                          )}
-                        </div>
-                        <div className="p-4">
-                          <div
-                            className="font-bold text-base text-gray-900 mb-1 cursor-pointer hover:opacity-80"
-                            onClick={() => setSelectedProfile(suggestion)}
-                          >
-                            {suggestion.name || 'Unknown'}
-                          </div>
-                          <div className="text-[13px] text-gray-500 mb-3">
-                            {suggestion.age || ''} {suggestion.age && '•'} {suggestion.year || ''} {suggestion.year && '•'} {suggestion.mutualFriends || 0} mutual friends
-                          </div>
-                          {suggestion.interests && suggestion.interests.length > 0 && (
-                            <div className="flex gap-1.5 flex-wrap mb-3">
-                              {suggestion.interests.slice(0, 2).map((interest: string, i: number) => (
-                                <span
-                                  key={i}
-                                  className="px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200"
-                                >
-                                  {interest}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <button
-                            onClick={() => handleConnect(suggestion.id)}
-                            className="w-full px-4 py-2.5 rounded-[10px] border-none font-semibold text-xs sm:text-[13px] cursor-pointer transition-all duration-300 text-white touch-manipulation active:scale-95 min-h-[44px] bg-[#2E7B91] hover:bg-[#25658A]"
-                            style={{ WebkitTapHighlightColor: 'transparent' }}
-                          >
-                            Connect
-                          </button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
     </div>

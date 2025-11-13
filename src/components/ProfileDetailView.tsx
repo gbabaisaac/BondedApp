@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronLeft, ChevronRight, Heart, Share2, Send, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { X, ChevronLeft, ChevronRight, Heart, Sparkles, Instagram, Send, Share2, MoreVertical } from 'lucide-react';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { SoftIntroFlow } from './SoftIntroFlow';
 import { projectId } from '../utils/supabase/config';
+import { theme } from '../utils/theme';
 import { shareProfile } from '../utils/deep-linking';
 import { ReportBlockModal } from './ReportBlockModal';
 import './ProfileDetailView.css';
@@ -17,24 +20,14 @@ interface Profile {
   major: string;
   year: string;
   bio: string;
-  interests?: string[];
-  lookingFor?: string[];
-  imageUrl?: string;
-  profilePicture?: string;
-  photos?: string[];
+  interests: string[];
+  lookingFor: string[];
+  imageUrl: string;
   personality?: string[];
   sleepSchedule?: string;
   cleanliness?: string;
   instagram?: string;
   snapchat?: string;
-  spotify?: string;
-  pronouns?: string;
-  bondPrint?: any;
-  socialConnections?: any;
-  scrapbookEnabled?: boolean;
-  roommateMode?: boolean;
-  rating?: number;
-  distance?: string;
 }
 
 interface ProfileDetailViewProps {
@@ -45,54 +38,44 @@ interface ProfileDetailViewProps {
   hasNext: boolean;
   hasPrev: boolean;
   accessToken?: string;
-  currentIndex?: number;
-  totalProfiles?: number;
 }
 
-export function ProfileDetailView({ 
-  profile, 
-  onClose, 
-  onNext, 
-  onPrev, 
-  hasNext, 
-  hasPrev, 
-  accessToken,
-  currentIndex = 0,
-  totalProfiles = 1,
-}: ProfileDetailViewProps) {
+export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, hasPrev, accessToken }: ProfileDetailViewProps) {
   const [showSoftIntro, setShowSoftIntro] = useState(false);
   const [liked, setLiked] = useState(false);
   const [showReportBlock, setShowReportBlock] = useState(false);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  
+  // Debug: Ensure buttons are rendered (development only)
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('ProfileDetailView: Buttons should be visible at bottom');
+    }
+    // Force a re-render check after a short delay
+    setTimeout(() => {
+      const buttonElement = document.querySelector('[data-action-buttons]');
+      if (buttonElement) {
+        console.log('✅ Action buttons element found in DOM');
+        const styles = window.getComputedStyle(buttonElement);
+        console.log('Button position:', styles.position);
+        console.log('Button bottom:', styles.bottom);
+        console.log('Button zIndex:', styles.zIndex);
+        console.log('Button display:', styles.display);
+        console.log('Button visibility:', styles.visibility);
+      } else {
+        console.error('❌ Action buttons element NOT found in DOM!');
+      }
+    }, 100);
+  }, []);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [direction, setDirection] = useState(0);
   const [compatibility, setCompatibility] = useState<any>(null);
   const [loadingCompatibility, setLoadingCompatibility] = useState(false);
-  
-  // Swipe detection state
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number>(0);
-  const touchStartY = useRef<number>(0);
-  const touchEndX = useRef<number>(0);
-  const touchEndY = useRef<number>(0);
-  const swipeTarget = useRef<'carousel' | 'card' | null>(null);
-  const [showSwipeHints, setShowSwipeHints] = useState(false);
 
-  // Get photos array
-  const photos = profile.photos || (profile.profilePicture ? [profile.profilePicture] : [profile.imageUrl || '']).filter(Boolean);
-  const hasMultiplePhotos = photos.length > 1;
-
-  // Reset states when profile changes
+  // Reset liked state when profile changes
   useEffect(() => {
     setLiked(false);
-    setCurrentPhotoIndex(0);
     loadCompatibility();
-  }, [profile.id]);
-
-  // Show swipe hints briefly on mount
-  useEffect(() => {
-    setShowSwipeHints(true);
-    const timer = setTimeout(() => setShowSwipeHints(false), 2000);
-    return () => clearTimeout(timer);
   }, [profile.id]);
 
   const loadCompatibility = async () => {
@@ -100,7 +83,7 @@ export function ProfileDetailView({
     setLoadingCompatibility(true);
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/bond-print/compatibility/${profile.id}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/compatibility/${profile.id}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -118,94 +101,33 @@ export function ProfileDetailView({
     }
   };
 
-  // Carousel swipe handlers
-  const handleCarouselTouchStart = (e: React.TouchEvent) => {
-    swipeTarget.current = 'carousel';
-    touchStartX.current = e.changedTouches[0].screenX;
-    touchStartY.current = e.changedTouches[0].screenY;
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
   };
 
-  const handleCarouselTouchEnd = (e: React.TouchEvent) => {
-    if (swipeTarget.current !== 'carousel') return;
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
     
-    touchEndX.current = e.changedTouches[0].screenX;
-    touchEndY.current = e.changedTouches[0].screenY;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
     
-    const deltaX = touchEndX.current - touchStartX.current;
-    const deltaY = Math.abs(touchEndY.current - touchStartY.current);
-    
-    // Only handle horizontal swipes (not vertical scrolls)
-    if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 50) {
-      if (deltaX < 0) {
-        // Swipe left = next photo
-        nextPhoto();
-      } else {
-        // Swipe right = previous photo
-        prevPhoto();
-      }
+    if (isLeftSwipe && hasNext) {
+      setDirection(1);
+      onNext();
     }
-    
-    swipeTarget.current = null;
-  };
-
-  // Card swipe handlers (for profile navigation)
-  const handleCardTouchStart = (e: React.TouchEvent) => {
-    // Don't handle if touch started inside carousel
-    const target = e.target as HTMLElement;
-    if (carouselRef.current?.contains(target)) {
-      return;
+    if (isRightSwipe && hasPrev) {
+      setDirection(-1);
+      onPrev();
     }
-    
-    swipeTarget.current = 'card';
-    touchStartX.current = e.changedTouches[0].screenX;
-    touchStartY.current = e.changedTouches[0].screenY;
-  };
-
-  const handleCardTouchEnd = (e: React.TouchEvent) => {
-    if (swipeTarget.current !== 'card') return;
-    
-    touchEndX.current = e.changedTouches[0].screenX;
-    touchEndY.current = e.changedTouches[0].screenY;
-    
-    const deltaX = touchEndX.current - touchStartX.current;
-    const deltaY = Math.abs(touchEndY.current - touchStartY.current);
-    
-    // Higher threshold for profile navigation (80px vs 50px)
-    if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 80) {
-      if (deltaX < 0) {
-        // Swipe left = next profile
-        if (hasNext) {
-          showToast(`Viewing next profile`);
-          onNext();
-        } else {
-          showToast('No more profiles! 🎉');
-        }
-      } else {
-        // Swipe right = previous profile
-        if (hasPrev) {
-          showToast(`Viewing previous profile`);
-          onPrev();
-        }
-      }
-    }
-    
-    swipeTarget.current = null;
-  };
-
-  const nextPhoto = () => {
-    if (hasMultiplePhotos) {
-      setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
-    }
-  };
-
-  const prevPhoto = () => {
-    if (hasMultiplePhotos) {
-      setCurrentPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
-    }
-  };
-
-  const goToPhoto = (index: number) => {
-    setCurrentPhotoIndex(index);
   };
 
   const handleLike = () => {
@@ -219,554 +141,325 @@ export function ProfileDetailView({
     }
   };
 
-  const showToast = (message: string) => {
-    toast.success(message, {
-      duration: 2000,
-    });
-  };
-
-  // Get mode badges
-  const getModeBadges = () => {
-    const badges: Array<{ emoji: string; label: string; borderColor: string }> = [];
-    
-    if (profile.scrapbookEnabled) {
-      badges.push({ emoji: '💕', label: 'Scrapbook', borderColor: 'rgba(236,72,153,0.5)' });
-    }
-    if (profile.roommateMode) {
-      badges.push({ emoji: '🏠', label: 'Roommate', borderColor: 'rgba(168,85,247,0.5)' });
-    }
-    if (!profile.scrapbookEnabled && !profile.roommateMode) {
-      badges.push({ emoji: '👋', label: 'Friend Mode', borderColor: 'rgba(59,130,246,0.5)' });
-    }
-    
-    return badges;
-  };
-
-  const modeBadges = getModeBadges();
-  const bondPrintMatch = compatibility?.score || 0;
-  const rating = profile.rating || 4.5;
-
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 bg-white z-[9999] flex flex-col"
       style={{
-        background: 'linear-gradient(135deg, #0a1628 0%, #1a2841 50%, #0f4d5c 100%)',
-        fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         height: '100dvh',
+        maxHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        WebkitTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
+        overflow: 'hidden',
       }}
-      onMouseEnter={() => setShowSwipeHints(true)}
-      onMouseLeave={() => setShowSwipeHints(false)}
     >
-      {/* Background Pattern */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%)
-          `,
-        }}
-      />
-
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-50 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300"
-        style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          color: 'white',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-          e.currentTarget.style.transform = 'rotate(90deg)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          e.currentTarget.style.transform = 'rotate(0deg)';
-        }}
-        aria-label="Close profile view"
-      >
-        <X className="w-5 h-5" />
-      </button>
-
-      {/* Progress Indicator */}
-      {totalProfiles > 1 && (
-        <div
-          className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 flex gap-2"
-        >
-          {Array.from({ length: totalProfiles }).map((_, i) => (
-            <div
-              key={i}
-              className="transition-all duration-300"
-              style={{
-                width: i === currentIndex ? '24px' : '8px',
-                height: '8px',
-                borderRadius: i === currentIndex ? '4px' : '50%',
-                background: i === currentIndex ? 'rgba(16,185,129,0.8)' : 'rgba(255,255,255,0.3)',
-              }}
-            />
-          ))}
+      {/* Header */}
+      <div className={`${theme.components.navigation.header} px-4 py-4 flex items-center justify-between flex-shrink-0`}>
+        <button onClick={onClose} className={`p-2 -ml-2 hover:bg-gray-100 rounded-full ${theme.transition.default}`}>
+          <X className="w-6 h-6" />
+        </button>
+        <div className="flex-1 text-center">
+          <h3 className="font-semibold text-lg">{profile.name}, {profile.age}</h3>
+          <p className="text-sm text-[#64748b]">{profile.school}</p>
         </div>
-      )}
-
-      {/* Swipe Hints */}
-      <AnimatePresence>
-        {showSwipeHints && (
-          <>
-            {hasPrev && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.6 }}
-                exit={{ opacity: 0 }}
-                className="absolute left-5 top-1/2 transform -translate-y-1/2 z-40 w-10 h-10 rounded-full flex items-center justify-center pointer-events-none"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(10px)',
-                  color: 'white',
-                }}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </motion.div>
-            )}
-            {hasNext && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.6 }}
-                exit={{ opacity: 0 }}
-                className="absolute right-5 top-1/2 transform -translate-y-1/2 z-40 w-10 h-10 rounded-full flex items-center justify-center pointer-events-none"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(10px)',
-                  color: 'white',
-                }}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </motion.div>
-            )}
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Profile Card */}
-      <motion.div
-        ref={cardRef}
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-        className="relative w-full max-w-[420px] mx-4"
-        onTouchStart={handleCardTouchStart}
-        onTouchEnd={handleCardTouchEnd}
-        style={{ touchAction: 'pan-y' }}
-      >
-        <div
-          className="rounded-[28px] p-7 relative overflow-hidden"
-          style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
-          }}
-        >
-          {/* Mode Badges */}
-          <div className="absolute top-5 left-5 z-10 flex flex-col gap-2">
-            {modeBadges.map((badge, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[20px] text-xs font-semibold text-white"
-                style={{
-                  background: 'rgba(0, 0, 0, 0.6)',
-                  backdropFilter: 'blur(10px)',
-                  border: `1px solid ${badge.borderColor}`,
-                }}
-              >
-                <span>{badge.emoji}</span>
-                <span>{badge.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Rating Badge */}
-          <div
-            className="absolute top-5 right-5 z-10 flex items-center gap-1 px-3.5 py-2 rounded-2xl text-sm font-bold text-white"
-            style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              shareProfile(profile.id, profile.name);
+              toast.success('Profile link copied!');
             }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Share profile"
           >
-            <span>{rating.toFixed(1)}</span>
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-          </div>
-
-          {/* Photo Carousel - PRIMARY SWIPE ZONE */}
-          <div
-            ref={carouselRef}
-            className="relative w-full rounded-[20px] overflow-hidden mb-6"
-            style={{
-              height: '380px',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
-            }}
-            onTouchStart={handleCarouselTouchStart}
-            onTouchEnd={handleCarouselTouchEnd}
-            onMouseEnter={(e) => {
-              const navButtons = e.currentTarget.querySelectorAll('.carousel-nav');
-              navButtons.forEach((btn) => {
-                (btn as HTMLElement).style.opacity = '1';
-              });
-            }}
-            onMouseLeave={(e) => {
-              const navButtons = e.currentTarget.querySelectorAll('.carousel-nav');
-              navButtons.forEach((btn) => {
-                (btn as HTMLElement).style.opacity = '0';
-              });
-            }}
-          >
-            {/* Carousel Inner */}
-            <div
-              className="flex w-full h-full transition-transform duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              style={{
-                transform: `translateX(-${currentPhotoIndex * 100}%)`,
-                willChange: 'transform',
-              }}
+            <Share2 className="w-5 h-5 text-[#2E7B91]" />
+          </button>
+          {accessToken && (
+            <button
+              onClick={() => setShowReportBlock(true)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="More options"
             >
-              {photos.map((photo, index) => (
-                <div
-                  key={index}
-                  className="min-w-full h-full flex-shrink-0 flex items-center justify-center"
-                >
-                  <img
-                    src={photo}
-                    alt={`${profile.name} photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+              <MoreVertical className="w-5 h-5 text-[#2E7B91]" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', // Extra space for fixed buttons
+        }}
+      >
+        {/* Image with tap zones for navigation */}
+        <div 
+          className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          <motion.img
+            key={profile.id}
+            initial={{ opacity: 0, x: direction * 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -direction * 50 }}
+            transition={{ duration: 0.3 }}
+            src={profile.profilePicture || profile.photos?.[0] || profile.imageUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80'}
+            alt={profile.name}
+            className="w-full h-full object-cover"
+          />
+          
+          {/* Tap zones for navigation */}
+          {hasPrev && (
+            <button
+              onClick={onPrev}
+              className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-start pl-4 group"
+            >
+              <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+                <ChevronLeft className="w-6 h-6" />
+              </div>
+            </button>
+          )}
+          {hasNext && (
+            <button
+              onClick={onNext}
+              className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-end pr-4 group"
+            >
+              <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+                <ChevronRight className="w-6 h-6" />
+              </div>
+            </button>
+          )}
+
+          {/* Position indicator */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded-full">
+            <p className="text-white text-xs">Swipe to see more profiles</p>
+          </div>
+        </div>
+
+        {/* Profile Info */}
+        <div className="p-4 space-y-4">
+          {/* Basic Info */}
+          <div>
+            <h2 className="text-2xl mb-1">{profile.name}, {profile.age}</h2>
+            <p className="text-[#475569]">{profile.major} • {profile.year}</p>
+            <p className="text-sm text-[#64748b]">{profile.school}</p>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <h3 className="text-sm text-[#64748b] mb-2 font-medium">About</h3>
+            <p className="text-[#1E4F74]">{profile.bio}</p>
+          </div>
+
+          {/* Compatibility Analysis */}
+          {compatibility && (
+            <div className="bg-gradient-to-br from-[#2E7B9115] to-[#25658A15] rounded-2xl p-4 border border-[#2E7B9140]">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-[#2E7B91]" />
+                <h3 className="font-medium text-[#1E4F74]">Compatibility</h3>
+              </div>
+              <div className="space-y-3">
+                {compatibility.score && (
+                  <div>
+                    <p className="text-sm font-medium text-[#25658A]">
+                      {compatibility.score}% Match
+                    </p>
+                  </div>
+                )}
+                {compatibility.commonInterests && compatibility.commonInterests.length > 0 && (
+                  <div>
+                    <p className="text-xs text-[#64748b] mb-1">You both enjoy:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {compatibility.commonInterests.map((interest: string) => (
+                        <Badge key={interest} className="text-xs bg-[#2E7B9120] text-[#1E4F74]">
+                          {interest}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {compatibility.analysis && (
+                  <p className="text-sm text-[#1E4F74]">
+                    {compatibility.analysis}
+                  </p>
+                )}
+              </div>
             </div>
+          )}
 
-            {/* Carousel Navigation Arrows */}
-            {hasMultiplePhotos && (
-              <>
-                <button
-                  onClick={prevPhoto}
-                  className="carousel-nav absolute left-3 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer z-5"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    color: 'white',
-                    opacity: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
-                  }}
-                  aria-label="Previous photo"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={nextPhoto}
-                  className="carousel-nav absolute right-3 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer z-5"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    color: 'white',
-                    opacity: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
-                  }}
-                  aria-label="Next photo"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </>
-            )}
+          {/* Looking For */}
+          {profile.lookingFor && profile.lookingFor.length > 0 && (
+            <div>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Looking For</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.lookingFor.map((item) => {
+                  // Convert normalized format (study-partner) to display format (Study Partner)
+                  const displayText = item.split('-').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ');
+                  return (
+                    <Badge key={item} className="bg-[#2E7B9120] text-[#1E4F74] whitespace-nowrap">
+                      {displayText}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-            {/* Carousel Dots */}
-            {hasMultiplePhotos && (
-              <div
-                className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-5"
-              >
-                {photos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToPhoto(index)}
-                    className="transition-all duration-300 cursor-pointer"
-                    style={{
-                      width: index === currentPhotoIndex ? '24px' : '8px',
-                      height: '8px',
-                      borderRadius: index === currentPhotoIndex ? '4px' : '50%',
-                      background: index === currentPhotoIndex ? 'white' : 'rgba(255, 255, 255, 0.4)',
-                    }}
-                    aria-label={`Go to photo ${index + 1}`}
-                  />
+          {/* Interests */}
+          {profile.interests && profile.interests.length > 0 && (
+            <div>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Interests</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.interests.map((interest) => (
+                  <Badge key={interest} variant="outline">
+                    {interest}
+                  </Badge>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Profile Info Section */}
-          <div className="text-white space-y-5">
-            {/* Name Section */}
+          {/* Personality */}
+          {profile.personality && profile.personality.length > 0 && (
             <div>
-              <div className="flex items-baseline gap-2.5 mb-1">
-                <h2
-                  className="text-[28px] font-extrabold"
-                  style={{
-                    background: 'linear-gradient(135deg, #ffffff 0%, #a0d8ef 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  {profile.name}
-                </h2>
-                <span className="text-2xl font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  {profile.age}
-                </span>
-              </div>
-              {profile.pronouns && (
-                <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {profile.pronouns}
-                </p>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="flex items-center gap-1.5 text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              <span>📍</span>
-              <span>{profile.distance || '2.4'} miles away • {profile.year}</span>
-            </div>
-
-            {/* Bio */}
-            <p className="text-[15px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
-              {profile.bio || 'No bio available.'}
-            </p>
-
-            {/* Personality Tags */}
-            {profile.personality && profile.personality.length > 0 && (
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider mb-2.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  PERSONALITY
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {profile.personality.map((trait) => (
-                    <span
-                      key={trait}
-                      className="px-3.5 py-2 rounded-[20px] text-[13px] font-semibold transition-transform duration-300 cursor-default"
-                      style={{
-                        background: 'rgba(59,130,246,0.2)',
-                        color: '#60a5fa',
-                        border: '1px solid rgba(59,130,246,0.3)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Interests Tags */}
-            {profile.interests && profile.interests.length > 0 && (
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider mb-2.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  INTERESTS
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {profile.interests.map((interest) => (
-                    <span
-                      key={interest}
-                      className="px-3.5 py-2 rounded-[20px] text-[13px] font-semibold transition-transform duration-300 cursor-default"
-                      style={{
-                        background: 'rgba(16,185,129,0.2)',
-                        color: '#34d399',
-                        border: '1px solid rgba(16,185,129,0.3)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Vibes Tags (from Bond Print) */}
-            {profile.bondPrint?.traits && (
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider mb-2.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  VIBES
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {['Chill', 'Ambitious', 'Funny', 'Deep', 'Creative', 'Adventurous']
-                    .filter((vibe) => profile.bondPrint?.traits[vibe.toLowerCase()])
-                    .map((vibe) => (
-                      <span
-                        key={vibe}
-                        className="px-3.5 py-2 rounded-[20px] text-[13px] font-semibold transition-transform duration-300 cursor-default"
-                        style={{
-                          background: 'rgba(168,85,247,0.2)',
-                          color: '#c084fc',
-                          border: '1px solid rgba(168,85,247,0.3)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                        }}
-                      >
-                        {vibe}
-                      </span>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {/* Info Cards Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div
-                className="rounded-xl p-3"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
-              >
-                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  MAJOR
-                </div>
-                <div className="text-sm font-semibold text-white">{profile.major || 'Not specified'}</div>
-              </div>
-              <div
-                className="rounded-xl p-3"
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
-              >
-                <div className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  BOND PRINT
-                </div>
-                <div className="text-sm font-semibold text-white">{bondPrintMatch}% Match</div>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Personality</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.personality.map((trait) => (
+                  <Badge key={trait} variant="secondary">
+                    {trait}
+                  </Badge>
+                ))}
               </div>
             </div>
+          )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-6">
-              {/* Icon Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={handleLike}
-                  className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer text-xl"
-                  style={{
-                    background: liked ? 'rgba(236,72,153,0.3)' : 'rgba(255,255,255,0.1)',
-                    border: `1px solid ${liked ? 'rgba(236,72,153,0.5)' : 'rgba(255,255,255,0.2)'}`,
-                    backdropFilter: 'blur(10px)',
-                    color: 'white',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!liked) {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                    }
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!liked) {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                    }
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                  onMouseDown={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.2)';
-                  }}
-                  onMouseUp={(e) => {
-                    setTimeout(() => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }, 200);
-                  }}
-                  aria-label="Like profile"
-                >
-                  💚
-                </button>
-                <button
-                  onClick={() => {
-                    shareProfile(profile.id, profile.name);
-                    showToast('Profile link copied! 🔗');
-                  }}
-                  className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer text-xl"
-                  style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    backdropFilter: 'blur(10px)',
-                    color: 'white',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                  aria-label="Share profile"
-                >
-                  📤
-                </button>
+          {/* Living Habits */}
+          {(profile.sleepSchedule || profile.cleanliness) && (
+            <div>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Living Habits</h3>
+              <div className="space-y-1 text-sm">
+                {profile.sleepSchedule && (
+                  <p>
+                    <span className="text-[#64748b]">Sleep Schedule:</span>{' '}
+                    <span className="capitalize">{profile.sleepSchedule}</span>
+                  </p>
+                )}
+                {profile.cleanliness && (
+                  <p>
+                    <span className="text-[#64748b]">Cleanliness:</span>{' '}
+                    <span className="capitalize">{profile.cleanliness}</span>
+                  </p>
+                )}
               </div>
-
-              {/* Primary CTA Button */}
-              <button
-                onClick={() => {
-                  if (!accessToken) {
-                    toast.error('Please log in to send a soft intro');
-                    return;
-                  }
-                  setShowSoftIntro(true);
-                }}
-                className="flex-1 h-[52px] rounded-2xl flex items-center justify-center gap-2 font-bold text-[15px] transition-all duration-300 cursor-pointer text-white"
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  boxShadow: '0 8px 24px rgba(16,185,129,0.3)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 12px 32px rgba(16,185,129,0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(16,185,129,0.3)';
-                }}
-                aria-label={`Send intro to ${profile.name}`}
-              >
-                <Send className="w-5 h-5" />
-                <span>Send Intro</span>
-              </button>
             </div>
-          </div>
+          )}
+
+          {/* Social Media */}
+          {(profile.instagram || profile.snapchat) && (
+            <div>
+              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Social Media</h3>
+              <div className="space-y-2">
+                {profile.instagram && (
+                  <a
+                    href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-[#2E7B91] hover:text-[#25658A] hover:underline"
+                  >
+                    <Instagram className="w-4 h-4" />
+                    {profile.instagram}
+                  </a>
+                )}
+                {profile.snapchat && (
+                  <p className="text-sm">
+                    <span className="text-[#64748b]">Snapchat:</span> {profile.snapchat}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      </motion.div>
+      </div>
+
+      {/* Action Buttons - Fixed at bottom - Always visible - Rendered via Portal for Safari */}
+      {typeof document !== 'undefined' && createPortal(
+        <div
+          data-action-buttons
+          className="bg-white border-t-2 border-[#EAEAEA] px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            paddingTop: '1rem',
+            paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
+            minHeight: '80px',
+            width: '100vw',
+            maxWidth: '100%',
+            backgroundColor: '#ffffff',
+            zIndex: 99999,
+            boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)',
+            WebkitTransform: 'translateZ(0)',
+            transform: 'translateZ(0)',
+            willChange: 'transform',
+            display: 'block',
+            visibility: 'visible',
+            opacity: 1,
+            WebkitBackfaceVisibility: 'visible',
+            backfaceVisibility: 'visible',
+          }}
+        >
+          <div className="flex gap-3 max-w-2xl mx-auto">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleLike}
+              className={`flex-1 gap-2 font-semibold h-12 text-base rounded-2xl ${
+                liked ? 'bg-red-50 border-2 border-red-400 text-red-600 hover:bg-red-100' : 'border-2 hover:border-gray-400'
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
+              {liked ? 'Liked' : 'Like'}
+            </Button>
+            <button
+              data-soft-intro-button
+              onClick={() => {
+                if (!accessToken) {
+                  toast.error('Please log in to send a soft intro');
+                  return;
+                }
+                setShowSoftIntro(true);
+              }}
+              aria-label={`Send soft intro to ${profile.name}`}
+              className="flex-1 gap-2 font-semibold h-12 shadow-lg text-base rounded-2xl flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#2E7B91]"
+              style={{ 
+                color: '#ffffff',
+                backgroundColor: '#2E7B91',
+                background: 'linear-gradient(to right, #2E7B91, #25658A)',
+                backgroundImage: 'linear-gradient(to right, #2E7B91, #25658A)',
+                border: 'none',
+              }}
+            >
+              <Sparkles className="w-5 h-5" style={{ color: '#ffffff', fill: 'none', stroke: '#ffffff' }} aria-hidden="true" />
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Soft Intro</span>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Soft Intro Flow */}
       {showSoftIntro && (
