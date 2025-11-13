@@ -4144,6 +4144,7 @@ app.get("/forum/posts", async (c) => {
         userDisliked: userLike?.is_like === false,
         createdAt: post.created_at,
         isAnonymous: post.is_anonymous,
+        canDelete: post.author_id === userId, // Include permission check
       };
     }));
 

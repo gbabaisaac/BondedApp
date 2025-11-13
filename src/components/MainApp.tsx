@@ -4,18 +4,24 @@ import { InstagramGrid } from './InstagramGrid';
 import { ChatView } from './ChatView';
 import { MatchSuggestions } from './MatchSuggestions';
 import { MyProfile } from './MyProfile';
+import { ModeToggle } from './ModeToggle';
+import { LoveModeNew } from './LoveModeNew';
 import { AppTutorial } from './AppTutorial';
 import { Forum } from './Forum';
+import { isFeatureEnabled } from '../config/features';
 import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimization';
 import { useAppStore } from '../store/useAppStore';
 
 type View = 'discover' | 'matches' | 'messages' | 'forum';
+type AppMode = 'friend' | 'love';
 
 export function MainApp() {
   const { userProfile, accessToken, handleLogout } = useAppStore();
   const [currentView, setCurrentView] = useState<View>('discover');
+  const [mode, setMode] = useState<AppMode>('friend');
   const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const loveModeEnabled = isFeatureEnabled('LOVE_MODE_ENABLED');
 
   useEffect(() => {
     // Check if user has seen tutorial
@@ -25,6 +31,17 @@ export function MainApp() {
     }
   }, []);
 
+  // Love Mode has its own full-screen view (no mode toggle inside)
+  // Only show if feature is enabled
+  if (loveModeEnabled && mode === 'love') {
+    return (
+      <LoveModeNew
+        onExit={() => setMode('friend')}
+      />
+    );
+  }
+
+  // Friend Mode uses the standard layout
   const profilePicture = getProfilePictureUrl(
     userProfile?.profilePicture || userProfile?.photos?.[0],
     'small'
@@ -39,14 +56,14 @@ export function MainApp() {
         />
       )}
       <div
-        className="fixed inset-0 flex flex-col bg-gradient-to-br from-[#1E4F74] via-[#2E7B91] to-[#1E4F74]"
+        className="fixed inset-0 flex flex-col bg-white"
           style={{
             height: '100dvh',
             overflow: 'hidden'
           }}
       >
       {/* Top Banner with Profile Picture */}
-      <div className="sticky top-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-50 bg-white border-b border-[#EAEAEA] px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => {
             // Profile is now accessed via top-left avatar, so just show profile view
@@ -67,7 +84,7 @@ export function MainApp() {
             alt="bonded logo" 
             className="w-6 h-6"
           />
-          <h1 className="text-xl text-white lowercase font-bold tracking-wide">
+          <h1 className="text-xl text-[#1E4F74] lowercase font-bold tracking-wide">
             bonded
           </h1>
         </div>
@@ -76,6 +93,8 @@ export function MainApp() {
         <div className="w-10 h-10"></div>
       </div>
 
+      {/* Only show mode toggle if Love Mode is enabled */}
+      {loveModeEnabled && <ModeToggle mode={mode} onChange={setMode} />}
       <div className="flex-1 overflow-hidden">
         <MobileLayout activeTab={currentView} onTabChange={setCurrentView} hideNavigation={isProfileDetailOpen}>
           {currentView === 'discover' && (

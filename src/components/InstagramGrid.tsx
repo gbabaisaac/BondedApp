@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Sparkles, Flame } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { projectId } from '../utils/supabase/config';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
@@ -9,7 +9,6 @@ import { EnhancedSearch } from './EnhancedSearch';
 import { toast } from 'sonner';
 import { getProfileCardAriaLabel, handleGridKeyDown } from '../utils/accessibility';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
-import { getProfileEmoji, getTagColor } from '../utils/emoji-mapper';
 
 interface InstagramGridProps {
   onProfileDetailOpen?: (isOpen: boolean) => void; // Callback to notify parent
@@ -259,11 +258,17 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-transparent">
-        <div className="sticky top-0 bg-black/30 backdrop-blur-md border-b border-white/10 px-4 py-3 z-10">
-          <div className="flex items-center justify-center gap-2">
-            <h1 className="text-xl text-white lowercase font-bold tracking-wide">
-              Yearbook
+      <div className="min-h-screen bg-[#F9F6F3]">
+        <div className="sticky top-0 bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <img 
+              src="/Bonded_transparent_icon.png" 
+              alt="bonded logo" 
+              className="w-8 h-8"
+            />
+            <h1 className="text-2xl text-[#1E4F74] lowercase font-bold tracking-wide">
+              bonded
             </h1>
           </div>
         </div>
@@ -272,31 +277,10 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     );
   }
 
-  // Get pronouns from profile (if available)
-  const getPronouns = (profile: Profile): string => {
-    // Try to get from profile data, default to he/him
-    return (profile as any).pronouns || 'he/him';
-  };
-
-  // Get tags for display (interests + personality)
-  const getDisplayTags = (profile: Profile): string[] => {
-    const tags: string[] = [];
-    if (profile.personality && profile.personality.length > 0) {
-      tags.push(...profile.personality.slice(0, 1));
-    }
-    if (profile.interests && profile.interests.length > 0) {
-      tags.push(...profile.interests.slice(0, 1));
-    }
-    if (profile.personality && profile.personality.length > 1) {
-      tags.push(profile.personality[1]);
-    }
-    return tags.slice(0, 3);
-  };
-
   return (
-    <div className="min-h-screen bg-transparent">
-      {/* Enhanced Search and Filter Bar */}
-      <div className="sticky top-0 bg-black/30 backdrop-blur-md border-b border-white/10 px-4 py-3 z-10">
+    <div className="min-h-screen bg-[#F9F6F3]">
+      {/* Enhanced Search and Filter Bar - positioned below top banner */}
+      <div className="sticky top-[60px] bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
         <EnhancedSearch
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -308,102 +292,89 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         />
       </div>
 
-      {/* Horizontal Scrollable Cards */}
-      {filteredProfiles.length > 0 ? (
-        <div className="overflow-x-auto pb-4 pt-4" style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
-          <div className="flex gap-4 px-4" style={{ width: 'max-content' }}>
-            {filteredProfiles.map((profile, index) => {
-              const bondPrintScore = bondPrintScores[profile.id];
-              const emoji = getProfileEmoji(profile);
-              const tags = getDisplayTags(profile);
-              const pronouns = getPronouns(profile);
-              const totalProfiles = filteredProfiles.length;
-            
-              return (
-                <div
-                  key={profile.id}
-                  style={{ scrollSnapAlign: 'start', minWidth: '280px', maxWidth: '280px' }}
-                  className="relative"
-                >
-                  <button
-                    onClick={() => handleProfileClick(index)}
-                    onKeyDown={(e) => handleGridKeyDown(
-                      e,
-                      () => handleProfileClick(index),
-                      index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
-                      index > 0 ? () => handleProfileClick(index - 1) : undefined
-                    )}
-                    aria-label={getProfileCardAriaLabel(profile)}
-                    className="relative w-full h-[500px] overflow-hidden bg-gradient-to-br from-[#1E4F74] via-[#2E7B91] to-[#1E4F74] rounded-3xl shadow-2xl hover:shadow-[#2E7B91]/50 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#2E7B91] focus:ring-offset-2"
-                  >
-                  {/* Top Left - Friend Badge */}
-                  <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5">
-                    <Flame className="w-4 h-4 text-yellow-400" />
-                    <span className="text-white text-xs font-semibold">Friend</span>
-                  </div>
+      {/* Stats Bar */}
+      <div className="bg-white border-b px-4 py-3 flex justify-around text-center">
+        <div>
+          <p className="font-semibold text-[#2E7B91]">{filteredProfiles.length}</p>
+          <p className="text-xs text-[#475569]">Students</p>
+        </div>
+        <div>
+          <p className="font-semibold">{userProfile?.school || 'Your School'}</p>
+          <p className="text-xs text-[#475569]">University</p>
+        </div>
+        <div>
+          <p className="font-semibold text-green-600">Active</p>
+          <p className="text-xs text-[#475569]">Community</p>
+        </div>
+      </div>
 
-                  {/* Top Right - Pagination */}
-                  <div className="absolute top-4 right-4 z-10">
-                    <span className="text-white/80 text-xs font-medium">
-                      {index + 1}/{totalProfiles}
-                    </span>
-                  </div>
-
-                  {/* Center - Large Emoji */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-9xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
-                      {emoji}
-                    </div>
-                  </div>
-
-                  {/* Bottom Section */}
-                  <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 via-black/60 to-transparent">
-                    {/* Name and Age */}
-                    <div className="mb-3">
-                      <p className="text-white text-xl font-bold mb-1">
-                        {profile.name} {profile.age || 20}
-                      </p>
-                      <p className="text-white/70 text-sm">
-                        {pronouns} • {profile.year || 'Student'}
-                      </p>
-                    </div>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2">
-                      {tags.map((tag, tagIndex) => {
-                        const displayTag = tag.split('-').map(word => 
-                          word.charAt(0).toUpperCase() + word.slice(1)
-                        ).join(' ');
-                        return (
-                          <span
-                            key={tagIndex}
-                            className={`${getTagColor(tag, tagIndex)} text-white text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap shadow-lg`}
-                          >
-                            {displayTag}
-                          </span>
-                        );
-                      })}
-                    </div>
-
-                    {/* Bond Print Score Badge (if high match) */}
-                    {bondPrintScore && bondPrintScore >= 70 && (
-                      <div className="mt-3 inline-flex items-center gap-1.5 bg-gradient-to-r from-[#2E7B91] to-purple-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                        <Sparkles className="w-3 h-3" />
-                        {bondPrintScore}% Match
-                      </div>
-                    )}
-                  </div>
-                  </button>
+      {/* Grid */}
+      <div className="grid grid-cols-2 gap-3 p-3">
+        {filteredProfiles.map((profile, index) => {
+          const bondPrintScore = bondPrintScores[profile.id];
+          const isHighMatch = bondPrintScore && bondPrintScore >= 70;
+          const isMediumMatch = bondPrintScore && bondPrintScore >= 50 && bondPrintScore < 70;
+          
+          return (
+            <button
+              key={profile.id}
+              onClick={() => handleProfileClick(index)}
+              onKeyDown={(e) => handleGridKeyDown(
+                e,
+                () => handleProfileClick(index),
+                index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
+                index > 0 ? () => handleProfileClick(index - 1) : undefined
+              )}
+              aria-label={getProfileCardAriaLabel(profile)}
+              className={`relative overflow-hidden bg-white rounded-2xl shadow-sm hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-[#2E7B91] focus:ring-offset-2 ${
+                isHighMatch 
+                  ? 'ring-2 ring-[#2E7B91] ring-offset-2' 
+                  : isMediumMatch 
+                  ? 'ring-1 ring-[#25658A]'
+                  : ''
+              }`}
+            >
+              {/* Bond Print Badge */}
+              {bondPrintScore && bondPrintScore >= 50 && (
+                <div className={`absolute top-2 right-2 z-10 ${
+                  isHighMatch 
+                    ? 'bg-gradient-to-r from-[#2E7B91] to-[#B69CFF]' 
+                    : 'bg-[#25658A]'
+                } text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1`}>
+                  <Sparkles className="w-3 h-3" />
+                  {bondPrintScore}% Match
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-center h-96">
-          <EmptyState type="no-profiles" />
-        </div>
-      )}
+              )}
+              
+              <div className="aspect-[3/4] relative">
+                <img
+                  src={profile.imageUrl}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-3 text-white text-left">
+                  <p className="text-sm font-semibold truncate">{profile.name}</p>
+                  <p className="text-xs text-gray-200 truncate">{profile.major}</p>
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {profile.lookingFor?.slice(0, 2).map((item: string, i: number) => {
+                      // Convert normalized format (study-partner) to display format (Study Partner)
+                      const displayText = item.split('-').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ');
+                      return (
+                        <span key={i} className="text-[10px] bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full whitespace-nowrap">
+                          {displayText}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

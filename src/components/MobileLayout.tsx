@@ -92,14 +92,14 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
 
   const tabs = [
     { id: 'discover' as const, icon: Home, label: 'Yearbook', badge: 0 },
-    { id: 'matches' as const, icon: Users, label: 'Friends', badge: pendingCount },
-    { id: 'messages' as const, icon: MessageCircle, label: 'Quad', badge: unreadCount },
-    { id: 'forum' as const, icon: MessageSquare, label: 'Scrapbook', badge: 0 },
+    { id: 'matches' as const, icon: Users, label: 'Connections', badge: pendingCount },
+    { id: 'messages' as const, icon: MessageCircle, label: 'Messages', badge: unreadCount },
+    { id: 'forum' as const, icon: MessageSquare, label: 'The Quad', badge: 0 },
   ];
 
   return (
     <div
-      className="h-full flex flex-col bg-transparent"
+      className="h-full flex flex-col bg-white"
       style={{
         height: '100%',
         position: 'relative'
@@ -117,51 +117,35 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         {children}
       </div>
 
-      {/* Bottom Navigation - Dark translucent style */}
+      {/* Bottom Navigation - Hidden when profile detail is open */}
       {!hideNavigation && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-black/40 backdrop-blur-xl border-t border-white/10 z-50"
+          className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
           style={{
             paddingBottom: 'env(safe-area-inset-bottom)'
           }}
         >
-          <div className="flex items-center justify-around h-20 px-2">
+          <div className="flex items-center justify-around h-16 px-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              
-              // Map tab IDs to icon colors based on image
-              const getIconColor = () => {
-                if (isActive) {
-                  if (tab.id === 'discover') return 'text-[#2E7B91]'; // Teal for Yearbook
-                  if (tab.id === 'matches') return 'text-purple-400'; // Purple for Friends
-                  if (tab.id === 'messages') return 'text-gray-300'; // Gray for Quad
-                  if (tab.id === 'forum') return 'text-pink-400'; // Pink for Scrapbook
-                }
-                return 'text-gray-400';
-              };
               
               return (
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className="flex flex-col items-center justify-center flex-1 h-full transition-all relative group"
+                  className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+                    isActive ? 'text-[#2E7B91]' : 'text-[#64748b]'
+                  }`}
                 >
-                  <div className={`relative p-2 rounded-xl transition-all ${
-                    isActive ? 'bg-white/10' : 'hover:bg-white/5'
-                  }`}>
-                    <Icon className={`w-6 h-6 ${isActive ? 'fill-current' : ''} ${getIconColor()}`} />
+                  <div className="relative">
+                    <Icon className={`w-6 h-6 ${isActive ? 'fill-[#2E7B91]' : ''}`} />
                     {tab.badge > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center ring-2 ring-black/20">
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                         {tab.badge > 9 ? '9+' : tab.badge}
                       </span>
                     )}
                   </div>
-                  <span className={`text-[10px] mt-1 font-medium transition-colors ${
-                    isActive ? 'text-white' : 'text-gray-400'
-                  }`}>
-                    {tab.label}
-                  </span>
                 </button>
               );
             })}

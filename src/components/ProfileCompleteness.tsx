@@ -76,18 +76,18 @@ export function ProfileCompleteness({ userProfile, onComplete }: ProfileComplete
                     {item}
                   </span>
                 ))}
-              </div>
-            )}
+            </div>
+          )}
             {onComplete && (
-              <Button
-                onClick={onComplete}
-                size="sm"
+            <Button
+              onClick={onComplete}
+              size="sm"
                 variant="ghost"
                 className="mt-2 h-7 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-100"
-              >
+            >
                 Add info →
-              </Button>
-            )}
+            </Button>
+          )}
           </div>
         </div>
       </CardContent>
