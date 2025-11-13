@@ -49,8 +49,8 @@ export function MainApp() {
             overflow: 'hidden'
           }}
       >
-      {/* Top Navigation - Modern Mobile Social App Style */}
-      <div className="sticky top-0 z-50 bg-midnight-indigo/80 backdrop-blur-xl border-b border-soft-cream/10 px-4 py-2.5 flex items-center justify-between safe-top">
+      {/* Top Navigation - Dark Mode */}
+      <div className="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-soft-cream/10 px-4 py-2.5 flex items-center justify-between safe-top">
         {/* Left: Bonded Icon */}
         <button
           onClick={() => {

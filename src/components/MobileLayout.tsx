@@ -130,7 +130,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
           }}
         >
           <div className="max-w-2xl mx-auto">
-            <div className="bg-midnight-indigo/95 backdrop-blur-2xl rounded-3xl border border-soft-cream/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+            <div className="bg-black/60 backdrop-blur-2xl rounded-3xl border border-soft-cream/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
               <div className="flex items-center justify-around h-16 px-2">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
