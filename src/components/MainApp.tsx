@@ -43,14 +43,14 @@ export function MainApp() {
         />
       )}
       <div
-        className="fixed inset-0 flex flex-col bg-gradient-hero bg-pattern"
+        className="fixed inset-0 flex flex-col bg-black"
           style={{
             height: '100dvh',
             overflow: 'hidden'
           }}
       >
       {/* Top Navigation - Dark Mode */}
-      <div className="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-soft-cream/10 px-4 py-2.5 flex items-center justify-between safe-top">
+      <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-2.5 flex items-center justify-between safe-top">
         {/* Left: Bonded Icon */}
         <button
           onClick={() => {

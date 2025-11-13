@@ -470,7 +470,7 @@ export function Forum() {
   };
 
   return (
-    <div className="min-h-screen pb-28 w-full overflow-x-hidden bg-black/20">
+    <div className="min-h-screen pb-28 w-full overflow-x-hidden bg-black" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {/* Quad Section Header - Dark Mode */}
       <div className="px-4 pt-4 pb-3">
         <h1 className="text-2xl font-bold text-soft-cream mb-1">
@@ -484,7 +484,7 @@ export function Forum() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-black/40 rounded-3xl p-4 border border-soft-cream/10"
+          className="bg-gray-900/80 rounded-3xl p-4 border border-gray-700/50"
         >
           <div className="flex gap-3">
             <Avatar className="w-9 h-9 flex-shrink-0">
@@ -498,7 +498,7 @@ export function Forum() {
                 placeholder="What's on your mind?"
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                className="min-h-[52px] resize-none rounded-2xl bg-black/30 border-soft-cream/10 text-soft-cream placeholder:text-soft-cream/40 text-sm focus:border-teal-blue/40 focus:ring-1 focus:ring-teal-blue/20"
+                className="min-h-[52px] resize-none rounded-2xl bg-gray-800/50 border-gray-700/50 text-soft-cream placeholder:text-gray-400 text-sm focus:border-teal-blue/40 focus:ring-1 focus:ring-teal-blue/20"
               />
               {selectedMedia && (
                 <div className="mt-2 relative rounded-2xl overflow-hidden">
@@ -534,7 +534,7 @@ export function Forum() {
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                       isAnonymous
                         ? 'bg-teal-blue/30 text-teal-blue border border-teal-blue/40'
-                        : 'bg-black/30 text-soft-cream/60 border border-soft-cream/10'
+                        : 'bg-gray-800/50 text-gray-300 border border-gray-700/50'
                     }`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -620,7 +620,7 @@ export function Forum() {
                 className="relative"
               >
                 <div
-                  className={`bg-black/30 rounded-2xl overflow-hidden transition-all border border-soft-cream/5 ${
+                  className={`bg-gray-900/80 rounded-2xl overflow-hidden transition-all border border-gray-700/30 ${
                     isExpanded ? 'ring-1 ring-teal-blue/40' : ''
                   }`}
                 >

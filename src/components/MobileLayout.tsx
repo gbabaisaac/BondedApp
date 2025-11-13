@@ -112,7 +112,9 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' // Space for floating nav
+          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))', // Space for floating nav
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
         }}
       >
         {children}
