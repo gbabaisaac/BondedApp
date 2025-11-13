@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Sparkles, Heart, Music, Instagram, Music2, Camera, Filter, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { projectId } from '../utils/supabase/config';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
@@ -10,10 +10,9 @@ import { toast } from 'sonner';
 import { getProfileCardAriaLabel, handleGridKeyDown } from '../utils/accessibility';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
 import { motion } from 'motion/react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
+import { YearbookProfileCard } from './YearbookProfileCard';
 
 interface InstagramGridProps {
   onProfileDetailOpen?: (isOpen: boolean) => void;
@@ -42,6 +41,8 @@ interface Profile {
   bondPrint?: any;
   socialConnections?: any;
   goals?: any;
+  scrapbookEnabled?: boolean;
+  roommateMode?: boolean;
 }
 
 export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
@@ -60,6 +61,7 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     personalityType: 'all',
     interest: 'all',
     musicTaste: 'all',
+    mode: 'all' as 'all' | 'scrapbook' | 'roommate' | 'friend',
     sortBy: 'newest' as 'newest' | 'compatibility' | 'name' | 'vibe',
   });
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -227,77 +229,7 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     return Array.from(goals).sort();
   }, [profiles]);
 
-  const getPersonalityTags = (profile: Profile): string[] => {
-    const tags: string[] = [];
-    
-    // Personality type from Bond Print
-    if (profile.bondPrint?.personality?.type) {
-      const type = profile.bondPrint.personality.type;
-      const typeMap: Record<string, string> = {
-        'introvert': '🧠 The Thinker',
-        'extrovert': '🌟 The Explorer',
-        'ambivert': '⚖️ The Balancer',
-        'analytical': '🔬 The Builder',
-        'creative': '🎨 The Creator',
-        'empath': '💝 The Empath',
-      };
-      tags.push(typeMap[type] || `🧠 ${type}`);
-    }
-    
-    // Personality traits
-    profile.personality?.slice(0, 2).forEach((trait: string) => {
-      tags.push(trait);
-    });
-    
-    return tags;
-  };
-
-  const getVibeTags = (profile: Profile): string[] => {
-    const tags: string[] = [];
-    
-    // Interests (music, aesthetic, etc.)
-    profile.interests?.slice(0, 3).forEach((interest: string) => {
-      const interestMap: Record<string, string> = {
-        'music': '🎵 Music',
-        'indie': '🎵 Indie',
-        'r&b': '🎵 R&B',
-        'house': '🎵 House',
-        'travel': '✈️ Travel',
-        'gaming': '🎮 Gaming',
-        'design': '🎨 Design',
-        'fashion': '👗 Fashion',
-        'fitness': '💪 Fitness',
-      };
-      tags.push(interestMap[interest.toLowerCase()] || interest);
-    });
-    
-    // Vibe words from Bond Print
-    if (profile.bondPrint?.traits) {
-      const vibeWords = ['Chill', 'Ambitious', 'Funny', 'Deep', 'Creative', 'Adventurous'];
-      vibeWords.forEach((word) => {
-        if (profile.bondPrint.traits[word.toLowerCase()]) {
-          tags.push(word);
-        }
-      });
-    }
-    
-    return tags;
-  };
-
-  const getModeIndicator = (profile: Profile) => {
-    // Check if they're in love mode (would need to check their mode preference)
-    // For now, default to friend mode
-    return '🫱 Friend Mode';
-  };
-
-  const getQuote = (profile: Profile): string => {
-    if (profile.bio) {
-      return profile.bio.length > 60 ? profile.bio.substring(0, 60) + '...' : profile.bio;
-    }
-    // Generate AI quote if no bio (would need backend call)
-    return 'Late-night thinker, early-morning texter.';
-  };
-
+  // Add mode filter
   const filteredProfiles = useMemo(() => {
     let filtered = profiles.filter((profile) => {
       const matchesSearch = searchQuery === '' ||
@@ -330,8 +262,20 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
       const matchesInterest = filters.interest === 'all' ||
         profile.interests?.includes(filters.interest);
 
+      // Mode filter (Scrapbook / Roommate / Friend)
+      let matchesMode = true;
+      if (filters.mode && filters.mode !== 'all') {
+        if (filters.mode === 'scrapbook') {
+          matchesMode = profile.scrapbookEnabled === true;
+        } else if (filters.mode === 'roommate') {
+          matchesMode = profile.roommateMode === true;
+        } else if (filters.mode === 'friend') {
+          matchesMode = !profile.scrapbookEnabled && !profile.roommateMode;
+        }
+      }
+
       return matchesSearch && matchesMajor && matchesYear && matchesLookingFor &&
-        matchesAcademicGoal && matchesLeisureGoal && matchesPersonality && matchesInterest;
+        matchesAcademicGoal && matchesLeisureGoal && matchesPersonality && matchesInterest && matchesMode;
     });
 
     // Sort
@@ -479,6 +423,17 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
                   <option key={interest} value={interest}>{interest}</option>
                 ))}
               </select>
+              
+              <select
+                value={filters.mode}
+                onChange={(e) => setFilters({ ...filters, mode: e.target.value as any })}
+                className="text-sm rounded-xl border border-teal-200 px-3 py-2 bg-white/80"
+              >
+                <option value="all">All Modes</option>
+                <option value="scrapbook">💞 Scrapbook</option>
+                <option value="roommate">🏠 Roommate</option>
+                <option value="friend">🫱 Friend</option>
+              </select>
             </div>
             
             {/* Vibe Sort Slider */}
@@ -518,136 +473,40 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         </div>
       </div>
 
-      {/* Grid - New Profile Card Design */}
+      {/* Grid - Using YearbookProfileCard */}
       <div className="grid grid-cols-2 gap-4 p-4">
-        {filteredProfiles.map((profile, index) => {
-          const bondPrintScore = bondPrintScores[profile.id];
-          const isHighMatch = bondPrintScore && bondPrintScore >= 70;
-          const personalityTags = getPersonalityTags(profile);
-          const vibeTags = getVibeTags(profile);
-          const allTags = [...personalityTags, ...vibeTags].slice(0, 4);
-          const insights = sharedInsights[profile.id] || [];
-          
-          return (
-            <motion.button
-              key={profile.id}
-              onClick={() => handleProfileClick(index)}
-              onKeyDown={(e) => handleGridKeyDown(
-                e,
-                () => handleProfileClick(index),
-                index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
-                index > 0 ? () => handleProfileClick(index - 1) : undefined
-              )}
-              aria-label={getProfileCardAriaLabel(profile)}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`relative overflow-hidden bg-white rounded-[18px] shadow-lg hover:shadow-xl transition-all focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 ${
-                isHighMatch 
-                  ? 'ring-2 ring-teal-400 ring-offset-2' 
-                  : ''
-              }`}
-            >
-              {/* Bond Print Badge */}
-              {bondPrintScore && bondPrintScore >= 50 && (
-                <div className={`absolute top-3 right-3 z-10 ${
-                  isHighMatch 
-                    ? 'bg-gradient-to-r from-teal-500 to-navy-500' 
-                    : 'bg-teal-500'
-                } text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1`}>
-                  <Sparkles className="w-3 h-3" />
-                  {bondPrintScore}% Match
-                </div>
-              )}
-              
-              {/* Profile Photo - Rounded Square with Teal Ring */}
-              <div className="relative aspect-[3/4] bg-gradient-to-br from-teal-100 to-navy-100">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.div
-                    className="relative"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <div className={`w-24 h-24 rounded-2xl overflow-hidden ring-4 ${
-                      isHighMatch ? 'ring-teal-400 animate-pulse' : 'ring-teal-300'
-                    } shadow-xl`}>
-                      <img
-                        src={profile.imageUrl}
-                        alt={profile.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </motion.div>
-                </div>
-                
-                {/* Mode Badge */}
-                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-medium text-teal-700">
-                  {getModeIndicator(profile)}
-                </div>
-              </div>
-
-              {/* Content Section */}
-              <div className="p-4 space-y-3">
-                {/* Tag Row */}
-                <div className="flex flex-wrap gap-1.5">
-                  {allTags.map((tag, i) => (
-                    <motion.span
-                      key={i}
-                      whileHover={{ scale: 1.05 }}
-                      className="text-[10px] bg-gradient-to-r from-lavender-100 to-peach-100 text-gray-700 px-2 py-1 rounded-full font-medium"
-                    >
-                      {tag}
-                    </motion.span>
-                  ))}
-                </div>
-
-                {/* Bottom Overlay Gradient Section */}
-                <div className="bg-gradient-to-br from-teal-600 to-navy-600 rounded-xl p-3 text-white space-y-1.5">
-                  <div>
-                    <p className="font-bold text-sm">{profile.name.split(' ')[0]}</p>
-                    {profile.pronouns && (
-                      <p className="text-[10px] text-teal-100">{profile.pronouns}</p>
-                    )}
-                  </div>
-                  <p className="text-xs text-teal-50 italic line-clamp-2">
-                    "{getQuote(profile)}"
-                  </p>
-                </div>
-
-                {/* Social Links */}
-                {(profile.instagram || profile.spotify || profile.socialConnections?.spotify || profile.socialConnections?.linkedin) && (
-                  <div className="flex items-center gap-2 justify-center">
-                    {profile.instagram && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
-                        <Instagram className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                    {(profile.spotify || profile.socialConnections?.spotify) && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                        <Music2 className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Bonded Insights */}
-                {insights.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {insights.slice(0, 2).map((insight, i) => (
-                      <span
-                        key={i}
-                        className="text-[9px] bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full border border-teal-200"
-                      >
-                        {insight}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.button>
-          );
-        })}
+        {filteredProfiles.map((profile, index) => (
+          <YearbookProfileCard
+            key={profile.id}
+            profile={{
+              id: profile.id,
+              name: profile.name,
+              pronouns: profile.pronouns,
+              profilePicture: profile.profilePicture,
+              photos: profile.photos || (profile.profilePicture ? [profile.profilePicture] : []),
+              bio: profile.bio,
+              interests: profile.interests,
+              personality: profile.personality,
+              bondPrint: profile.bondPrint,
+              lookingFor: profile.lookingFor,
+              instagram: profile.instagram,
+              spotify: profile.spotify,
+              socialConnections: profile.socialConnections,
+              scrapbookEnabled: profile.scrapbookEnabled,
+              roommateMode: profile.roommateMode,
+            }}
+            bondPrintScore={bondPrintScores[profile.id]}
+            sharedInsights={sharedInsights[profile.id] || []}
+            onClick={() => handleProfileClick(index)}
+            onKeyDown={(e) => handleGridKeyDown(
+              e,
+              () => handleProfileClick(index),
+              index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
+              index > 0 ? () => handleProfileClick(index - 1) : undefined
+            )}
+            aria-label={getProfileCardAriaLabel(profile)}
+          />
+        ))}
       </div>
 
       {filteredProfiles.length === 0 && (
