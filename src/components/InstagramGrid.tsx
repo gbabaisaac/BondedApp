@@ -258,29 +258,16 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F9F6F3]">
-        <div className="sticky top-0 bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <img 
-              src="/Bonded_transparent_icon.png" 
-              alt="bonded logo" 
-              className="w-8 h-8"
-            />
-            <h1 className="text-2xl text-[#1E4F74] lowercase font-bold tracking-wide">
-              bonded
-            </h1>
-          </div>
-        </div>
+      <div className="min-h-screen">
         <ProfileGridSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F6F3]">
-      {/* Enhanced Search and Filter Bar - positioned below top banner */}
-      <div className="sticky top-[60px] bg-white border-b border-[#EAEAEA] px-4 py-3 z-10">
+    <div className="min-h-screen">
+      {/* Enhanced Search and Filter Bar - positioned below top banner - Bonded Design */}
+      <div className="sticky top-[60px] bg-midnight-indigo/80 backdrop-blur-lg border-b border-teal-blue/20 px-4 py-3 z-10">
         <EnhancedSearch
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -292,19 +279,19 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         />
       </div>
 
-      {/* Stats Bar */}
-      <div className="bg-white border-b px-4 py-3 flex justify-around text-center">
+      {/* Stats Bar - Bonded Design */}
+      <div className="glass-card mx-4 my-3 px-4 py-3 flex justify-around text-center">
         <div>
-          <p className="font-semibold text-[#2E7B91]">{filteredProfiles.length}</p>
-          <p className="text-xs text-[#475569]">Students</p>
+          <p className="font-semibold text-teal-blue">{filteredProfiles.length}</p>
+          <p className="text-xs text-soft-cream/60">Students</p>
         </div>
         <div>
-          <p className="font-semibold">{userProfile?.school || 'Your School'}</p>
-          <p className="text-xs text-[#475569]">University</p>
+          <p className="font-semibold text-soft-cream">{userProfile?.school || 'Your School'}</p>
+          <p className="text-xs text-soft-cream/60">University</p>
         </div>
         <div>
-          <p className="font-semibold text-green-600">Active</p>
-          <p className="text-xs text-[#475569]">Community</p>
+          <p className="font-semibold text-teal-blue">Active</p>
+          <p className="text-xs text-soft-cream/60">Community</p>
         </div>
       </div>
 
@@ -326,21 +313,21 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
                 index > 0 ? () => handleProfileClick(index - 1) : undefined
               )}
               aria-label={getProfileCardAriaLabel(profile)}
-              className={`relative overflow-hidden bg-white rounded-2xl shadow-sm hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-[#2E7B91] focus:ring-offset-2 ${
+              className={`relative overflow-hidden glass-card glass-card-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-blue focus:ring-offset-2 ${
                 isHighMatch 
-                  ? 'ring-2 ring-[#2E7B91] ring-offset-2' 
+                  ? 'ring-2 ring-teal-blue ring-offset-2' 
                   : isMediumMatch 
-                  ? 'ring-1 ring-[#25658A]'
+                  ? 'ring-1 ring-ocean-blue'
                   : ''
               }`}
             >
-              {/* Bond Print Badge */}
+              {/* Bond Print Badge - Bonded Design */}
               {bondPrintScore && bondPrintScore >= 50 && (
                 <div className={`absolute top-2 right-2 z-10 ${
                   isHighMatch 
-                    ? 'bg-gradient-to-r from-[#2E7B91] to-[#B69CFF]' 
-                    : 'bg-[#25658A]'
-                } text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1`}>
+                    ? 'bg-gradient-to-r from-teal-blue to-lavender-mist' 
+                    : 'bg-ocean-blue'
+                } text-soft-cream text-[10px] font-bold px-2 py-1 rounded-full shadow-glow-teal flex items-center gap-1`}>
                   <Sparkles className="w-3 h-3" />
                   {bondPrintScore}% Match
                 </div>

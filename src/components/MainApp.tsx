@@ -18,6 +18,7 @@ export function MainApp() {
   const [currentView, setCurrentView] = useState<View>('discover');
   const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     // Check if user has seen tutorial
@@ -42,35 +43,35 @@ export function MainApp() {
         />
       )}
       <div
-        className="fixed inset-0 flex flex-col bg-white"
+        className="fixed inset-0 flex flex-col bg-gradient-hero bg-pattern"
           style={{
             height: '100dvh',
             overflow: 'hidden'
           }}
       >
-      {/* Top Banner with Profile Picture */}
-      <div className="sticky top-0 z-50 bg-white border-b border-[#EAEAEA] px-4 py-3 flex items-center justify-between">
+      {/* Top Banner with Profile Picture - Bonded Design */}
+      <div className="sticky top-0 z-50 bg-midnight-indigo/95 backdrop-blur-lg border-b border-teal-blue/20 px-4 py-3 flex items-center justify-between safe-top">
         <button
           onClick={() => {
             // Profile is now accessed via top-left avatar, so just show profile view
             // Could navigate to profile if needed
           }}
-          className="flex items-center gap-2 focus:outline-none"
+          className="btn-icon"
         >
           <img
             {...getLazyImageProps(profilePicture, userProfile?.name || 'Profile')}
-            className="w-10 h-10 rounded-full object-cover border-2 border-[#2E7B91]"
+            className="w-10 h-10 rounded-full object-cover border-2 border-teal-blue/50"
           />
         </button>
         
         {/* Logo/Center */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('discover')}>
           <img 
             src="/Bonded_transparent_icon.png" 
             alt="bonded logo" 
             className="w-6 h-6"
           />
-          <h1 className="text-xl text-[#1E4F74] lowercase font-bold tracking-wide">
+          <h1 className="text-xl text-gradient lowercase font-bold tracking-brand">
             bonded
           </h1>
         </div>
@@ -78,14 +79,24 @@ export function MainApp() {
         {/* Right side - Messages icon */}
         <button
           onClick={() => setCurrentView('messages')}
-          className="flex items-center gap-2 focus:outline-none"
+          className="btn-icon relative"
         >
-          <MessageCircle className="w-6 h-6 text-[#1E4F74]" />
+          <MessageCircle className="w-6 h-6 text-soft-cream" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-peach-glow text-midnight-indigo text-xs font-bold rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </button>
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <MobileLayout activeTab={currentView} onTabChange={setCurrentView} hideNavigation={isProfileDetailOpen}>
+        <MobileLayout 
+          activeTab={currentView} 
+          onTabChange={setCurrentView} 
+          hideNavigation={isProfileDetailOpen}
+          onUnreadCountChange={setUnreadCount}
+        >
           {currentView === 'discover' && (
             <InstagramGrid 
               onProfileDetailOpen={setIsProfileDetailOpen}

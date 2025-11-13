@@ -100,7 +100,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
 
   return (
     <div
-      className="h-full flex flex-col bg-white"
+      className="h-full flex flex-col"
       style={{
         height: '100%',
         position: 'relative'
@@ -118,15 +118,15 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         {children}
       </div>
 
-      {/* Bottom Navigation - Hidden when profile detail is open */}
+      {/* Bottom Navigation - Hidden when profile detail is open - Bonded Design */}
       {!hideNavigation && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+          className="fixed bottom-0 left-0 right-0 bg-midnight-indigo/95 backdrop-blur-lg border-t border-teal-blue/20 z-50"
           style={{
             paddingBottom: 'env(safe-area-inset-bottom)'
           }}
         >
-          <div className="flex items-center justify-around h-16 px-2">
+          <div className="flex items-center justify-around h-16 px-2 max-w-2xl mx-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -135,18 +135,17 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
-                    isActive ? 'text-[#2E7B91]' : 'text-[#64748b]'
-                  }`}
+                  className={isActive ? 'nav-item-active' : 'nav-item'}
                 >
                   <div className="relative">
-                    <Icon className={`w-6 h-6 ${isActive ? 'fill-[#2E7B91]' : ''}`} />
+                    <Icon className={`w-6 h-6 ${isActive ? 'fill-current' : ''}`} />
                     {tab.badge > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                      <span className="absolute -top-2 -right-2 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
                         {tab.badge > 9 ? '9+' : tab.badge}
                       </span>
                     )}
                   </div>
+                  <span className="text-xs font-medium mt-0.5">{tab.label}</span>
                 </button>
               );
             })}

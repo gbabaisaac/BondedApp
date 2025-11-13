@@ -274,42 +274,42 @@ export function MatchSuggestions() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-4">
-        <h1 className="text-xl font-semibold mb-4">Friends</h1>
+    <div className="h-full flex flex-col">
+      {/* Header - Bonded Design */}
+      <div className="glass-card mx-4 mt-4 mb-2 px-4 py-4">
+        <h1 className="text-2xl font-bold text-gradient mb-4">Friends</h1>
         
         {/* Tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           <Button
             variant={activeTab === 'friends' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('friends')}
-            className={activeTab === 'friends' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+            className={activeTab === 'friends' ? 'btn-primary' : 'btn-secondary'}
           >
             <Users className="w-4 h-4 mr-2" />
             My Friends
             {connections.length > 0 && (
-              <Badge className="ml-2 bg-[#2E7B91] text-white">{connections.length}</Badge>
+              <Badge className="ml-2 bg-teal-blue text-soft-cream">{connections.length}</Badge>
             )}
           </Button>
           <Button
             variant={activeTab === 'requests' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('requests')}
-            className={activeTab === 'requests' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+            className={activeTab === 'requests' ? 'btn-primary' : 'btn-secondary'}
           >
             <UserCheck className="w-4 h-4 mr-2" />
             Requests
             {pendingIntros.length > 0 && (
-              <Badge className="ml-2 bg-red-500 text-white">{pendingIntros.length}</Badge>
+              <Badge className="ml-2 bg-peach-glow text-midnight-indigo">{pendingIntros.length}</Badge>
             )}
           </Button>
           <Button
             variant={activeTab === 'suggestions' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('suggestions')}
-            className={activeTab === 'suggestions' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+            className={activeTab === 'suggestions' ? 'btn-primary' : 'btn-secondary'}
           >
             <Sparkles className="w-4 h-4 mr-2" />
             Suggestions
@@ -318,13 +318,13 @@ export function MatchSuggestions() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
         {loading ? (
           <div className="p-4">
             <ConnectionCardSkeleton />
           </div>
         ) : (
-          <div className="p-4 space-y-3">
+          <div className="space-y-3">
             {/* My Friends */}
             {activeTab === 'friends' && (
               <>
@@ -346,7 +346,7 @@ export function MatchSuggestions() {
                       return (
                         <Card 
                           key={connection.id} 
-                          className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                          className="glass-card glass-card-hover overflow-hidden"
                           onClick={() => {
                             if (connection.name) {
                               setSelectedProfile(connection);
@@ -354,19 +354,19 @@ export function MatchSuggestions() {
                           }}
                         >
                           <CardContent className="p-0">
-                            <div className="h-32 bg-gradient-to-br from-[#2E7B91] to-[#25658A] relative">
+                            <div className="h-32 bg-gradient-to-br from-teal-blue to-ocean-blue relative">
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <Avatar className="w-20 h-20 border-4 border-white">
+                                <Avatar className="w-20 h-20 border-4 border-soft-cream/20">
                                   <AvatarImage src={connection.profilePicture || connection.imageUrl} />
-                                  <AvatarFallback className="text-xl bg-white text-[#2E7B91]">
+                                  <AvatarFallback className="text-xl bg-soft-cream text-teal-blue">
                                     {getInitials(connection.name || 'U')}
                                   </AvatarFallback>
                                 </Avatar>
                               </div>
                             </div>
-                            <div className="p-3 text-center">
-                              <h3 className="font-medium text-sm mb-1">{connection.name || 'Unknown'}</h3>
-                              <p className="text-xs text-[#475569]">{connection.major || ''}</p>
+                            <div className="p-3 text-center bg-midnight-indigo/50">
+                              <h3 className="font-medium text-sm mb-1 text-soft-cream">{connection.name || 'Unknown'}</h3>
+                              <p className="text-xs text-soft-cream/60">{connection.major || ''}</p>
                             </div>
                           </CardContent>
                         </Card>
@@ -412,10 +412,10 @@ export function MatchSuggestions() {
                             </p>
                             
                             {intro.analysis && (
-                              <div className="bg-[#2E7B9115] rounded-2xl p-3 mb-3">
+                              <div className="bg-teal-blue/15 rounded-2xl p-3 mb-3 border border-teal-blue/20">
                                 <div className="flex items-start gap-2">
-                                  <Sparkles className="w-4 h-4 text-[#2E7B91] flex-shrink-0 mt-0.5" />
-                                  <p className="text-xs text-[#1E4F74] leading-relaxed">
+                                  <Sparkles className="w-4 h-4 text-teal-blue flex-shrink-0 mt-0.5" />
+                                  <p className="text-xs text-soft-cream leading-relaxed">
                                     {typeof intro.analysis === 'string' 
                                       ? intro.analysis 
                                       : intro.analysis?.analysis || intro.analysis?.recommendation || 'You have a great match!'}
@@ -429,7 +429,7 @@ export function MatchSuggestions() {
                                 size="sm"
                                 onClick={() => handleAccept(intro.id)}
                                 disabled={processing === intro.id}
-                                className="flex-1 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white rounded-2xl"
+                                className="flex-1 btn-primary"
                               >
                                 <CheckCircle2 className="w-4 h-4 mr-1" />
                                 Accept
@@ -439,7 +439,7 @@ export function MatchSuggestions() {
                                 variant="outline"
                                 onClick={() => handleDeny(intro.id)}
                                 disabled={processing === intro.id}
-                                className="flex-1"
+                                className="flex-1 btn-secondary"
                               >
                                 <XCircle className="w-4 h-4 mr-1" />
                                 Decline
@@ -469,26 +469,26 @@ export function MatchSuggestions() {
                     {suggestions.map((suggestion) => (
                       <Card 
                         key={suggestion.id} 
-                        className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                        className="glass-card glass-card-hover overflow-hidden"
                         onClick={() => setSelectedProfile(suggestion)}
                       >
                         <CardContent className="p-0">
-                          <div className="h-32 bg-gradient-to-br from-purple-400 to-pink-400 relative">
+                          <div className="h-32 bg-gradient-to-br from-lavender-mist to-peach-glow relative">
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <Avatar className="w-20 h-20 border-4 border-white">
+                              <Avatar className="w-20 h-20 border-4 border-soft-cream/20">
                                 <AvatarImage src={suggestion.profilePicture || suggestion.imageUrl} />
-                                <AvatarFallback className="text-xl bg-white text-purple-600">
+                                <AvatarFallback className="text-xl bg-soft-cream text-lavender-mist">
                                   {getInitials(suggestion.name || 'U')}
                                 </AvatarFallback>
                               </Avatar>
                             </div>
                           </div>
-                          <div className="p-3 text-center">
-                            <h3 className="font-medium text-sm mb-1">{suggestion.name || 'Unknown'}</h3>
-                            <p className="text-xs text-[#475569] mb-2">{suggestion.major || ''}</p>
+                          <div className="p-3 text-center bg-midnight-indigo/50">
+                            <h3 className="font-medium text-sm mb-1 text-soft-cream">{suggestion.name || 'Unknown'}</h3>
+                            <p className="text-xs text-soft-cream/60 mb-2">{suggestion.major || ''}</p>
                             <Button
                               size="sm"
-                              className="w-full bg-gradient-to-r from-[#2E7B91] to-[#25658A] text-white"
+                              className="w-full btn-primary"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Send friend request
