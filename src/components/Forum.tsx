@@ -491,25 +491,24 @@ export function Forum() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed inset-0 bg-gray-50 flex flex-col z-50"
+        className="fixed inset-0 bg-white flex flex-col z-50"
         style={{
-          background: 'linear-gradient(135deg, #0a1628 0%, #1a2841 50%, #0f4d5c 100%)',
           fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         }}
       >
-        <div className="sticky top-0 z-10 bg-white/10 backdrop-blur-[20px] border-b border-white/10 px-4 py-3 flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedPost(null)} className="text-white">
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => setSelectedPost(null)} className="text-gray-600">
             <X className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold text-white">Post Details</h1>
+          <h1 className="text-xl font-bold text-gray-900">Post Details</h1>
           <div className="w-10" />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/5 backdrop-blur-[20px] rounded-[20px] border border-white/10 p-5 mb-4"
+            className="bg-white rounded-[20px] border border-gray-200 p-5 mb-4 shadow-sm"
           >
             <div className="flex items-center gap-3 mb-4">
               <Avatar
@@ -517,18 +516,18 @@ export function Forum() {
                 onClick={() => !selectedPost.isAnonymous && handleProfileClick(selectedPost.authorId)}
               >
                 <AvatarImage src={getProfilePictureUrl(selectedPost.authorAvatar, 'small')} />
-                <AvatarFallback className="bg-gradient-to-br from-teal-500 to-blue-500 text-white">
+                <AvatarFallback className="bg-[#2E7B91] text-white">
                   {selectedPost.isAnonymous ? '?' : selectedPost.authorName[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div
-                  className={`text-[15px] font-bold text-white mb-0.5 ${!selectedPost.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  className={`text-[15px] font-bold text-gray-900 mb-0.5 ${!selectedPost.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
                   onClick={() => !selectedPost.isAnonymous && handleProfileClick(selectedPost.authorId)}
                 >
                   {selectedPost.isAnonymous ? 'Anonymous Student' : selectedPost.authorName}
                 </div>
-                <div className="text-xs text-white/50">
+                <div className="text-xs text-gray-500">
                   {userProfile?.year || 'Student'} • {formatTimeAgo(selectedPost.createdAt)}
                 </div>
               </div>
@@ -537,18 +536,18 @@ export function Forum() {
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDeletePost(selectedPost.id)}
-                  className="text-white/60 hover:text-red-400"
+                  className="text-gray-600 hover:text-red-500"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               )}
             </div>
 
-            <h2 className="text-lg font-bold text-white mb-2">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">
               {getPostTitle(selectedPost.content)}
             </h2>
 
-            <p className="text-[15px] leading-relaxed text-white/80 mb-4">
+            <p className="text-[15px] leading-relaxed text-gray-700 mb-4">
               {selectedPost.content}
             </p>
 
@@ -567,7 +566,7 @@ export function Forum() {
                 {extractTags(selectedPost.content).map((tag, i) => (
                   <span
                     key={i}
-                    className="px-3 py-1 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[11px] font-semibold"
+                    className="px-3 py-1 rounded-xl bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-semibold"
                   >
                     {tag}
                   </span>
@@ -575,12 +574,13 @@ export function Forum() {
               </div>
             )}
 
-            <div className="flex gap-4 pt-4 border-t border-white/10">
+            <div className="flex gap-4 pt-4 border-t border-gray-200">
               <button
                 onClick={() => handleLike(selectedPost.id)}
-                className={`flex items-center gap-1.5 transition-all ${
-                  selectedPost.userLiked ? 'text-pink-400' : 'text-white/60 hover:text-pink-400'
+                className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
+                  selectedPost.userLiked ? 'text-pink-500' : 'text-gray-600 active:text-pink-500'
                 }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <Heart className={`w-5 h-5 ${selectedPost.userLiked ? 'fill-current' : ''}`} />
                 <span className="text-sm font-semibold">{selectedPost.likes}</span>
@@ -588,22 +588,24 @@ export function Forum() {
 
               <button
                 onClick={() => handleDislike(selectedPost.id)}
-                className={`flex items-center gap-1.5 transition-all ${
-                  selectedPost.userDisliked ? 'text-red-400' : 'text-white/60 hover:text-red-400'
+                className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
+                  selectedPost.userDisliked ? 'text-red-500' : 'text-gray-600 active:text-red-500'
                 }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <ThumbsDown className={`w-5 h-5 ${selectedPost.userDisliked ? 'fill-current' : ''}`} />
                 <span className="text-sm font-semibold">{selectedPost.dislikes}</span>
               </button>
 
-              <button className="flex items-center gap-1.5 text-white/60">
+              <button className="flex items-center gap-1.5 text-gray-600 touch-manipulation active:scale-95 min-h-[44px]">
                 <MessageCircle className="w-5 h-5" />
                 <span className="text-sm font-semibold">{selectedPost.comments}</span>
               </button>
 
               <button
                 onClick={() => openShareDialog(selectedPost.id)}
-                className="flex items-center gap-1.5 text-white/60 hover:text-teal-400 ml-auto"
+                className="flex items-center gap-1.5 text-gray-600 active:text-[#2E7B91] ml-auto touch-manipulation active:scale-95 min-h-[44px]"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <Share2 className="w-5 h-5" />
               </button>
@@ -612,7 +614,7 @@ export function Forum() {
 
           {/* Comments Section */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-white mb-3">Comments</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Comments</h3>
             <div className="flex gap-2 mb-3">
               <Input
                 placeholder="Add a comment..."
@@ -623,44 +625,44 @@ export function Forum() {
                     handleComment(selectedPost.id);
                   }
                 }}
-                className="flex-1 h-9 text-sm rounded-full border-white/20 bg-white/5 text-white placeholder-white/40 focus:border-teal-500/50"
+                className="flex-1 h-9 text-sm rounded-full border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-[#2E7B91]"
               />
               <Button
                 onClick={() => handleComment(selectedPost.id)}
                 size="sm"
-                className="h-9 rounded-full bg-gradient-to-r from-teal-500 to-blue-500"
+                className="h-9 rounded-full bg-[#2E7B91] hover:bg-[#25658A]"
               >
                 <Send className="w-3 h-3" />
               </Button>
             </div>
             <div className="space-y-3">
               {postComments[selectedPost.id]?.length === 0 ? (
-                <p className="text-xs text-white/50 text-center py-2">
+                <p className="text-xs text-gray-500 text-center py-2">
                   No comments yet. Be the first!
                 </p>
               ) : (
                 postComments[selectedPost.id]?.map((comment: ForumComment) => (
-                  <div key={comment.id} className="flex gap-2 text-sm items-start bg-white/5 backdrop-blur-[10px] rounded-xl p-3">
+                  <div key={comment.id} className="flex gap-2 text-sm items-start bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
                     <Avatar className="w-7 h-7 flex-shrink-0">
                       <AvatarImage src={getProfilePictureUrl(comment.authorAvatar, 'small')} />
-                      <AvatarFallback className="bg-teal-500/20 text-teal-300 text-xs">
+                      <AvatarFallback className="bg-[#2E7B91] text-white text-xs">
                         {comment.isAnonymous ? '?' : comment.authorName[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs text-white mb-1">
+                      <p className="font-medium text-xs text-gray-900 mb-1">
                         {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
-                        <span className="text-[10px] text-white/50 ml-2">
+                        <span className="text-[10px] text-gray-500 ml-2">
                           {formatTimeAgo(comment.createdAt)}
                         </span>
                       </p>
-                      <p className="text-white/80">{comment.content}</p>
+                      <p className="text-gray-700">{comment.content}</p>
                     </div>
                     {comment.canDelete && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-white/40 hover:text-red-400"
+                        className="h-6 w-6 text-gray-400 hover:text-red-500"
                         onClick={() => handleDeleteComment(selectedPost.id, comment.id)}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -678,43 +680,34 @@ export function Forum() {
 
   return (
     <div
-      className="min-h-screen flex flex-col relative overflow-x-hidden"
+      className="min-h-screen flex flex-col relative overflow-x-hidden bg-gray-50"
       style={{
-        background: 'linear-gradient(135deg, #0a1628 0%, #1a2841 50%, #0f4d5c 100%)',
         fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
       {/* Fixed Header */}
       <div
-        className="fixed top-0 left-0 right-0 z-[1000] backdrop-blur-[20px] border-b border-white/10"
+        className="fixed top-0 left-0 right-0 z-[1000] bg-white border-b border-gray-200"
         style={{
-          background: 'rgba(10, 22, 40, 0.95)',
           paddingTop: 'env(safe-area-inset-top, 0)',
         }}
       >
         <div className="max-w-[800px] mx-auto px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg sm:text-xl"
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              }}
-            >
-              💬
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-bold text-white bg-[#667eea]">
+              Q
             </div>
-            <h1
-              className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-teal-400 to-blue-400 bg-clip-text text-transparent"
-            >
-              the quad
-            </h1>
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-[#3b82f6] rounded"></div>
+              <h1 className="text-lg sm:text-xl font-bold text-[#3b82f6]">
+                bonded
+              </h1>
+            </div>
           </div>
           <button
             onClick={() => setShowCreatePost(true)}
-            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-[20px] border-none font-semibold text-xs sm:text-sm cursor-pointer transition-all duration-300 text-white touch-manipulation active:scale-95 min-h-[44px]"
-            style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              WebkitTapHighlightColor: 'transparent',
-            }}
+            className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-[20px] border-none font-semibold text-xs sm:text-sm cursor-pointer transition-all duration-300 text-white touch-manipulation active:scale-95 min-h-[44px] bg-[#2E7B91] hover:bg-[#25658A]"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             + New Post
           </button>
@@ -733,10 +726,10 @@ export function Forum() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/5 backdrop-blur-[20px] rounded-[20px] border border-white/10 p-4 sm:p-5 mb-4 sm:mb-6"
+          className="bg-white rounded-[20px] border border-gray-200 p-4 sm:p-5 mb-4 sm:mb-6 shadow-sm"
         >
-          <div className="text-sm sm:text-base font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
-            🔥 Trending Now
+          <div className="text-sm sm:text-base font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            Trending Now
           </div>
           <div className="flex gap-2 sm:gap-2.5 flex-wrap overflow-x-auto pb-2 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
             {trendingTopics.map((topic, i) => (
@@ -746,11 +739,8 @@ export function Forum() {
                   setNewPost(topic + ' ');
                   setShowCreatePost(true);
                 }}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-[20px] border-none cursor-pointer transition-all duration-300 text-xs sm:text-[13px] font-semibold text-teal-300 border border-teal-400/30 touch-manipulation active:scale-95 whitespace-nowrap min-h-[36px]"
-                style={{
-                  background: 'rgba(16, 185, 129, 0.2)',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-[20px] border border-gray-300 cursor-pointer transition-all duration-300 text-xs sm:text-[13px] font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 touch-manipulation active:scale-95 whitespace-nowrap min-h-[36px]"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {topic}
               </button>
@@ -760,16 +750,16 @@ export function Forum() {
 
         {/* Create Post Dialog */}
         <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
-          <DialogContent className="w-[95vw] sm:max-w-[600px] rounded-3xl bg-white/10 backdrop-blur-[20px] border-white/20 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:max-w-[600px] rounded-3xl bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-white">Create New Post</DialogTitle>
-              <DialogDescription className="text-white/60">
+              <DialogTitle className="text-xl font-bold text-gray-900">Create New Post</DialogTitle>
+              <DialogDescription className="text-gray-600">
                 Share what's on your mind with your campus
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="post-title" className="text-white/80 mb-2 block">
+                <Label htmlFor="post-title" className="text-gray-700 mb-2 block">
                   Title (optional)
                 </Label>
                 <Input
@@ -777,11 +767,11 @@ export function Forum() {
                   placeholder="Give your post a title..."
                   value={postTitle}
                   onChange={(e) => setPostTitle(e.target.value)}
-                  className="bg-white/5 border-white/20 text-white placeholder-white/40"
+                  className="bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                 />
               </div>
               <div>
-                <Label htmlFor="post-content" className="text-white/80 mb-2 block">
+                <Label htmlFor="post-content" className="text-gray-700 mb-2 block">
                   Content
                 </Label>
                 <Textarea
@@ -789,7 +779,7 @@ export function Forum() {
                   placeholder="What's on your mind? Share with your campus..."
                   value={newPost}
                   onChange={(e) => setNewPost(e.target.value)}
-                  className="min-h-[120px] bg-white/5 border-white/20 text-white placeholder-white/40"
+                  className="min-h-[120px] bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                 />
               </div>
               {selectedMedia && (
@@ -825,9 +815,9 @@ export function Forum() {
                       id="anonymous"
                       checked={isAnonymous}
                       onCheckedChange={setIsAnonymous}
-                      className="data-[state=checked]:bg-teal-500"
+                      className="data-[state=checked]:bg-[#2E7B91]"
                     />
-                    <Label htmlFor="anonymous" className="text-xs text-white/60 cursor-pointer">
+                    <Label htmlFor="anonymous" className="text-xs text-gray-600 cursor-pointer">
                       Post anonymously
                     </Label>
                   </div>
@@ -844,7 +834,7 @@ export function Forum() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-full hover:bg-white/10 cursor-pointer text-white"
+                        className="h-9 w-9 rounded-full hover:bg-gray-100 cursor-pointer text-gray-600"
                         asChild
                       >
                         <span>
@@ -864,7 +854,7 @@ export function Forum() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-full hover:bg-white/10 cursor-pointer text-white"
+                        className="h-9 w-9 rounded-full hover:bg-gray-100 cursor-pointer text-gray-600"
                         asChild
                       >
                         <span>
@@ -877,7 +867,7 @@ export function Forum() {
                 <Button
                   onClick={handleCreatePost}
                   disabled={uploadingMedia}
-                  className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white rounded-full px-6"
+                  className="bg-[#2E7B91] hover:bg-[#25658A] text-white rounded-full px-6"
                 >
                   {uploadingMedia ? (
                     <>
@@ -898,12 +888,12 @@ export function Forum() {
 
         {/* Posts Feed */}
         {loading ? (
-          <div className="p-8 text-center text-white/60">Loading posts...</div>
+          <div className="p-8 text-center text-gray-600">Loading posts...</div>
         ) : posts.length === 0 ? (
-          <div className="p-8 text-center text-white">
+          <div className="p-8 text-center text-gray-600">
             <div className="text-6xl mb-5">💬</div>
-            <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
-            <p className="text-white/60">Be the first to share something!</p>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">No posts yet</h3>
+            <p className="text-gray-600">Be the first to share something!</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -917,7 +907,7 @@ export function Forum() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ y: -2 }}
-                  className="bg-white/5 backdrop-blur-[20px] rounded-[20px] border border-white/10 p-4 sm:p-5 cursor-pointer transition-all duration-300 active:scale-[0.98] touch-manipulation"
+                  className="bg-white rounded-[20px] border border-gray-200 p-4 sm:p-5 cursor-pointer transition-all duration-300 active:scale-[0.98] touch-manipulation shadow-sm hover:shadow-md"
                   onClick={() => {
                     setSelectedPost(post);
                     loadComments(post.id);
@@ -933,13 +923,13 @@ export function Forum() {
                       }}
                     >
                       <AvatarImage src={getProfilePictureUrl(post.authorAvatar, 'small')} />
-                      <AvatarFallback className="bg-gradient-to-br from-teal-500 to-blue-500 text-white">
+                      <AvatarFallback className="bg-[#2E7B91] text-white">
                         {post.isAnonymous ? '?' : post.authorName[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div
-                        className={`text-[15px] font-bold text-white mb-0.5 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        className={`text-[15px] font-bold text-gray-900 mb-0.5 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           !post.isAnonymous && handleProfileClick(post.authorId);
@@ -947,7 +937,7 @@ export function Forum() {
                       >
                         {post.isAnonymous ? 'Anonymous Student' : post.authorName}
                       </div>
-                      <div className="text-xs text-white/50">
+                      <div className="text-xs text-gray-500">
                         {userProfile?.year || 'Student'} • {formatTimeAgo(post.createdAt)}
                       </div>
                     </div>
@@ -955,7 +945,7 @@ export function Forum() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-white/10 text-white"
+                        className="h-8 w-8 rounded-full hover:bg-gray-100 text-gray-600"
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowPostMenu(showPostMenu === post.id ? null : post.id);
@@ -964,14 +954,14 @@ export function Forum() {
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                       {showPostMenu === post.id && (
-                        <div className="absolute right-0 top-10 bg-white/10 backdrop-blur-[20px] rounded-2xl border border-white/20 py-2 z-50 min-w-[120px]">
+                        <div className="absolute right-0 top-10 bg-white rounded-2xl border border-gray-200 shadow-lg py-2 z-50 min-w-[120px]">
                           {post.canDelete && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeletePost(post.id);
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-white/10 flex items-center gap-2"
+                              className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 flex items-center gap-2"
                             >
                               <Trash2 className="w-4 h-4" />
                               Delete
@@ -983,7 +973,7 @@ export function Forum() {
                               openShareDialog(post.id);
                               setShowPostMenu(null);
                             }}
-                            className="w-full px-4 py-2 text-left text-sm text-white/80 hover:bg-white/10 flex items-center gap-2"
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                           >
                             <Share2 className="w-4 h-4" />
                             Share
@@ -993,11 +983,11 @@ export function Forum() {
                     </div>
                   </div>
 
-                  <h2 className="text-base sm:text-lg font-bold text-white mb-2">
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
                     {title}
                   </h2>
 
-                  <p className="text-sm sm:text-[15px] leading-relaxed text-white/80 mb-4 line-clamp-3">
+                  <p className="text-sm sm:text-[15px] leading-relaxed text-gray-700 mb-4 line-clamp-3">
                     {post.content}
                   </p>
 
@@ -1016,7 +1006,7 @@ export function Forum() {
                       {tags.map((tag, i) => (
                         <span
                           key={i}
-                          className="px-3 py-1 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[11px] font-semibold"
+                          className="px-3 py-1 rounded-xl bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-semibold"
                         >
                           {tag}
                         </span>
@@ -1024,14 +1014,14 @@ export function Forum() {
                     </div>
                   )}
 
-                  <div className="flex gap-3 sm:gap-4 pt-4 border-t border-white/10">
+                  <div className="flex gap-3 sm:gap-4 pt-4 border-t border-gray-200">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleLike(post.id);
                       }}
                       className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
-                        post.userLiked ? 'text-pink-400' : 'text-white/60 active:text-pink-400'
+                        post.userLiked ? 'text-pink-500' : 'text-gray-600 active:text-pink-500'
                       }`}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
@@ -1045,7 +1035,7 @@ export function Forum() {
                         handleDislike(post.id);
                       }}
                       className={`flex items-center gap-1.5 transition-all touch-manipulation active:scale-95 min-h-[44px] ${
-                        post.userDisliked ? 'text-red-400' : 'text-white/60 active:text-red-400'
+                        post.userDisliked ? 'text-red-500' : 'text-gray-600 active:text-red-500'
                       }`}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
@@ -1059,7 +1049,7 @@ export function Forum() {
                         setSelectedPost(post);
                         loadComments(post.id);
                       }}
-                      className="flex items-center gap-1.5 text-white/60 active:text-teal-400 touch-manipulation active:scale-95 min-h-[44px]"
+                      className="flex items-center gap-1.5 text-gray-600 active:text-[#2E7B91] touch-manipulation active:scale-95 min-h-[44px]"
                       style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
                       <MessageCircle className="w-5 h-5" />
@@ -1075,22 +1065,22 @@ export function Forum() {
 
       {/* Share Dialog */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <DialogContent className="sm:max-w-md rounded-3xl bg-white/10 backdrop-blur-[20px] border-white/20">
+        <DialogContent className="sm:max-w-md rounded-3xl bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">Share Post</DialogTitle>
-            <DialogDescription className="text-white/60">
+            <DialogTitle className="text-xl font-bold text-gray-900">Share Post</DialogTitle>
+            <DialogDescription className="text-gray-600">
               Share this post with a friend
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-96 overflow-y-auto">
             {loadingFriends ? (
               <div className="p-8 text-center">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-400" />
-                <p className="text-sm text-white/60">Loading friends...</p>
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#2E7B91]" />
+                <p className="text-sm text-gray-600">Loading friends...</p>
               </div>
             ) : friends.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-sm text-white/60">No friends to share with yet</p>
+                <p className="text-sm text-gray-600">No friends to share with yet</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1098,21 +1088,21 @@ export function Forum() {
                   <button
                     key={friend.id}
                     onClick={() => handleSharePost(friend.id)}
-                    className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/10 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors"
                   >
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={getProfilePictureUrl(friend.profilePicture, 'small')} />
-                      <AvatarFallback className="bg-gradient-to-br from-teal-500 to-blue-500 text-white">
+                      <AvatarFallback className="bg-[#2E7B91] text-white">
                         {friend.name?.[0] || 'F'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left">
-                      <p className="font-medium text-sm text-white">{friend.name}</p>
-                      <p className="text-xs text-white/50">{friend.major || 'Student'}</p>
+                      <p className="font-medium text-sm text-gray-900">{friend.name}</p>
+                      <p className="text-xs text-gray-500">{friend.major || 'Student'}</p>
                     </div>
                     <Button
                       size="sm"
-                      className="rounded-full bg-gradient-to-r from-teal-500 to-blue-500"
+                      className="rounded-full bg-[#2E7B91] hover:bg-[#25658A]"
                     >
                       Send
                     </Button>
