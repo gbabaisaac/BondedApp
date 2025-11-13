@@ -309,32 +309,33 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
       </div>
 
       {/* Horizontal Scrollable Cards */}
-      <div className="overflow-x-auto pb-4 pt-4" style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
-        <div className="flex gap-4 px-4" style={{ width: 'max-content' }}>
-          {filteredProfiles.map((profile, index) => {
-            const bondPrintScore = bondPrintScores[profile.id];
-            const emoji = getProfileEmoji(profile);
-            const tags = getDisplayTags(profile);
-            const pronouns = getPronouns(profile);
-            const totalProfiles = filteredProfiles.length;
+      {filteredProfiles.length > 0 ? (
+        <div className="overflow-x-auto pb-4 pt-4" style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex gap-4 px-4" style={{ width: 'max-content' }}>
+            {filteredProfiles.map((profile, index) => {
+              const bondPrintScore = bondPrintScores[profile.id];
+              const emoji = getProfileEmoji(profile);
+              const tags = getDisplayTags(profile);
+              const pronouns = getPronouns(profile);
+              const totalProfiles = filteredProfiles.length;
             
-            return (
-              <div
-                key={profile.id}
-                style={{ scrollSnapAlign: 'start', minWidth: '280px', maxWidth: '280px' }}
-                className="relative"
-              >
-                <button
-                  onClick={() => handleProfileClick(index)}
-                  onKeyDown={(e) => handleGridKeyDown(
-                    e,
-                    () => handleProfileClick(index),
-                    index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
-                    index > 0 ? () => handleProfileClick(index - 1) : undefined
-                  )}
-                  aria-label={getProfileCardAriaLabel(profile)}
-                  className="relative w-full h-[500px] overflow-hidden bg-gradient-to-br from-[#1E4F74] via-[#2E7B91] to-[#1E4F74] rounded-3xl shadow-2xl hover:shadow-[#2E7B91]/50 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#2E7B91] focus:ring-offset-2"
+              return (
+                <div
+                  key={profile.id}
+                  style={{ scrollSnapAlign: 'start', minWidth: '280px', maxWidth: '280px' }}
+                  className="relative"
                 >
+                  <button
+                    onClick={() => handleProfileClick(index)}
+                    onKeyDown={(e) => handleGridKeyDown(
+                      e,
+                      () => handleProfileClick(index),
+                      index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
+                      index > 0 ? () => handleProfileClick(index - 1) : undefined
+                    )}
+                    aria-label={getProfileCardAriaLabel(profile)}
+                    className="relative w-full h-[500px] overflow-hidden bg-gradient-to-br from-[#1E4F74] via-[#2E7B91] to-[#1E4F74] rounded-3xl shadow-2xl hover:shadow-[#2E7B91]/50 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#2E7B91] focus:ring-offset-2"
+                  >
                   {/* Top Left - Friend Badge */}
                   <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5">
                     <Flame className="w-4 h-4 text-yellow-400" />
@@ -392,15 +393,13 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
                       </div>
                     )}
                   </div>
-                </button>
-              </div>
-            );
-          })}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-
-      {/* Empty State */}
-      {filteredProfiles.length === 0 && !loading && (
+      ) : (
         <div className="flex items-center justify-center h-96">
           <EmptyState type="no-profiles" />
         </div>
