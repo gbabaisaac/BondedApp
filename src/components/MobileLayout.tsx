@@ -112,7 +112,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))'
+          paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' // Increased for taller bottom nav
         }}
       >
         {children}
@@ -121,12 +121,13 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
       {/* Bottom Navigation - Hidden when profile detail is open - Bonded Design */}
       {!hideNavigation && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-midnight-indigo/95 backdrop-blur-lg border-t border-teal-blue/20 z-50"
+          className="fixed bottom-0 left-0 right-0 bg-midnight-indigo backdrop-blur-xl border-t border-teal-blue/30 z-50 shadow-strong"
           style={{
-            paddingBottom: 'env(safe-area-inset-bottom)'
+            paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))',
+            paddingTop: '0.75rem'
           }}
         >
-          <div className="flex items-center justify-around h-16 px-2 max-w-2xl mx-auto">
+          <div className="flex items-center justify-around h-20 px-2 max-w-2xl mx-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -135,17 +136,41 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className={isActive ? 'nav-item-active' : 'nav-item'}
+                  className={`flex flex-col items-center justify-center gap-1.5 flex-1 h-full transition-all duration-300 relative ${
+                    isActive 
+                      ? 'text-teal-blue' 
+                      : 'text-soft-cream/50'
+                  }`}
                 >
-                  <div className="relative">
-                    <Icon className={`w-6 h-6 ${isActive ? 'fill-current' : ''}`} />
+                  {/* Active Tab Background Pill */}
+                  {isActive && (
+                    <div className="absolute inset-0 mx-2 my-1 bg-teal-blue/20 rounded-2xl backdrop-blur-sm border border-teal-blue/30" />
+                  )}
+                  
+                  {/* Icon Container */}
+                  <div className="relative z-10 flex items-center justify-center">
+                    <Icon 
+                      className={`w-7 h-7 transition-all duration-300 ${
+                        isActive 
+                          ? 'fill-teal-blue text-teal-blue scale-110' 
+                          : 'text-soft-cream/50'
+                      }`} 
+                    />
                     {tab.badge > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      <span className="absolute -top-1.5 -right-1.5 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg border-2 border-midnight-indigo">
                         {tab.badge > 9 ? '9+' : tab.badge}
                       </span>
                     )}
                   </div>
-                  <span className="text-xs font-medium mt-0.5">{tab.label}</span>
+                  
+                  {/* Label */}
+                  <span className={`text-xs font-semibold z-10 transition-all duration-300 ${
+                    isActive 
+                      ? 'text-teal-blue' 
+                      : 'text-soft-cream/50'
+                  }`}>
+                    {tab.label}
+                  </span>
                 </button>
               );
             })}
