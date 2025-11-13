@@ -1,14 +1,15 @@
 import React from 'react';
 import { OnboardingWizard } from './OnboardingWizard';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { useAccessToken } from '../store/useAppStore';
 
 interface ProfileSetupProps {
-  accessToken: string;
   onComplete: (profile: any) => void;
   existingProfile?: any;
 }
 
-export function ProfileSetup({ accessToken, onComplete, existingProfile }: ProfileSetupProps) {
+export function ProfileSetup({ onComplete, existingProfile }: ProfileSetupProps) {
+  const accessToken = useAccessToken();
   const [userInfo, setUserInfo] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -79,7 +80,6 @@ export function ProfileSetup({ accessToken, onComplete, existingProfile }: Profi
       userEmail={userInfo?.email || existingProfile?.email || ''}
       userName={userInfo?.name || existingProfile?.name || ''}
       userSchool={userInfo?.school || existingProfile?.school || ''}
-      accessToken={accessToken}
       onComplete={onComplete}
       existingProfile={existingProfile}
     />

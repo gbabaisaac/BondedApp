@@ -26,11 +26,12 @@ import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { motion, AnimatePresence } from 'motion/react';
 import { BondPrintQuiz } from './BondPrintQuiz';
 
+import { useAccessToken } from '../store/useAppStore';
+
 interface OnboardingWizardProps {
   userEmail: string;
   userName: string;
   userSchool: string;
-  accessToken: string;
   onComplete: (profile: any) => void;
   existingProfile?: any; // For editing existing profile
 }
@@ -98,7 +99,8 @@ const MAJORS = [
 
 const YEARS = ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'];
 
-export function OnboardingWizard({ userEmail, userName, userSchool, accessToken, onComplete, existingProfile }: OnboardingWizardProps) {
+export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, existingProfile }: OnboardingWizardProps) {
+  const accessToken = useAccessToken();
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   
@@ -1150,7 +1152,6 @@ export function OnboardingWizard({ userEmail, userName, userSchool, accessToken,
                 },
                 additionalInfo,
               }}
-              accessToken={accessToken}
               onComplete={handleBondPrintComplete}
               onSkip={() => {
                 setShowQuiz(false);

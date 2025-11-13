@@ -10,11 +10,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { projectId } from '../utils/supabase/info';
+import { useUserProfile, useAccessToken, useAppStore } from '../store/useAppStore';
 
 interface SocialConnectionsProps {
-  userProfile: any;
-  accessToken: string;
-  onUpdate: () => void;
+  onUpdate?: () => void;
 }
 
 interface SocialConnection {
@@ -24,9 +23,14 @@ interface SocialConnection {
   profileUrl?: string;
 }
 
-export function SocialConnections({ userProfile, accessToken, onUpdate }: SocialConnectionsProps) {
+export function SocialConnections({ onUpdate }: SocialConnectionsProps) {
+  const userProfile = useUserProfile();
+  const accessToken = useAccessToken();
+  const refreshUserProfile = useAppStore((state) => state.refreshUserProfile);
   const [connecting, setConnecting] = useState<string | null>(null);
-  const [connections, setConnections] = useState<SocialConnection[]>([
+  
+  // Update connections when userProfile changes
+  const connections: SocialConnection[] = [
     {
       platform: 'linkedin',
       connected: !!userProfile?.socialConnections?.linkedin,
@@ -39,7 +43,7 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
       username: userProfile?.socialConnections?.spotify?.username,
       profileUrl: userProfile?.socialConnections?.spotify?.profileUrl,
     },
-  ]);
+  ];
 
   const platformConfig = {
     linkedin: {
@@ -88,7 +92,8 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
             window.location.href = data.authUrl;
           } else {
             toast.success('LinkedIn connected!');
-            onUpdate();
+            await refreshUserProfile();
+            onUpdate?.();
           }
         } else {
           const errorData = await response.json();
@@ -127,10 +132,8 @@ export function SocialConnections({ userProfile, accessToken, onUpdate }: Social
 
       if (response.ok) {
         toast.success(`${platformConfig[platform as keyof typeof platformConfig].name} disconnected`);
-        setConnections(connections.map(c => 
-          c.platform === platform ? { ...c, connected: false } : c
-        ));
-        onUpdate();
+        await refreshUserProfile();
+        onUpdate?.();
       }
     } catch (error) {
       console.error(`Disconnect ${platform} error:`, error);

@@ -10,17 +10,13 @@ import { AppTutorial } from './AppTutorial';
 import { Forum } from './Forum';
 import { isFeatureEnabled } from '../config/features';
 import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimization';
-
-interface MainAppProps {
-  userProfile: any;
-  accessToken: string;
-  onLogout: () => void;
-}
+import { useAppStore } from '../store/useAppStore';
 
 type View = 'discover' | 'matches' | 'messages' | 'forum';
 type AppMode = 'friend' | 'love';
 
-export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
+export function MainApp() {
+  const { userProfile, accessToken, handleLogout } = useAppStore();
   const [currentView, setCurrentView] = useState<View>('discover');
   const [mode, setMode] = useState<AppMode>('friend');
   const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
@@ -40,8 +36,6 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
   if (loveModeEnabled && mode === 'love') {
     return (
       <LoveModeNew
-        userProfile={userProfile}
-        accessToken={accessToken}
         onExit={() => setMode('friend')}
       />
     );
@@ -71,7 +65,10 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
       {/* Top Banner with Profile Picture */}
       <div className="sticky top-0 z-50 bg-white border-b border-[#EAEAEA] px-4 py-3 flex items-center justify-between">
         <button
-          onClick={() => setCurrentView('profile')}
+          onClick={() => {
+            // Profile is now accessed via top-left avatar, so just show profile view
+            // Could navigate to profile if needed
+          }}
           className="flex items-center gap-2 focus:outline-none"
         >
           <img
@@ -99,25 +96,20 @@ export function MainApp({ userProfile, accessToken, onLogout }: MainAppProps) {
       {/* Only show mode toggle if Love Mode is enabled */}
       {loveModeEnabled && <ModeToggle mode={mode} onChange={setMode} />}
       <div className="flex-1 overflow-hidden">
-        <MobileLayout activeTab={currentView} onTabChange={setCurrentView} accessToken={accessToken} hideNavigation={isProfileDetailOpen}>
+        <MobileLayout activeTab={currentView} onTabChange={setCurrentView} hideNavigation={isProfileDetailOpen}>
           {currentView === 'discover' && (
             <InstagramGrid 
-              userProfile={userProfile} 
-              accessToken={accessToken}
               onProfileDetailOpen={setIsProfileDetailOpen}
             />
           )}
           {currentView === 'matches' && (
-            <MatchSuggestions userProfile={userProfile} accessToken={accessToken} />
+            <MatchSuggestions />
           )}
           {currentView === 'messages' && (
-            <ChatView userProfile={userProfile} accessToken={accessToken} />
+            <ChatView />
           )}
           {currentView === 'forum' && (
-            <Forum userProfile={userProfile} accessToken={accessToken} />
-          )}
-          {currentView === 'profile' && (
-            <MyProfile userProfile={userProfile} accessToken={accessToken} onLogout={onLogout} />
+            <Forum />
           )}
         </MobileLayout>
       </div>

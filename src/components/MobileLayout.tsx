@@ -2,17 +2,18 @@ import { ReactNode, useState, useEffect } from 'react';
 import { Home, Users, MessageCircle, MessageSquare } from 'lucide-react';
 import { projectId } from '../utils/supabase/config';
 import { POLL_INTERVALS } from '../config/app-config';
+import { useAccessToken } from '../store/useAppStore';
 
 interface MobileLayoutProps {
   children: ReactNode;
   activeTab: 'discover' | 'matches' | 'messages' | 'forum';
   onTabChange: (tab: 'discover' | 'matches' | 'messages' | 'forum') => void;
-  accessToken?: string;
   hideNavigation?: boolean; // Hide bottom nav when profile detail is open
   onUnreadCountChange?: (count: number) => void; // Callback to expose unread count
 }
 
-export function MobileLayout({ children, activeTab, onTabChange, accessToken, hideNavigation = false, onUnreadCountChange }: MobileLayoutProps) {
+export function MobileLayout({ children, activeTab, onTabChange, hideNavigation = false, onUnreadCountChange }: MobileLayoutProps) {
+  const accessToken = useAccessToken();
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -90,10 +91,10 @@ export function MobileLayout({ children, activeTab, onTabChange, accessToken, hi
   }, [accessToken]);
 
   const tabs = [
-    { id: 'discover' as const, icon: Home, label: 'Discover', badge: 0 },
+    { id: 'discover' as const, icon: Home, label: 'Yearbook', badge: 0 },
     { id: 'matches' as const, icon: Users, label: 'Connections', badge: pendingCount },
     { id: 'messages' as const, icon: MessageCircle, label: 'Messages', badge: unreadCount },
-    { id: 'forum' as const, icon: MessageSquare, label: 'Feed', badge: 0 },
+    { id: 'forum' as const, icon: MessageSquare, label: 'The Quad', badge: 0 },
   ];
 
   return (

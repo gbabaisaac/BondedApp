@@ -26,12 +26,11 @@ import { ProfileDetailView } from './ProfileDetailView';
 import './ChatView.css';
 import { isFeatureEnabled } from '../config/features';
 
-interface ChatViewProps {
-  userProfile: any;
-  accessToken: string;
-}
+import { useUserProfile, useAccessToken } from '../store/useAppStore';
 
-export function ChatView({ userProfile, accessToken }: ChatViewProps) {
+export function ChatView() {
+  const userProfile = useUserProfile();
+  const accessToken = useAccessToken();
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);

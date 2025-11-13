@@ -20,15 +20,13 @@ import { toast } from 'sonner';
 import { ProfileDetailView } from './ProfileDetailView';
 import { ConnectionCardSkeleton } from './LoadingSkeletons';
 import { EmptyState } from './EmptyStates';
-
-interface MatchSuggestionsProps {
-  userProfile: any;
-  accessToken: string;
-}
+import { useUserProfile, useAccessToken } from '../store/useAppStore';
 
 type Tab = 'pending' | 'sent' | 'connections';
 
-export function MatchSuggestions({ userProfile, accessToken }: MatchSuggestionsProps) {
+export function MatchSuggestions() {
+  const userProfile = useUserProfile();
+  const accessToken = useAccessToken();
   const [activeTab, setActiveTab] = useState<Tab>('pending');
   const [pendingIntros, setPendingIntros] = useState<any[]>([]);
   const [sentIntros, setSentIntros] = useState<any[]>([]);

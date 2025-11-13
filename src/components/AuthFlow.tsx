@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { getSupabaseClient } from '../utils/supabase/client';
+import { useAppStore } from '../store/useAppStore';
 
 const supabase = getSupabaseClient();
 
@@ -15,6 +16,7 @@ interface AuthFlowProps {
 }
 
 export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
+  const handleAuthSuccess = useAppStore((state) => state.handleAuthSuccess);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -109,6 +111,7 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
       if (signInError) throw signInError;
 
       if (signInData.session) {
+        await handleAuthSuccess(signInData.session.access_token, signInData.user.id);
         onAuthSuccess(signInData.session.access_token, signInData.user.id);
       }
     } catch (err: any) {
@@ -149,6 +152,7 @@ export function AuthFlow({ onAuthSuccess }: AuthFlowProps) {
 
       if (data.session) {
         console.log('Login successful, calling onAuthSuccess');
+        await handleAuthSuccess(data.session.access_token, data.user.id);
         onAuthSuccess(data.session.access_token, data.user.id);
       } else {
         throw new Error('No session returned from login');

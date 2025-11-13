@@ -6,10 +6,9 @@ import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
+import { useUserProfile, useAccessToken } from '../store/useAppStore';
 
 interface BondPrintQuizProps {
-  userProfile: any;
-  accessToken: string;
   onComplete: (bondPrint: any) => void;
   onSkip?: () => void;
 }
@@ -21,7 +20,9 @@ interface Question {
   options: string[];
 }
 
-export function BondPrintQuiz({ userProfile, accessToken, onComplete, onSkip }: BondPrintQuizProps) {
+export function BondPrintQuiz({ onComplete, onSkip }: BondPrintQuizProps) {
+  const userProfile = useUserProfile();
+  const accessToken = useAccessToken();
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);

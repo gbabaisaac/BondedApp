@@ -2515,39 +2515,58 @@ app.post("/ai-assistant/search", async (c) => {
 - Career Orientation: ${userProfile.bondPrint.professionalInsights.careerOrientation || 'Not specified'}
 ` : '';
 
-    const prompt = `You are Link, an AI assistant helping a college student find connections.
+    const prompt = `You are Link, an intelligent AI assistant helping a college student find meaningful connections. You excel at creative matching and understanding deeper needs.
 
 User Request: "${query || JSON.stringify(criteria)}"
 User Profile:
 - Name: ${userProfile.name}
 - Major: ${userProfile.major}
+- Year: ${userProfile.year}
+- Interests: ${userProfile.interests?.join(', ') || 'None'}
 - Looking For: ${userProfile.lookingFor?.join(', ') || 'None'}
 - Goals: ${JSON.stringify(userProfile.goals || {})}
+- Bio: ${userProfile.bio || 'None'}
 ${linkedinInfo}${bondPrintInfo}
 
 Available Profiles (${profilesSummary.length}):
 ${profilesSummary.map((p: any, i: number) => {
   const pLinkedIn = p.socialConnections?.linkedin ? ' [Has LinkedIn]' : '';
   const pSkills = p.bondPrint?.professionalInsights?.skills ? `\n     Skills: ${p.bondPrint.professionalInsights.skills.join(', ')}` : '';
+  const pPersonality = p.personality?.length ? `\n     Personality: ${p.personality.join(', ')}` : '';
   return `${i + 1}. ${p.name} (${p.major}, ${p.year})${pLinkedIn}
      Interests: ${p.interests.join(', ') || 'None'}
      Looking For: ${p.lookingFor.join(', ') || 'None'}
      Goals: ${JSON.stringify(p.goals)}
-     Bio: ${p.bio || 'No bio'}${pSkills}`;
+     Bio: ${p.bio || 'No bio'}${pSkills}${pPersonality}`;
 }).join('\n\n')}
 
-Analyze these profiles and return the top 3-5 best matches for the user's request. Consider:
-- Compatibility with their goals/interests
-- What they're looking for
-- Major/field alignment
-- Year/experience level
-- Professional skills and career orientation (especially for co-founder, business partner, or career-oriented connections)
-- LinkedIn connections (indicates professional presence)
+CRITICAL: Analyze the user's request creatively and match intelligently:
+
+1. **Understand Intent**: 
+   - "likes concerts" → match music/events/entertainment interests, social people, event organizers
+   - "co-founder" → match on skills, major, goals, LinkedIn, professional orientation
+   - "study partner" → match major, year, academic goals, study habits
+   - "roommate" → match living habits, personality, cleanliness, sleep schedule
+
+2. **Creative Matching**:
+   - Don't just match exact keywords - think about related interests and compatible traits
+   - Consider complementary matches (e.g., different but compatible personalities)
+   - Look for shared goals, values, and lifestyle preferences
+
+3. **Context Matters**:
+   - Consider the user's profile when matching (their major, year, interests)
+   - Match people who complement or share their interests/goals
+   - For professional connections, prioritize LinkedIn presence and skills
+
+4. **Quality over Quantity**: 
+   - Only return profiles that are genuinely good matches
+   - Better to return 2-3 great matches than 5 mediocre ones
+   - If no good matches, return empty array
 
 Return ONLY a JSON array of profile IDs in order of best match (most relevant first):
 ["profile-id-1", "profile-id-2", "profile-id-3"]
 
-If no good matches, return an empty array: []`;
+If no genuinely good matches exist, return an empty array: []`;
 
     const geminiResponse = await tryCallGemini(prompt);
     
@@ -4135,6 +4154,77 @@ app.get("/forum/posts", async (c) => {
   }
 });
 
+// Upload forum media (images/videos)
+app.post("/forum/upload-media", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const type = formData.get('type') as string;
+
+    if (!file) {
+      return c.json({ error: 'No file provided' }, 400);
+    }
+
+    // Validate file size
+    const maxSize = type === 'image' ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB images, 50MB videos
+    if (file.size > maxSize) {
+      return c.json({ error: `File too large. Max size: ${type === 'image' ? '10MB' : '50MB'}` }, 400);
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const fileExt = file.name.split('.').pop() || (type === 'image' ? 'jpg' : 'mp4');
+    const filePath = `forum/${userId}/${timestamp}.${fileExt}`;
+
+    // Convert file to binary
+    const arrayBuffer = await file.arrayBuffer();
+    const binaryData = new Uint8Array(arrayBuffer);
+
+    // Upload to Supabase Storage (use forum bucket)
+    const forumBucketName = 'make-2516be19-forum-media';
+    
+    // Ensure bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(bucket => bucket.name === forumBucketName);
+    if (!bucketExists) {
+      await supabase.storage.createBucket(forumBucketName, {
+        public: true, // Forum media should be public
+        fileSizeLimit: 52428800, // 50MB
+      });
+    }
+
+    const { data, error } = await supabase.storage
+      .from(forumBucketName)
+      .upload(filePath, binaryData, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Storage upload error:', error);
+      return c.json({ error: error.message }, 500);
+    }
+
+    // Get public URL (since bucket is public)
+    const { data: urlData } = await supabase.storage
+      .from(forumBucketName)
+      .getPublicUrl(filePath);
+
+    return c.json({ 
+      url: urlData.publicUrl,
+      path: filePath
+    });
+  } catch (error: any) {
+    console.error('Forum media upload error:', error);
+    return c.json({ error: error.message || 'Upload failed' }, 500);
+  }
+});
+
 // Create a forum post
 app.post("/forum/posts", async (c) => {
   try {
@@ -4345,6 +4435,7 @@ app.get("/forum/posts/:postId/comments", async (c) => {
         authorAvatar,
         createdAt: comment.created_at,
         isAnonymous: comment.is_anonymous,
+        canDelete: comment.author_id === userId, // Include permission check
       };
     }));
 
@@ -4399,6 +4490,204 @@ app.post("/forum/posts/:postId/comments", async (c) => {
     return c.json({ success: true, comment });
   } catch (error: any) {
     console.error('Create comment error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Delete a forum post (only by author)
+app.delete("/forum/posts/:postId", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+
+    // Check if post exists and user is the author
+    const { data: post, error: fetchError } = await supabase
+      .from('forum_posts')
+      .select('author_id, media_url')
+      .eq('id', postId)
+      .single();
+
+    if (fetchError || !post) {
+      return c.json({ error: 'Post not found' }, 404);
+    }
+
+    if (post.author_id !== userId) {
+      return c.json({ error: 'Unauthorized: Only the author can delete this post' }, 403);
+    }
+
+    // Delete associated likes
+    await supabase
+      .from('forum_post_likes')
+      .delete()
+      .eq('post_id', postId);
+
+    // Delete associated comments
+    await supabase
+      .from('forum_comments')
+      .delete()
+      .eq('post_id', postId);
+
+    // Delete media from storage if exists
+    if (post.media_url) {
+      try {
+        const forumBucketName = 'make-2516be19-forum-media';
+        // Extract path from URL
+        const urlParts = post.media_url.split('/');
+        const pathIndex = urlParts.findIndex(part => part === forumBucketName);
+        if (pathIndex !== -1) {
+          const filePath = urlParts.slice(pathIndex + 1).join('/');
+          await supabase.storage
+            .from(forumBucketName)
+            .remove([filePath]);
+        }
+      } catch (storageError) {
+        console.error('Error deleting media:', storageError);
+        // Continue with post deletion even if media deletion fails
+      }
+    }
+
+    // Delete the post
+    const { error: deleteError } = await supabase
+      .from('forum_posts')
+      .delete()
+      .eq('id', postId);
+
+    if (deleteError) {
+      console.error('Delete post error:', deleteError);
+      return c.json({ error: 'Failed to delete post' }, 500);
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete post error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Delete a comment (only by author)
+app.delete("/forum/posts/:postId/comments/:commentId", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const commentId = c.req.param('commentId');
+
+    // Check if comment exists and user is the author
+    const { data: comment, error: fetchError } = await supabase
+      .from('forum_comments')
+      .select('author_id')
+      .eq('id', commentId)
+      .single();
+
+    if (fetchError || !comment) {
+      return c.json({ error: 'Comment not found' }, 404);
+    }
+
+    if (comment.author_id !== userId) {
+      return c.json({ error: 'Unauthorized: Only the author can delete this comment' }, 403);
+    }
+
+    // Delete the comment
+    const { error: deleteError } = await supabase
+      .from('forum_comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (deleteError) {
+      console.error('Delete comment error:', deleteError);
+      return c.json({ error: 'Failed to delete comment' }, 500);
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete comment error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Share a post to a friend via messages
+app.post("/forum/posts/:postId/share", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+    const body = await c.req.json();
+    const { targetUserId } = body;
+
+    if (!targetUserId) {
+      return c.json({ error: 'targetUserId is required' }, 400);
+    }
+
+    // Get post details
+    const { data: post, error: postError } = await supabase
+      .from('forum_posts')
+      .select('*')
+      .eq('id', postId)
+      .single();
+
+    if (postError || !post) {
+      return c.json({ error: 'Post not found' }, 404);
+    }
+
+    // Get author info if not anonymous
+    let authorName = 'Anonymous Student';
+    if (!post.is_anonymous) {
+      const authorProfile = await kv.get(`user:${post.author_id}`);
+      if (authorProfile) {
+        authorName = authorProfile.name || 'Student';
+      }
+    }
+
+    // Create or get chat between users
+    const chatId = userId < targetUserId 
+      ? `chat:${userId}:${targetUserId}`
+      : `chat:${targetUserId}:${userId}`;
+
+    let chat = await kv.get(chatId);
+    if (!chat) {
+      chat = {
+        chatId,
+        userId1: userId < targetUserId ? userId : targetUserId,
+        userId2: userId < targetUserId ? targetUserId : userId,
+        messages: [],
+        createdAt: new Date().toISOString(),
+      };
+      await kv.set(chatId, chat);
+    }
+
+    // Create share message
+    const shareMessage = {
+      id: `${chatId}:${Date.now()}`,
+      senderId: userId,
+      content: `Check out this post from The Quad${post.mediaUrl ? ' (with media)' : ''}: "${post.content?.substring(0, 100)}${post.content && post.content.length > 100 ? '...' : ''}"`,
+      timestamp: new Date().toISOString(),
+      type: 'text',
+      metadata: {
+        type: 'forum-post-share',
+        postId: post.id,
+        postContent: post.content,
+        postMediaUrl: post.media_url,
+        postMediaType: post.media_type,
+        authorName: authorName,
+        isAnonymous: post.is_anonymous,
+      },
+    };
+
+    chat.messages.push(shareMessage);
+    await kv.set(chatId, chat);
+
+    return c.json({ success: true, message: 'Post shared successfully' });
+  } catch (error: any) {
+    console.error('Share post error:', error);
     return c.json({ error: error.message }, 500);
   }
 });

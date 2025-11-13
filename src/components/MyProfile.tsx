@@ -35,15 +35,14 @@ import { apiPost } from '../utils/api-client';
 import { ProfileCompleteness } from './ProfileCompleteness';
 import { SocialConnections } from './SocialConnections';
 
-interface MyProfileProps {
-  userProfile: any;
-  accessToken: string;
-  onLogout: () => void;
-}
+import { useUserProfile, useAccessToken, useAppStore } from '../store/useAppStore';
 
 type View = 'profile' | 'edit' | 'settings';
 
-export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps) {
+export function MyProfile() {
+  const userProfile = useUserProfile();
+  const accessToken = useAccessToken();
+  const handleLogout = useAppStore((state) => state.handleLogout);
   const [currentView, setCurrentView] = useState<View>('profile');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [settings, setSettings] = useState({
@@ -360,9 +359,10 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
 
         {/* Social Connections */}
         <SocialConnections
-          userProfile={userProfile}
-          accessToken={accessToken}
-          onUpdate={() => window.location.reload()}
+          onUpdate={async () => {
+            const { refreshUserProfile } = useAppStore.getState();
+            await refreshUserProfile();
+          }}
         />
 
         {/* Bond Print */}
@@ -588,7 +588,7 @@ export function MyProfile({ userProfile, accessToken, onLogout }: MyProfileProps
               className="flex-1 bg-red-600 hover:bg-red-700"
               onClick={() => {
                 setShowLogoutConfirm(false);
-                onLogout();
+                handleLogout();
               }}
             >
               Logout
