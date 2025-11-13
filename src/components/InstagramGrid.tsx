@@ -267,7 +267,7 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
   return (
     <div className="min-h-screen">
       {/* Enhanced Search and Filter Bar - positioned below top banner - Bonded Design */}
-      <div className="sticky top-[60px] bg-midnight-indigo/80 backdrop-blur-lg border-b border-teal-blue/20 px-4 py-3 z-10">
+      <div className="sticky top-[60px] bg-midnight-indigo border-b border-teal-blue/30 px-4 py-2 z-10">
         <EnhancedSearch
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

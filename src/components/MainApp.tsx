@@ -50,7 +50,7 @@ export function MainApp() {
           }}
       >
       {/* Top Banner with Profile Picture - Bonded Design */}
-      <div className="sticky top-0 z-50 bg-midnight-indigo/95 backdrop-blur-lg border-b border-teal-blue/20 px-4 py-3 flex items-center justify-between safe-top">
+      <div className="sticky top-0 z-50 bg-midnight-indigo border-b border-teal-blue/30 px-4 py-3 flex items-center justify-between safe-top">
         <button
           onClick={() => {
             // Profile is now accessed via top-left avatar, so just show profile view

@@ -470,27 +470,27 @@ export function Forum() {
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-24 w-full overflow-x-hidden">
       {/* Header - Bonded Design */}
-      <div className="sticky top-0 z-10 bg-midnight-indigo/95 backdrop-blur-lg border-b border-teal-blue/20 px-4 py-3 shadow-sm">
-        <h1 className="text-2xl font-bold text-gradient">
+      <div className="sticky top-0 z-10 bg-midnight-indigo border-b border-teal-blue/30 px-4 py-3 shadow-sm">
+        <h1 className="text-xl font-bold text-soft-cream">
           The Quad
         </h1>
-        <p className="text-xs text-soft-cream/60 mt-0.5">Post anonymous messages, pictures or videos to everyone on campus</p>
+        <p className="text-xs text-soft-cream/70 mt-0.5">Post anonymous messages, pictures or videos to everyone on campus</p>
       </div>
 
       {/* Trending Now Section */}
-      <div className="px-4 py-4">
-        <div className="glass-card rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">🔥</span>
-            <h2 className="text-lg font-bold text-soft-cream">Trending Now</h2>
+      <div className="px-4 py-3">
+        <div className="bg-midnight-indigo/80 rounded-2xl p-3 border border-soft-cream/10">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-base">🔥</span>
+            <h2 className="text-base font-bold text-soft-cream">Trending Now</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {['#Finals', '#CampusEvents', '#StudySpots', '#FoodRecs', '#Housing'].map((tag) => (
               <button
                 key={tag}
-                className="px-3 py-1.5 rounded-full text-sm font-medium bg-teal-blue/20 text-teal-blue border border-teal-blue/30 hover:bg-teal-blue/30 transition-colors"
+                className="px-2.5 py-1 rounded-full text-xs font-medium bg-teal-blue/30 text-teal-blue border border-teal-blue/40 hover:bg-teal-blue/40 transition-colors"
               >
                 {tag}
               </button>
@@ -500,26 +500,26 @@ export function Forum() {
       </div>
 
       {/* Create Post - Bonded Design */}
-      <div className="p-4">
+      <div className="px-4 pb-3">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-3xl p-4"
+          className="bg-midnight-indigo/80 rounded-2xl p-3 border border-soft-cream/10"
         >
-          <div className="flex gap-3">
-            <Avatar className="w-10 h-10 ring-2 ring-teal-blue/30">
+          <div className="flex gap-2">
+            <Avatar className="w-10 h-10 flex-shrink-0">
               <AvatarImage src={userProfile?.profilePicture} />
-              <AvatarFallback className="bg-gradient-to-br from-teal-blue to-lavender-mist text-soft-cream">
+              <AvatarFallback className="bg-gradient-to-br from-teal-blue to-lavender-mist text-soft-cream font-bold">
                 {userProfile?.name?.[0] || 'A'}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-                    <Textarea
-                      placeholder="What's on your mind? Share with your campus..."
-                      value={newPost}
-                      onChange={(e) => setNewPost(e.target.value)}
-                      className="min-h-[80px] resize-none rounded-2xl input-field"
-                    />
+            <div className="flex-1 min-w-0">
+              <Textarea
+                placeholder="What's on your mind? Share with your campus..."
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                className="min-h-[60px] resize-none rounded-xl bg-soft-cream/5 border-soft-cream/20 text-soft-cream placeholder:text-soft-cream/50 text-sm"
+              />
               {selectedMedia && (
                 <div className="mt-2 relative rounded-2xl overflow-hidden">
                   {selectedMedia.type === 'image' ? (
@@ -546,80 +546,78 @@ export function Forum() {
                   </Button>
                 </div>
               )}
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-3">
-                         <div className="flex items-center gap-2">
-                           <Switch
-                             id="anonymous"
-                             checked={isAnonymous}
-                             onCheckedChange={setIsAnonymous}
-                             className="data-[state=checked]:bg-teal-blue"
-                           />
-                           <Label htmlFor="anonymous" className="text-xs text-soft-cream/80 cursor-pointer">
-                             Anonymous
-                           </Label>
-                         </div>
-                         <div className="flex gap-2">
-                           <input
-                             type="file"
-                             accept="image/*"
-                             onChange={(e) => handleMediaSelect(e, 'image')}
-                             className="hidden"
-                             id="forum-image-upload"
-                           />
-                           <label htmlFor="forum-image-upload">
-                             <Button
-                               type="button"
-                               variant="ghost"
-                               size="icon"
-                               className="btn-icon cursor-pointer"
-                               asChild
-                             >
-                               <span>
-                                 <ImageIcon className="w-5 h-5 text-teal-blue" />
-                               </span>
-                             </Button>
-                           </label>
-                           <input
-                             type="file"
-                             accept="video/*"
-                             onChange={(e) => handleMediaSelect(e, 'video')}
-                             className="hidden"
-                             id="forum-video-upload"
-                           />
-                           <label htmlFor="forum-video-upload">
-                             <Button
-                               type="button"
-                               variant="ghost"
-                               size="icon"
-                               className="btn-icon cursor-pointer"
-                               asChild
-                             >
-                               <span>
-                                 <Video className="w-5 h-5 text-lavender-mist" />
-                               </span>
-                             </Button>
-                           </label>
-                         </div>
-                       </div>
-                       <Button
-                         onClick={handleCreatePost}
-                         size="sm"
-                         className="btn-primary rounded-full px-6"
-                         disabled={uploadingMedia}
-                       >
-                         {uploadingMedia ? (
-                           <>
-                             <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                             Uploading...
-                           </>
-                         ) : (
-                           <>
-                             <Send className="w-4 h-4 mr-1" />
-                             Post
-                           </>
-                         )}
-                       </Button>
+              <div className="flex items-center justify-between mt-2 gap-2">
+                <div className="flex items-center gap-2 flex-1">
+                  <Switch
+                    id="anonymous"
+                    checked={isAnonymous}
+                    onCheckedChange={setIsAnonymous}
+                    className="data-[state=checked]:bg-teal-blue"
+                  />
+                  <Label htmlFor="anonymous" className="text-xs text-soft-cream cursor-pointer">
+                    Anonymous
+                  </Label>
+                  <div className="flex gap-1.5 ml-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleMediaSelect(e, 'image')}
+                      className="hidden"
+                      id="forum-image-upload"
+                    />
+                    <label htmlFor="forum-image-upload" className="cursor-pointer">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-soft-cream/70 hover:text-teal-blue hover:bg-teal-blue/10"
+                        asChild
+                      >
+                        <span>
+                          <ImageIcon className="w-4 h-4" />
+                        </span>
+                      </Button>
+                    </label>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => handleMediaSelect(e, 'video')}
+                      className="hidden"
+                      id="forum-video-upload"
+                    />
+                    <label htmlFor="forum-video-upload" className="cursor-pointer">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-soft-cream/70 hover:text-lavender-mist hover:bg-lavender-mist/10"
+                        asChild
+                      >
+                        <span>
+                          <Video className="w-4 h-4" />
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleCreatePost}
+                  size="sm"
+                  className="bg-gradient-to-r from-teal-blue to-ocean-blue text-soft-cream rounded-full px-4 h-8 text-xs font-medium hover:opacity-90 transition-opacity"
+                  disabled={uploadingMedia}
+                >
+                  {uploadingMedia ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3 h-3 mr-1" />
+                      Post
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </div>
@@ -651,11 +649,11 @@ export function Forum() {
                 className="relative"
               >
                 <Card
-                  className={`bg-midnight-indigo/60 backdrop-blur-sm rounded-2xl border border-soft-cream/10 overflow-hidden transition-all ${
+                  className={`bg-midnight-indigo/80 rounded-2xl border border-soft-cream/10 overflow-hidden transition-all ${
                     isExpanded ? 'ring-2 ring-teal-blue' : ''
                   }`}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     {/* Post Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div
@@ -757,7 +755,27 @@ export function Forum() {
                     )}
 
                     {/* Engagement Metrics */}
-                    <div className="flex items-center gap-4 pt-3 border-t border-soft-cream/10">
+                    <div className="flex items-center gap-3 pt-2 border-t border-soft-cream/10">
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-1 text-soft-cream/70 hover:text-peach-glow transition-colors ${
+                          post.userLiked ? 'text-peach-glow' : ''
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 ${post.userLiked ? 'fill-current' : ''}`} />
+                        <span className="text-xs font-medium">{post.likes}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDislike(post.id)}
+                        className={`flex items-center gap-1 text-soft-cream/70 hover:text-red-400 transition-colors ${
+                          post.userDisliked ? 'text-red-400' : ''
+                        }`}
+                      >
+                        <ThumbsDown className={`w-4 h-4 ${post.userDisliked ? 'fill-current' : ''}`} />
+                        <span className="text-xs font-medium">{post.dislikes}</span>
+                      </button>
+
                       <button
                         onClick={() => {
                           const newShowState = showComments === post.id ? null : post.id;
@@ -766,20 +784,17 @@ export function Forum() {
                             loadComments(post.id);
                           }
                         }}
-                        className="flex items-center gap-1.5 text-soft-cream/60 hover:text-teal-blue transition-colors"
+                        className="flex items-center gap-1 text-soft-cream/70 hover:text-teal-blue transition-colors"
                       >
                         <MessageCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">{post.comments} replies</span>
+                        <span className="text-xs font-medium">{post.comments}</span>
                       </button>
 
                       <button
-                        onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-1.5 transition-all ${
-                          post.userLiked ? 'text-peach-glow' : 'text-soft-cream/60 hover:text-peach-glow'
-                        }`}
+                        onClick={() => openShareDialog(post.id)}
+                        className="flex items-center gap-1 text-soft-cream/70 hover:text-teal-blue transition-colors ml-auto"
                       >
-                        <ThumbsUp className={`w-4 h-4 ${post.userLiked ? 'fill-current' : ''}`} />
-                        <span className="text-sm font-medium">{post.likes}</span>
+                        <Share2 className="w-4 h-4" />
                       </button>
                     </div>
 

@@ -121,7 +121,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
       {/* Bottom Navigation - Hidden when profile detail is open - Bonded Design */}
       {!hideNavigation && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-midnight-indigo backdrop-blur-xl border-t border-teal-blue/30 z-50 shadow-strong"
+          className="fixed bottom-0 left-0 right-0 bg-midnight-indigo border-t border-teal-blue/30 z-50 shadow-strong"
           style={{
             paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))',
             paddingTop: '0.75rem'
