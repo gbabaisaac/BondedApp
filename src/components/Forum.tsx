@@ -938,6 +938,8 @@ export function Forum() {
           hasNext={false}
           hasPrev={false}
           accessToken={accessToken}
+          currentIndex={0}
+          totalProfiles={1}
         />
       )}
     </div>

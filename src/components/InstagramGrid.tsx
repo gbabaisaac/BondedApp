@@ -333,6 +333,8 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         hasNext={selectedProfileIndex < profiles.length - 1}
         hasPrev={selectedProfileIndex > 0}
         accessToken={accessToken}
+        currentIndex={selectedProfileIndex}
+        totalProfiles={profiles.length}
       />
     );
   }
