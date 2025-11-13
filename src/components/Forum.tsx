@@ -484,10 +484,10 @@ export function Forum() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-midnight-indigo/90 rounded-2xl p-3 border border-soft-cream/20 shadow-medium"
+          className="bg-midnight-indigo/90 rounded-2xl p-3 border-2 border-soft-cream/40 shadow-[0_4px_12px_rgba(0,0,0,0.3),0_2px_4px_rgba(0,0,0,0.2)]"
         >
           <div className="flex gap-2">
-            <Avatar className="w-10 h-10 flex-shrink-0">
+            <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-soft-cream/30 shadow-lg">
               <AvatarImage src={userProfile?.profilePicture} />
               <AvatarFallback className="bg-gradient-to-br from-teal-blue to-lavender-mist text-soft-cream font-bold">
                 {userProfile?.name?.[0] || 'A'}
@@ -629,8 +629,8 @@ export function Forum() {
                 className="relative"
               >
                 <Card
-                  className={`bg-midnight-indigo/90 rounded-2xl border border-soft-cream/20 shadow-medium overflow-hidden transition-all ${
-                    isExpanded ? 'ring-2 ring-teal-blue' : ''
+                  className={`bg-midnight-indigo/90 rounded-2xl border-2 border-soft-cream/40 shadow-[0_4px_12px_rgba(0,0,0,0.3),0_2px_4px_rgba(0,0,0,0.2)] overflow-hidden transition-all ${
+                    isExpanded ? 'ring-2 ring-teal-blue border-teal-blue/60' : ''
                   }`}
                 >
                   <CardContent className="p-4">
@@ -640,7 +640,7 @@ export function Forum() {
                         className={`flex items-center gap-3 flex-1 ${!post.isAnonymous ? 'cursor-pointer hover:opacity-80' : ''}`}
                         onClick={() => !post.isAnonymous && handleProfileClick(post.authorId)}
                       >
-                        <Avatar className="w-12 h-12 flex-shrink-0">
+                        <Avatar className="w-12 h-12 flex-shrink-0 ring-2 ring-soft-cream/30 shadow-lg">
                           <AvatarImage src={post.authorAvatar} />
                           <AvatarFallback className="bg-gradient-to-br from-lavender-mist to-peach-glow text-midnight-indigo font-bold">
                             {post.isAnonymous ? '?' : post.authorName[0]}
@@ -708,7 +708,7 @@ export function Forum() {
                         {post.tags.map((tag: string, index: number) => (
                           <span
                             key={index}
-                            className="px-3 py-1 rounded-full text-xs font-medium bg-lavender-mist/30 text-lavender-mist border border-lavender-mist/40"
+                            className="px-3 py-1 rounded-full text-xs font-medium bg-lavender-mist/30 text-lavender-mist border border-lavender-mist/50 shadow-sm"
                           >
                             #{tag}
                           </span>
@@ -728,7 +728,7 @@ export function Forum() {
                     )}
 
                     {/* Engagement Metrics */}
-                    <div className="flex items-center gap-4 pt-3 border-t border-soft-cream/20">
+                    <div className="flex items-center gap-4 pt-3 border-t-2 border-soft-cream/30">
                       <button
                         onClick={() => handleLike(post.id)}
                         className={`flex items-center gap-1.5 text-soft-cream hover:text-peach-glow transition-colors ${
@@ -773,7 +773,7 @@ export function Forum() {
 
                     {/* Preview Comments (1-2 comments) - Bonded Design */}
                     {!isExpanded && previewComments.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-soft-cream/20">
+                      <div className="mt-3 pt-3 border-t-2 border-soft-cream/30">
                         <div className="space-y-2">
                           {previewComments.map((comment) => (
                             <div key={comment.id} className="flex gap-2 text-sm">
@@ -825,7 +825,7 @@ export function Forum() {
                                initial={{ opacity: 0, height: 0 }}
                                animate={{ opacity: 1, height: 'auto' }}
                                exit={{ opacity: 0, height: 0 }}
-                               className="mt-3 pt-3 border-t border-soft-cream/20"
+                               className="mt-3 pt-3 border-t-2 border-soft-cream/30"
                              >
                                {isExpanded && (
                                  <button
