@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { projectId } from '../utils/supabase/config';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
@@ -9,10 +9,11 @@ import { EnhancedSearch } from './EnhancedSearch';
 import { toast } from 'sonner';
 import { getProfileCardAriaLabel, handleGridKeyDown } from '../utils/accessibility';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
-import { YearbookProfileCard } from './YearbookProfileCard';
+import { YearbookGridCard } from './YearbookGridCard';
+import { isFeatureEnabled } from '../config/features';
 
 interface InstagramGridProps {
   onProfileDetailOpen?: (isOpen: boolean) => void;
@@ -51,7 +52,9 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
   const [selectedProfileIndex, setSelectedProfileIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [vibeSort, setVibeSort] = useState([50]); // 0 = Chill, 100 = Extroverted
+  const [showSearch, setShowSearch] = useState(false);
+  const [activeMode, setActiveMode] = useState<'friend' | 'love'>('friend');
+  const [vibeSort, setVibeSort] = useState([50]);
   const [filters, setFilters] = useState({
     major: 'all',
     year: 'all',
@@ -118,7 +121,6 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     profileList.forEach((profile) => {
       const shared: string[] = [];
       
-      // Shared interests
       const sharedInterests = profile.interests?.filter((i: string) => 
         userProfile?.interests?.includes(i)
       ) || [];
@@ -126,12 +128,10 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         shared.push(`${sharedInterests.length} shared interests`);
       }
       
-      // Similar sleep schedule
       if (profile.sleepSchedule && userProfile?.livingHabits?.sleepSchedule === profile.sleepSchedule) {
         shared.push('Similar sleep schedule');
       }
       
-      // Shared goals
       const sharedAcademic = profile.goals?.academic?.filter((g: string) =>
         userProfile?.goals?.academic?.includes(g)
       ) || [];
@@ -139,7 +139,6 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         shared.push('Shared academic goals');
       }
       
-      // High empathy match
       const bondScore = bondPrintScores[profile.id];
       if (bondScore && bondScore >= 80) {
         shared.push('High empathy match 🔥');
@@ -184,7 +183,6 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     );
     
     setBondPrintScores(scores);
-    // Recalculate insights after scores load
     calculateSharedInsights(profileList);
   };
 
@@ -229,7 +227,6 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     return Array.from(goals).sort();
   }, [profiles]);
 
-  // Add mode filter
   const filteredProfiles = useMemo(() => {
     let filtered = profiles.filter((profile) => {
       const matchesSearch = searchQuery === '' ||
@@ -262,9 +259,11 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
       const matchesInterest = filters.interest === 'all' ||
         profile.interests?.includes(filters.interest);
 
-      // Mode filter (Scrapbook / Roommate / Friend)
+      // Mode filter
       let matchesMode = true;
-      if (filters.mode && filters.mode !== 'all') {
+      if (activeMode === 'love') {
+        matchesMode = profile.scrapbookEnabled === true;
+      } else if (filters.mode && filters.mode !== 'all') {
         if (filters.mode === 'scrapbook') {
           matchesMode = profile.scrapbookEnabled === true;
         } else if (filters.mode === 'roommate') {
@@ -285,7 +284,6 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         const scoreB = bondPrintScores[b.id] || 0;
         return scoreB - scoreA;
       } else if (filters.sortBy === 'vibe') {
-        // Sort by vibe slider position (would need vibe score calculation)
         const scoreA = bondPrintScores[a.id] || 50;
         const scoreB = bondPrintScores[b.id] || 50;
         const targetVibe = vibeSort[0];
@@ -297,7 +295,7 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     });
 
     return filtered;
-  }, [profiles, searchQuery, filters, bondPrintScores, vibeSort]);
+  }, [profiles, searchQuery, filters, bondPrintScores, vibeSort, activeMode]);
 
   const handleProfileClick = (index: number) => {
     const profile = filteredProfiles[index];
@@ -341,182 +339,351 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-teal-50 to-navy-50">
-        <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-teal-200/50 px-4 py-3 z-10">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <img 
-              src="/Bonded_transparent_icon.png" 
-              alt="bonded logo" 
-              className="w-8 h-8"
-            />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-navy-600 bg-clip-text text-transparent">
-              The Yearbook
-            </h1>
-          </div>
-        </div>
+      <div 
+        className="min-h-screen flex flex-col"
+        style={{
+          background: 'linear-gradient(135deg, #0a1628 0%, #1a2841 50%, #0f4d5c 100%)',
+          fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        }}
+      >
         <ProfileGridSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 via-blue-50 to-navy-50">
-      {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-teal-200/50 px-4 py-3 z-10 shadow-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <img 
-              src="/Bonded_transparent_icon.png" 
-              alt="bonded logo" 
-              className="w-8 h-8"
+    <>
+      <style>{`
+        @media (max-width: 1024px) {
+          .yearbook-grid {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+            gap: 16px !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .yearbook-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+            gap: 12px !important;
+          }
+          .main-content-yearbook {
+            padding-top: 240px !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
+        }
+      `}</style>
+      <div
+        className="min-h-screen flex flex-col relative overflow-x-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #0a1628 0%, #1a2841 50%, #0f4d5c 100%)',
+          fontFamily: "'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        }}
+      >
+      {/* Background Pattern */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%)
+          `,
+        }}
+      />
+
+      {/* Fixed Header */}
+      <div
+        className="fixed top-0 left-0 right-0 z-[1000] backdrop-blur-[20px] border-b border-white/10"
+        style={{
+          background: 'rgba(10, 22, 40, 0.9)',
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto px-5 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="/Bonded_transparent_icon.png"
+              alt="Bonded logo"
+              className="w-10 h-10"
             />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-navy-600 bg-clip-text text-transparent">
-              The Yearbook
+            <h1
+              className="text-2xl font-extrabold bg-gradient-to-r from-teal-400 to-blue-400 bg-clip-text text-transparent"
+            >
+              bonded
             </h1>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowFilters(!showFilters)}
-            className="rounded-full hover:bg-teal-100"
-          >
-            <SlidersHorizontal className="w-5 h-5 text-teal-600" />
-          </Button>
+          <div className="flex gap-3 items-center">
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300"
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: 'white',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300"
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: 'white',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              aria-label="Filters"
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-        
-        {/* Filter Bar */}
+      </div>
+
+      {/* Campus Banner */}
+      <div
+        className="fixed top-[72px] left-0 right-0 z-[999] backdrop-blur-[10px] border-b border-teal-500/20 py-3 px-5"
+        style={{
+          background: 'rgba(16, 185, 129, 0.1)',
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <div className="text-base font-bold text-white">
+              {userProfile?.school || 'Your School'}
+            </div>
+            <div className="text-[13px] text-white/60 flex items-center gap-2">
+              <span>{filteredProfiles.length} Students</span>
+              <span>•</span>
+              <span>Campus</span>
+            </div>
+          </div>
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[20px] text-xs font-semibold text-teal-300 border border-teal-500/30"
+            style={{
+              background: 'rgba(16, 185, 129, 0.2)',
+            }}
+          >
+            <div
+              className="w-2 h-2 rounded-full bg-green-400 animate-pulse"
+            />
+            <span>Active Community</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Mode Toggle */}
+      {isFeatureEnabled('LOVE_MODE_ENABLED') && (
+        <div
+          className="fixed top-[144px] left-1/2 transform -translate-x-1/2 z-[998] flex gap-3 backdrop-blur-[20px] border border-white/15 rounded-[24px] p-1.5"
+          style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+          }}
+        >
+          <button
+            onClick={() => setActiveMode('friend')}
+            className={`px-6 py-2.5 rounded-[18px] border-none font-semibold text-sm cursor-pointer transition-all duration-300 flex items-center gap-2 ${
+              activeMode === 'friend'
+                ? 'text-white shadow-[0_4px_16px_rgba(16,185,129,0.3)]'
+                : 'text-white/60 hover:text-white hover:bg-white/10'
+            }`}
+            style={
+              activeMode === 'friend'
+                ? {
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  }
+                : {}
+            }
+          >
+            <span>👋</span>
+            <span>Friend Mode</span>
+          </button>
+          <button
+            onClick={() => setActiveMode('love')}
+            className={`px-6 py-2.5 rounded-[18px] border-none font-semibold text-sm cursor-pointer transition-all duration-300 flex items-center gap-2 ${
+              activeMode === 'love'
+                ? 'text-white shadow-[0_4px_16px_rgba(16,185,129,0.3)]'
+                : 'text-white/60 hover:text-white hover:bg-white/10'
+            }`}
+            style={
+              activeMode === 'love'
+                ? {
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  }
+                : {}
+            }
+          >
+            <span>💕</span>
+            <span>Love Mode</span>
+          </button>
+        </div>
+      )}
+
+      {/* Search Bar */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="fixed top-[72px] left-0 right-0 z-[998] px-5 py-3 backdrop-blur-[20px] border-b border-white/10"
+            style={{
+              background: 'rgba(10, 22, 40, 0.95)',
+            }}
+          >
+            <div className="max-w-[1200px] mx-auto">
+              <input
+                type="text"
+                placeholder="Search students..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-white/20 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:border-teal-500/50"
+                style={{
+                  backdropFilter: 'blur(10px)',
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Filter Panel */}
+      <AnimatePresence>
         {showFilters && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="space-y-3 pt-3 border-t border-teal-200/50"
+            className="fixed top-[72px] left-0 right-0 z-[998] px-5 py-4 backdrop-blur-[20px] border-b border-white/10 overflow-y-auto max-h-[60vh]"
+            style={{
+              background: 'rgba(10, 22, 40, 0.95)',
+            }}
           >
-            <EnhancedSearch
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              filters={filters}
-              onFiltersChange={setFilters}
-              availableMajors={availableMajors}
-              availableAcademicGoals={availableAcademicGoals}
-              availableLeisureGoals={availableLeisureGoals}
-            />
-            
-            {/* Additional Filters */}
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                value={filters.personalityType}
-                onChange={(e) => setFilters({ ...filters, personalityType: e.target.value })}
-                className="text-sm rounded-xl border border-teal-200 px-3 py-2 bg-white/80"
-              >
-                <option value="all">All Personality Types</option>
-                {availablePersonalityTypes.map((type) => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-              
-              <select
-                value={filters.interest}
-                onChange={(e) => setFilters({ ...filters, interest: e.target.value })}
-                className="text-sm rounded-xl border border-teal-200 px-3 py-2 bg-white/80"
-              >
-                <option value="all">All Interests</option>
-                {availableInterests.map((interest) => (
-                  <option key={interest} value={interest}>{interest}</option>
-                ))}
-              </select>
-              
-              <select
-                value={filters.mode}
-                onChange={(e) => setFilters({ ...filters, mode: e.target.value as any })}
-                className="text-sm rounded-xl border border-teal-200 px-3 py-2 bg-white/80"
-              >
-                <option value="all">All Modes</option>
-                <option value="scrapbook">💞 Scrapbook</option>
-                <option value="roommate">🏠 Roommate</option>
-                <option value="friend">🫱 Friend</option>
-              </select>
-            </div>
-            
-            {/* Vibe Sort Slider */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">Chill</span>
-                <span className="text-gray-600">Extroverted</span>
-                <span className="text-gray-600">Deep</span>
-                <span className="text-gray-600">Creative</span>
-              </div>
-              <Slider
-                value={vibeSort}
-                onValueChange={setVibeSort}
-                max={100}
-                step={1}
-                className="w-full"
-                onValueCommit={() => setFilters({ ...filters, sortBy: 'vibe' })}
+            <div className="max-w-[1200px] mx-auto space-y-3">
+              <EnhancedSearch
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                filters={filters}
+                onFiltersChange={setFilters}
+                availableMajors={availableMajors}
+                availableAcademicGoals={availableAcademicGoals}
+                availableLeisureGoals={availableLeisureGoals}
               />
+              
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={filters.personalityType}
+                  onChange={(e) => setFilters({ ...filters, personalityType: e.target.value })}
+                  className="text-sm rounded-xl border border-white/20 px-3 py-2 bg-white/5 text-white"
+                >
+                  <option value="all">All Personality Types</option>
+                  {availablePersonalityTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+                
+                <select
+                  value={filters.interest}
+                  onChange={(e) => setFilters({ ...filters, interest: e.target.value })}
+                  className="text-sm rounded-xl border border-white/20 px-3 py-2 bg-white/5 text-white"
+                >
+                  <option value="all">All Interests</option>
+                  {availableInterests.map((interest) => (
+                    <option key={interest} value={interest}>{interest}</option>
+                  ))}
+                </select>
+                
+                <select
+                  value={filters.mode}
+                  onChange={(e) => setFilters({ ...filters, mode: e.target.value as any })}
+                  className="text-sm rounded-xl border border-white/20 px-3 py-2 bg-white/5 text-white"
+                >
+                  <option value="all">All Modes</option>
+                  <option value="scrapbook">💞 Scrapbook</option>
+                  <option value="roommate">🏠 Roommate</option>
+                  <option value="friend">👋 Friend</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-white/60">
+                  <span>Chill</span>
+                  <span>Extroverted</span>
+                  <span>Deep</span>
+                  <span>Creative</span>
+                </div>
+                <Slider
+                  value={vibeSort}
+                  onValueChange={setVibeSort}
+                  max={100}
+                  step={1}
+                  className="w-full"
+                  onValueCommit={() => setFilters({ ...filters, sortBy: 'vibe' })}
+                />
+              </div>
             </div>
           </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* Stats Bar */}
-      <div className="bg-white/60 backdrop-blur-sm border-b border-teal-200/30 px-4 py-3 flex justify-around text-center">
-        <div>
-          <p className="font-semibold text-teal-600">{filteredProfiles.length}</p>
-          <p className="text-xs text-gray-600">Students</p>
-        </div>
-        <div>
-          <p className="font-semibold text-navy-600">{userProfile?.school || 'Your School'}</p>
-          <p className="text-xs text-gray-600">Campus</p>
-        </div>
-        <div>
-          <p className="font-semibold text-green-600">Active</p>
-          <p className="text-xs text-gray-600">Community</p>
-        </div>
-      </div>
-
-      {/* Grid - Using YearbookProfileCard */}
-      <div className="grid grid-cols-2 gap-4 p-4">
-        {filteredProfiles.map((profile, index) => (
-          <YearbookProfileCard
-            key={profile.id}
-            profile={{
-              id: profile.id,
-              name: profile.name,
-              pronouns: profile.pronouns,
-              profilePicture: profile.profilePicture,
-              photos: profile.photos || (profile.profilePicture ? [profile.profilePicture] : []),
-              bio: profile.bio,
-              interests: profile.interests,
-              personality: profile.personality,
-              bondPrint: profile.bondPrint,
-              lookingFor: profile.lookingFor,
-              instagram: profile.instagram,
-              spotify: profile.spotify,
-              socialConnections: profile.socialConnections,
-              scrapbookEnabled: profile.scrapbookEnabled,
-              roommateMode: profile.roommateMode,
+      {/* Main Content */}
+      <div
+        className="main-content-yearbook flex-1 pt-[220px] pb-24 relative z-[1] max-w-[1200px] mx-auto w-full px-5"
+      >
+        {filteredProfiles.length === 0 ? (
+          <div className="text-center py-16 text-white">
+            <div className="text-6xl mb-5">📖</div>
+            <h3 className="text-2xl font-bold mb-3">No profiles found</h3>
+            <p className="text-[15px] text-white/60 mb-6">
+              Try adjusting your filters or search query
+            </p>
+          </div>
+        ) : (
+          <div
+            className="yearbook-grid grid w-full gap-5"
+            style={{
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             }}
-            bondPrintScore={bondPrintScores[profile.id]}
-            sharedInsights={sharedInsights[profile.id] || []}
-            onClick={() => handleProfileClick(index)}
-            onKeyDown={(e) => handleGridKeyDown(
-              e,
-              () => handleProfileClick(index),
-              index < filteredProfiles.length - 1 ? () => handleProfileClick(index + 1) : undefined,
-              index > 0 ? () => handleProfileClick(index - 1) : undefined
-            )}
-            aria-label={getProfileCardAriaLabel(profile)}
-          />
-        ))}
+          >
+            {filteredProfiles.map((profile, index) => (
+              <YearbookGridCard
+                key={profile.id}
+                profile={{
+                  id: profile.id,
+                  name: profile.name,
+                  age: profile.age,
+                  pronouns: profile.pronouns,
+                  year: profile.year,
+                  profilePicture: profile.profilePicture,
+                  photos: profile.photos || (profile.profilePicture ? [profile.profilePicture] : []),
+                  interests: profile.interests,
+                  personality: profile.personality,
+                  bondPrint: profile.bondPrint,
+                  scrapbookEnabled: profile.scrapbookEnabled,
+                  roommateMode: profile.roommateMode,
+                }}
+                onClick={() => handleProfileClick(index)}
+              />
+            ))}
+          </div>
+        )}
       </div>
-
-      {filteredProfiles.length === 0 && (
-        <EmptyState
-          type="no-profiles"
-          description="No profiles match your filters. Try adjusting your search."
-        />
-      )}
     </div>
+    </>
   );
 }
