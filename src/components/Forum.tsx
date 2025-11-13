@@ -312,6 +312,24 @@ export function Forum({ onPostComposerChange }: ForumProps = {}) {
 
   const handleLike = async (postId: string) => {
     try {
+      // Optimistic update - update UI immediately
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            const wasLiked = post.userLiked;
+            return {
+              ...post,
+              userLiked: !wasLiked,
+              likes: wasLiked ? post.likes - 1 : post.likes + 1,
+              // If unliking, make sure userDisliked is false
+              userDisliked: false,
+              dislikes: post.userDisliked ? post.dislikes - 1 : post.dislikes,
+            };
+          }
+          return post;
+        })
+      );
+
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/forum/posts/${postId}/like`,
         {
@@ -322,16 +340,39 @@ export function Forum({ onPostComposerChange }: ForumProps = {}) {
         }
       );
 
-      if (response.ok) {
+      if (!response.ok) {
+        // Revert on error
         loadPosts();
+        toast.error('Failed to like post');
       }
     } catch (error) {
       console.error('Like error:', error);
+      // Revert on error
+      loadPosts();
+      toast.error('Failed to like post');
     }
   };
 
   const handleDislike = async (postId: string) => {
     try {
+      // Optimistic update - update UI immediately
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            const wasDisliked = post.userDisliked;
+            return {
+              ...post,
+              userDisliked: !wasDisliked,
+              dislikes: wasDisliked ? post.dislikes - 1 : post.dislikes + 1,
+              // If disliking, make sure userLiked is false
+              userLiked: false,
+              likes: post.userLiked ? post.likes - 1 : post.likes,
+            };
+          }
+          return post;
+        })
+      );
+
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/forum/posts/${postId}/dislike`,
         {
@@ -342,11 +383,16 @@ export function Forum({ onPostComposerChange }: ForumProps = {}) {
         }
       );
 
-      if (response.ok) {
+      if (!response.ok) {
+        // Revert on error
         loadPosts();
+        toast.error('Failed to dislike post');
       }
     } catch (error) {
       console.error('Dislike error:', error);
+      // Revert on error
+      loadPosts();
+      toast.error('Failed to dislike post');
     }
   };
 
@@ -487,14 +533,14 @@ export function Forum({ onPostComposerChange }: ForumProps = {}) {
     <div className="min-h-screen pb-28 w-full overflow-x-hidden bg-black" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {/* Quad Section Header - Dark Mode */}
       <div className="px-4 pt-4 pb-3">
-        <h1 className="text-2xl font-bold text-soft-cream mb-1">
+        <h1 className="text-2xl font-bold text-soft-cream mb-1 text-center">
           The Quad
         </h1>
-        <p className="text-sm text-soft-cream/60">Anonymous campus-wide posts.</p>
+        <p className="text-sm text-soft-cream/60 text-center">Anonymous campus-wide posts.</p>
       </div>
 
       {/* Floating Create Post Button - Above Bottom Nav, Centered */}
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40" style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}>
         <button
           onClick={() => setShowPostComposer(true)}
           className="w-14 h-14 bg-gradient-to-r from-teal-blue to-ocean-blue rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
@@ -698,37 +744,40 @@ export function Forum({ onPostComposerChange }: ForumProps = {}) {
                           </div>
                         </div>
                       </div>
-                      <div className="relative">
-                        <button
-                          className="w-8 h-8 flex items-center justify-center text-soft-cream/50 hover:text-soft-cream transition-colors"
-                          onClick={() => setShowPostMenu(showPostMenu === post.id ? null : post.id)}
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                        {showPostMenu === post.id && (
-                          <div className="absolute right-0 top-10 bg-midnight-indigo/95 backdrop-blur-xl rounded-2xl py-2 z-50 min-w-[120px] border border-soft-cream/20 shadow-lg">
-                            {isPostAuthor(post) && (
-                              <button
-                                onClick={() => handleDeletePost(post.id)}
-                                className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Delete
-                              </button>
-                            )}
-                            <button
-                              onClick={() => {
-                                openShareDialog(post.id);
-                                setShowPostMenu(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-soft-cream hover:bg-soft-cream/10 flex items-center gap-2 rounded-lg transition-colors"
-                            >
-                              <Share2 className="w-4 h-4" />
-                              Share
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                           <div className="relative">
+                             <button
+                               className="w-8 h-8 flex items-center justify-center text-soft-cream/50 hover:text-soft-cream transition-colors"
+                               onClick={() => setShowPostMenu(showPostMenu === post.id ? null : post.id)}
+                             >
+                               <MoreVertical className="w-4 h-4" />
+                             </button>
+                             {showPostMenu === post.id && (
+                               <div className="absolute right-0 top-10 bg-gray-900/98 backdrop-blur-xl rounded-2xl py-2 z-50 min-w-[140px] border-2 border-teal-blue/40 shadow-2xl">
+                                 {isPostAuthor(post) && (
+                                   <button
+                                     onClick={() => {
+                                       handleDeletePost(post.id);
+                                       setShowPostMenu(null);
+                                     }}
+                                     className="w-full px-5 py-3 text-left text-sm font-semibold text-red-400 hover:bg-red-500/20 flex items-center gap-3 rounded-xl transition-all border-b border-gray-700/50 last:border-b-0"
+                                   >
+                                     <Trash2 className="w-5 h-5" />
+                                     Delete
+                                   </button>
+                                 )}
+                                 <button
+                                   onClick={() => {
+                                     openShareDialog(post.id);
+                                     setShowPostMenu(null);
+                                   }}
+                                   className="w-full px-5 py-3 text-left text-sm font-semibold text-soft-cream hover:bg-teal-blue/20 flex items-center gap-3 rounded-xl transition-all"
+                                 >
+                                   <Share2 className="w-5 h-5" />
+                                   Share
+                                 </button>
+                               </div>
+                             )}
+                           </div>
                     </div>
 
                     {/* Post Title (if exists) */}

@@ -733,6 +733,189 @@ app.get("/profiles", async (c) => {
   }
 });
 
+// Seed test profiles endpoint (development only)
+app.post("/seed-test-profiles", async (c) => {
+  try {
+    // Only allow in development
+    if (Deno.env.get('ENVIRONMENT') === 'production') {
+      return c.json({ error: 'Not available in production' }, 403);
+    }
+
+    const { school, count = 50 } = await c.req.json().catch(() => ({ school: null, count: 50 }));
+    
+    if (!school) {
+      return c.json({ error: 'School parameter required' }, 400);
+    }
+
+    const firstNames = [
+      'Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn',
+      'Sam', 'Cameron', 'Dakota', 'Blake', 'Sage', 'River', 'Phoenix', 'Skylar',
+      'Emma', 'Olivia', 'Sophia', 'Isabella', 'Mia', 'Charlotte', 'Amelia', 'Harper',
+      'Evelyn', 'Abigail', 'Emily', 'Elizabeth', 'Mila', 'Ella', 'Avery', 'Sofia',
+      'Liam', 'Noah', 'Oliver', 'William', 'Elijah', 'James', 'Benjamin', 'Lucas',
+      'Mason', 'Ethan', 'Alexander', 'Henry', 'Jacob', 'Michael', 'Daniel', 'Logan'
+    ];
+
+    const lastNames = [
+      'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis',
+      'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Wilson', 'Anderson', 'Thomas', 'Taylor',
+      'Moore', 'Jackson', 'Martin', 'Lee', 'Thompson', 'White', 'Harris', 'Sanchez',
+      'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young', 'Allen', 'King',
+      'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores', 'Green', 'Adams',
+      'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts'
+    ];
+
+    const majors = [
+      'Computer Science', 'Business Administration', 'Psychology', 'Biology', 'Engineering',
+      'Communications', 'Economics', 'Political Science', 'English', 'Mathematics',
+      'Marketing', 'Finance', 'Nursing', 'Education', 'Art', 'Music', 'History',
+      'Chemistry', 'Physics', 'Sociology', 'Philosophy', 'Journalism', 'Architecture',
+      'Environmental Science', 'Public Health', 'Data Science', 'Graphic Design', 'Theater'
+    ];
+
+    const classYears = ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Grad'];
+    const lookingForOptions = [
+      'study-partner', 'roommate', 'gym-buddy', 'hiking-buddy', 'gaming-buddy',
+      'music-partner', 'co-founder', 'mentor', 'mentee', 'travel-buddy'
+    ];
+    const interestsList = [
+      'Music', 'Gaming', 'Hiking', 'Reading', 'Cooking', 'Photography', 'Art',
+      'Sports', 'Travel', 'Movies', 'Fitness', 'Yoga', 'Dancing', 'Writing',
+      'Technology', 'Entrepreneurship', 'Volunteering', 'Fashion', 'Food'
+    ];
+    const personalityTagsList = [
+      'Creative', 'Outgoing', 'Introverted', 'Analytical', 'Adventurous',
+      'Thoughtful', 'Energetic', 'Calm', 'Ambitious', 'Easygoing', 'Focused',
+      'Spontaneous', 'Organized', 'Flexible', 'Passionate', 'Supportive'
+    ];
+    const pronounsList = ['he/him', 'she/her', 'they/them'];
+
+    const photoUrls = [
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&q=80',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=80',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80',
+      'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&q=80',
+      'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&q=80',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=80',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80',
+      'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&q=80',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=80',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80'
+    ];
+
+    const schoolKey = `school:${school}:users`;
+    const existingUserIds = await kv.get(schoolKey) || [];
+    const createdProfiles = [];
+
+    for (let i = 0; i < count; i++) {
+      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+      const name = `${firstName} ${lastName}`;
+      const email = `test${Date.now()}-${i}@test.edu`;
+      const major = majors[Math.floor(Math.random() * majors.length)];
+      const year = classYears[Math.floor(Math.random() * classYears.length)];
+      const age = 18 + Math.floor(Math.random() * 7);
+      const pronouns = pronounsList[Math.floor(Math.random() * pronounsList.length)];
+      const photoUrl = photoUrls[i % photoUrls.length];
+      
+      // Generate random looking_for (2-4 items)
+      const lookingFor = [];
+      const lookingForCount = 2 + Math.floor(Math.random() * 3);
+      for (let j = 0; j < lookingForCount; j++) {
+        const option = lookingForOptions[Math.floor(Math.random() * lookingForOptions.length)];
+        if (!lookingFor.includes(option)) {
+          lookingFor.push(option);
+        }
+      }
+
+      // Generate random interests (3-6 items)
+      const interests = [];
+      const interestsCount = 3 + Math.floor(Math.random() * 4);
+      for (let j = 0; j < interestsCount; j++) {
+        const interest = interestsList[Math.floor(Math.random() * interestsList.length)];
+        if (!interests.includes(interest)) {
+          interests.push(interest);
+        }
+      }
+
+      // Generate random personality tags (2-4 items)
+      const personality = [];
+      const personalityCount = 2 + Math.floor(Math.random() * 3);
+      for (let j = 0; j < personalityCount; j++) {
+        const tag = personalityTagsList[Math.floor(Math.random() * personalityTagsList.length)];
+        if (!personality.includes(tag)) {
+          personality.push(tag);
+        }
+      }
+
+      const userId = `test-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
+      const bio = `Hey! I'm a ${year} studying ${major}. Love meeting new people and exploring campus!`;
+
+      const profile = {
+        id: userId,
+        email,
+        name,
+        school,
+        major,
+        year,
+        age,
+        pronouns,
+        bio,
+        profilePicture: photoUrl,
+        photos: [photoUrl],
+        lookingFor,
+        interests,
+        personality,
+        goals: {
+          academic: [],
+          leisure: [],
+        },
+        settings: {
+          readReceipts: true,
+          profileVisible: true,
+          allowMessages: true,
+          showOnlineStatus: true,
+        },
+        blockedUsers: [],
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      await kv.set(`user:${userId}`, profile);
+      existingUserIds.push(userId);
+      createdProfiles.push(profile);
+    }
+
+    await kv.set(schoolKey, existingUserIds);
+
+    // Update schools list
+    const allSchools = await kv.get('schools:all') || [];
+    if (!allSchools.includes(school)) {
+      allSchools.push(school);
+      await kv.set('schools:all', allSchools);
+    }
+
+    return c.json({ 
+      message: `Created ${count} test profiles for ${school}`,
+      count: createdProfiles.length,
+      profiles: createdProfiles.slice(0, 5) // Return first 5 as sample
+    });
+  } catch (error: any) {
+    console.error('Seed test profiles error:', error);
+    return c.json({ error: error.message || 'Failed to seed test profiles' }, 500);
+  }
+});
+
 // AI Matching algorithm
 app.get("/matches", async (c) => {
   try {
