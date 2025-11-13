@@ -265,9 +265,9 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Enhanced Search and Filter Bar - positioned below top banner - Bonded Design */}
-      <div className="sticky top-[60px] bg-midnight-indigo border-b border-teal-blue/30 px-4 py-2 z-10">
+    <div className="min-h-screen bg-black">
+      {/* Enhanced Search and Filter Bar - Dark Mode */}
+      <div className="sticky top-[60px] bg-gray-900/95 border-b border-gray-700/50 px-4 py-2 z-10">
         <EnhancedSearch
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -279,19 +279,19 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         />
       </div>
 
-      {/* Stats Bar - Bonded Design */}
-      <div className="glass-card mx-4 my-3 px-4 py-3 flex justify-around text-center">
+      {/* Stats Bar - Dark Mode */}
+      <div className="bg-gray-900/80 rounded-2xl mx-4 my-3 px-4 py-3 flex justify-around text-center border border-gray-700/30">
         <div>
           <p className="font-semibold text-teal-blue">{filteredProfiles.length}</p>
-          <p className="text-xs text-soft-cream/60">Students</p>
+          <p className="text-xs text-gray-400">Students</p>
         </div>
         <div>
           <p className="font-semibold text-soft-cream">{userProfile?.school || 'Your School'}</p>
-          <p className="text-xs text-soft-cream/60">University</p>
+          <p className="text-xs text-gray-400">University</p>
         </div>
         <div>
           <p className="font-semibold text-teal-blue">Active</p>
-          <p className="text-xs text-soft-cream/60">Community</p>
+          <p className="text-xs text-gray-400">Community</p>
         </div>
       </div>
 
@@ -313,7 +313,7 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
                 index > 0 ? () => handleProfileClick(index - 1) : undefined
               )}
               aria-label={getProfileCardAriaLabel(profile)}
-              className={`relative overflow-hidden glass-card glass-card-hover active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-blue focus:ring-offset-2 ${
+              className={`relative overflow-hidden bg-gray-900/80 rounded-2xl border border-gray-700/30 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-blue focus:ring-offset-2 ${
                 isHighMatch 
                   ? 'ring-2 ring-teal-blue ring-offset-2' 
                   : isMediumMatch 
