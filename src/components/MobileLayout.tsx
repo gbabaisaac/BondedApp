@@ -120,7 +120,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         {children}
       </div>
 
-      {/* Bottom Navigation - Modern Floating Style */}
+      {/* Bottom Navigation - Clean Vertical Stack Layout */}
       {!hideNavigation && (
         <div
           className="fixed bottom-0 left-0 right-0 z-50"
@@ -133,7 +133,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         >
           <div className="max-w-2xl mx-auto">
             <div className="bg-midnight-indigo/95 backdrop-blur-2xl rounded-2xl border border-teal-blue/30 shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
-              <div className="flex items-center justify-around h-14 px-1.5">
+              <div className="flex items-center justify-between px-2 py-2.5">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -142,39 +142,43 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                     <button
                       key={tab.id}
                       onClick={() => onTabChange(tab.id)}
-                      className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-300 relative ${
-                        isActive 
-                          ? 'text-teal-blue' 
-                          : 'text-soft-cream/60'
-                      }`}
+                      className="flex-1 flex flex-col items-center justify-center min-w-0 transition-all duration-300 relative"
                     >
                       {/* Active Tab Indicator */}
                       {isActive && (
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-7 h-0.5 bg-teal-blue rounded-full" />
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-teal-blue rounded-full" />
                       )}
                       
                       {/* Icon Container */}
-                      <div className="relative z-10 flex items-center justify-center w-full">
+                      <div className="relative flex items-center justify-center mb-1.5">
                         <Icon 
-                          className={`w-4 h-4 transition-all duration-300 ${
+                          className={`w-5 h-5 transition-all duration-300 ${
                             isActive 
-                              ? 'fill-teal-blue text-teal-blue scale-105' 
+                              ? 'fill-teal-blue text-teal-blue scale-110' 
                               : 'text-soft-cream/60'
                           }`} 
                         />
                         {tab.badge > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[7px] font-bold rounded-full w-3 h-3 flex items-center justify-center shadow-md">
+                          <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-md">
                             {tab.badge > 9 ? '9+' : tab.badge}
                           </span>
                         )}
                       </div>
                       
-                      {/* Label */}
-                      <span className={`text-[7px] font-medium z-10 transition-all duration-300 leading-tight truncate w-full text-center ${
-                        isActive 
-                          ? 'text-teal-blue' 
-                          : 'text-soft-cream/60'
-                      }`}>
+                      {/* Label - Properly Truncated */}
+                      <span 
+                        className={`text-[11px] font-medium transition-all duration-300 leading-tight text-center truncate w-full px-0.5 ${
+                          isActive 
+                            ? 'text-teal-blue' 
+                            : 'text-soft-cream/60'
+                        }`}
+                        style={{
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
                         {tab.label}
                       </span>
                     </button>
