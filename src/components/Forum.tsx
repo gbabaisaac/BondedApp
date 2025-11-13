@@ -24,6 +24,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { projectId } from '../utils/supabase/info';
@@ -79,6 +80,7 @@ export function Forum() {
   const [friends, setFriends] = useState<any[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
+  const [showPostComposer, setShowPostComposer] = useState(false);
 
   useEffect(() => {
     loadPosts();
@@ -227,10 +229,11 @@ export function Forum() {
 
       if (response.ok) {
         toast.success('Post created!');
-        setNewPost('');
-        setSelectedMedia(null);
-        setIsAnonymous(true);
-        loadPosts();
+      setNewPost('');
+      setSelectedMedia(null);
+      setIsAnonymous(true);
+      setShowPostComposer(false);
+      loadPosts();
       } else {
         throw new Error('Failed to create post');
       }
@@ -479,121 +482,156 @@ export function Forum() {
         <p className="text-sm text-soft-cream/60">Anonymous campus-wide posts.</p>
       </div>
 
-      {/* Create Post - Dark Mode */}
-      <div className="px-4 pb-4">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-900/80 rounded-3xl p-4 border border-gray-700/50"
+      {/* Floating Create Post Button */}
+      <div className="fixed bottom-20 right-4 z-40">
+        <button
+          onClick={() => setShowPostComposer(true)}
+          className="w-14 h-14 bg-gradient-to-r from-teal-blue to-ocean-blue rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
         >
-          <div className="flex gap-3">
-            <Avatar className="w-9 h-9 flex-shrink-0">
-              <AvatarImage src={userProfile?.profilePicture} />
-              <AvatarFallback className="bg-gradient-to-br from-teal-blue to-lavender-mist text-soft-cream font-medium text-sm">
-                {userProfile?.name?.[0] || 'A'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <Textarea
-                placeholder="What's on your mind?"
-                value={newPost}
-                onChange={(e) => setNewPost(e.target.value)}
-                className="min-h-[52px] resize-none rounded-2xl bg-gray-800/50 border-gray-700/50 text-soft-cream placeholder:text-gray-400 text-sm focus:border-teal-blue/40 focus:ring-1 focus:ring-teal-blue/20"
-              />
-              {selectedMedia && (
-                <div className="mt-2 relative rounded-2xl overflow-hidden">
-                  {selectedMedia.type === 'image' ? (
-                    <img
-                      src={selectedMedia.preview}
-                      alt="Preview"
-                      className="w-full max-h-64 object-cover"
-                    />
-                  ) : (
-                    <video
-                      src={selectedMedia.preview}
-                      controls
-                      className="w-full max-h-64"
-                    />
-                  )}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                    onClick={() => setSelectedMedia(null)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-              <div className="flex items-center justify-between mt-3 gap-3">
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Anonymous Toggle - Dark Mode */}
+          <Plus className="w-6 h-6 text-white" />
+        </button>
+      </div>
+
+      {/* Create Post Modal - Dark Mode */}
+      <AnimatePresence>
+        {showPostComposer && (
+          <div 
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" 
+            onClick={() => setShowPostComposer(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg bg-gray-900 rounded-t-3xl sm:rounded-3xl border-t border-gray-700/50 sm:border border-gray-700/50 shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-soft-cream">Create Post</h2>
                   <button
-                    onClick={() => setIsAnonymous(!isAnonymous)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      isAnonymous
-                        ? 'bg-teal-blue/30 text-teal-blue border border-teal-blue/40'
-                        : 'bg-gray-800/50 text-gray-300 border border-gray-700/50'
-                    }`}
+                    onClick={() => setShowPostComposer(false)}
+                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-soft-cream transition-colors"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                    Anonymous
+                    <X className="w-5 h-5" />
                   </button>
-                  
-                  {/* Media Icons - Evenly Spaced */}
-                  <div className="flex gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleMediaSelect(e, 'image')}
-                      className="hidden"
-                      id="forum-image-upload"
-                    />
-                    <label htmlFor="forum-image-upload" className="cursor-pointer">
-                      <button className="w-8 h-8 flex items-center justify-center text-soft-cream/50 hover:text-teal-blue transition-colors">
-                        <ImageIcon className="w-4 h-4" />
-                      </button>
-                    </label>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => handleMediaSelect(e, 'video')}
-                      className="hidden"
-                      id="forum-video-upload"
-                    />
-                    <label htmlFor="forum-video-upload" className="cursor-pointer">
-                      <button className="w-8 h-8 flex items-center justify-center text-soft-cream/50 hover:text-lavender-mist transition-colors">
-                        <Video className="w-4 h-4" />
-                      </button>
-                    </label>
-                  </div>
                 </div>
                 
-                {/* Post Button - Subtle */}
-                <Button
-                  onClick={handleCreatePost}
-                  size="sm"
-                  className="bg-teal-blue/80 text-soft-cream rounded-full px-4 h-8 text-xs font-medium hover:bg-teal-blue transition-colors"
-                  disabled={uploadingMedia}
-                >
-                  {uploadingMedia ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                      Uploading
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5 mr-1.5" />
-                      Post
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-3">
+                  <Avatar className="w-9 h-9 flex-shrink-0">
+                    <AvatarImage src={userProfile?.profilePicture} />
+                    <AvatarFallback className="bg-gradient-to-br from-teal-blue to-lavender-mist text-soft-cream font-medium text-sm">
+                      {userProfile?.name?.[0] || 'A'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <Textarea
+                      placeholder="What's on your mind?"
+                      value={newPost}
+                      onChange={(e) => setNewPost(e.target.value)}
+                      className="min-h-[120px] resize-none rounded-2xl bg-gray-800/50 border-gray-700/50 text-soft-cream placeholder:text-gray-400 text-sm focus:border-teal-blue/40 focus:ring-1 focus:ring-teal-blue/20"
+                    />
+                    {selectedMedia && (
+                      <div className="mt-3 relative rounded-2xl overflow-hidden">
+                        {selectedMedia.type === 'image' ? (
+                          <img
+                            src={selectedMedia.preview}
+                            alt="Preview"
+                            className="w-full max-h-64 object-cover"
+                          />
+                        ) : (
+                          <video
+                            src={selectedMedia.preview}
+                            controls
+                            className="w-full max-h-64"
+                          />
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                          onClick={() => setSelectedMedia(null)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mt-4 gap-3">
+                      <div className="flex items-center gap-3 flex-1">
+                        {/* Anonymous Toggle - More Visible */}
+                        <button
+                          onClick={() => setIsAnonymous(!isAnonymous)}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold transition-all ${
+                            isAnonymous
+                              ? 'bg-teal-blue text-white border-2 border-teal-blue shadow-lg shadow-teal-blue/30'
+                              : 'bg-gray-800/70 text-gray-400 border-2 border-gray-700/70'
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full transition-all ${
+                            isAnonymous ? 'bg-white' : 'bg-gray-500'
+                          }`} />
+                          Anonymous
+                        </button>
+                        
+                        {/* Media Icons - Evenly Spaced */}
+                        <div className="flex gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleMediaSelect(e, 'image')}
+                            className="hidden"
+                            id="forum-image-upload"
+                          />
+                          <label htmlFor="forum-image-upload" className="cursor-pointer">
+                            <button className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-teal-blue transition-colors bg-gray-800/50 rounded-full">
+                              <ImageIcon className="w-4.5 h-4.5" />
+                            </button>
+                          </label>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={(e) => handleMediaSelect(e, 'video')}
+                            className="hidden"
+                            id="forum-video-upload"
+                          />
+                          <label htmlFor="forum-video-upload" className="cursor-pointer">
+                            <button className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-lavender-mist transition-colors bg-gray-800/50 rounded-full">
+                              <Video className="w-4.5 h-4.5" />
+                            </button>
+                          </label>
+                        </div>
+                      </div>
+                      
+                      {/* Post Button */}
+                      <Button
+                        onClick={() => {
+                          handleCreatePost();
+                        }}
+                        size="sm"
+                        className="bg-gradient-to-r from-teal-blue to-ocean-blue text-soft-cream rounded-full px-5 h-9 text-sm font-medium hover:opacity-90 transition-opacity shadow-lg"
+                        disabled={uploadingMedia}
+                      >
+                        {uploadingMedia ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                            Uploading
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-1.5" />
+                            Post
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </motion.div>
-      </div>
+        )}
+      </AnimatePresence>
 
       {/* Posts Feed - Clean & Spacious */}
       {loading ? (
