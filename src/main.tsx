@@ -4,6 +4,9 @@ import App from './App';
 import './index.css';
 import './styles/globals.css';
 
+// Add dark class to html element for dark mode
+document.documentElement.classList.add('dark');
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
