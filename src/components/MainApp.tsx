@@ -19,6 +19,7 @@ export function MainApp() {
   const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isPostComposerOpen, setIsPostComposerOpen] = useState(false);
 
   useEffect(() => {
     // Check if user has seen tutorial
@@ -99,7 +100,7 @@ export function MainApp() {
         <MobileLayout 
           activeTab={currentView} 
           onTabChange={setCurrentView} 
-          hideNavigation={isProfileDetailOpen}
+          hideNavigation={isProfileDetailOpen || isPostComposerOpen}
           onUnreadCountChange={setUnreadCount}
         >
           {currentView === 'discover' && (
@@ -114,7 +115,7 @@ export function MainApp() {
             <ChatView />
           )}
           {currentView === 'forum' && (
-            <Forum />
+            <Forum onPostComposerChange={setIsPostComposerOpen} />
           )}
           {currentView === 'scrapbook' && (
             <Scrapbook

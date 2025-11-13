@@ -112,7 +112,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))', // Space for floating nav
+          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))', // Space for floating nav
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}
@@ -133,7 +133,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         >
           <div className="max-w-2xl mx-auto">
             <div className="bg-midnight-indigo/95 backdrop-blur-2xl rounded-2xl border border-teal-blue/30 shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
-              <div className="flex items-center justify-around h-14 px-1">
+              <div className="flex items-center justify-around h-16 px-2">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -142,7 +142,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                     <button
                       key={tab.id}
                       onClick={() => onTabChange(tab.id)}
-                      className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-300 relative ${
+                      className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-300 relative ${
                         isActive 
                           ? 'text-teal-blue' 
                           : 'text-soft-cream/60'
@@ -150,27 +150,27 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                     >
                       {/* Active Tab Indicator */}
                       {isActive && (
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-teal-blue rounded-full" />
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-teal-blue rounded-full" />
                       )}
                       
                       {/* Icon Container */}
-                      <div className="relative z-10 flex items-center justify-center">
+                      <div className="relative z-10 flex items-center justify-center w-full">
                         <Icon 
-                          className={`w-5 h-5 transition-all duration-300 ${
+                          className={`w-4.5 h-4.5 transition-all duration-300 ${
                             isActive 
-                              ? 'fill-teal-blue text-teal-blue scale-110' 
+                              ? 'fill-teal-blue text-teal-blue scale-105' 
                               : 'text-soft-cream/60'
                           }`} 
                         />
                         {tab.badge > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-md">
+                          <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center shadow-md">
                             {tab.badge > 9 ? '9+' : tab.badge}
                           </span>
                         )}
                       </div>
                       
                       {/* Label */}
-                      <span className={`text-[9px] font-medium z-10 transition-all duration-300 leading-tight ${
+                      <span className={`text-[8px] font-medium z-10 transition-all duration-300 leading-tight truncate w-full text-center px-0.5 ${
                         isActive 
                           ? 'text-teal-blue' 
                           : 'text-soft-cream/60'

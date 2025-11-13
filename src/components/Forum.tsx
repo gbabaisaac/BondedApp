@@ -60,7 +60,11 @@ interface ForumComment {
   canDelete?: boolean;
 }
 
-export function Forum() {
+interface ForumProps {
+  onPostComposerChange?: (isOpen: boolean) => void;
+}
+
+export function Forum({ onPostComposerChange }: ForumProps = {}) {
   const userProfile = useUserProfile();
   const accessToken = useAccessToken();
   const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -81,6 +85,13 @@ export function Forum() {
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [showPostMenu, setShowPostMenu] = useState<string | null>(null);
   const [showPostComposer, setShowPostComposer] = useState(false);
+
+  // Notify parent when post composer state changes
+  useEffect(() => {
+    if (onPostComposerChange) {
+      onPostComposerChange(showPostComposer);
+    }
+  }, [showPostComposer, onPostComposerChange]);
 
   useEffect(() => {
     loadPosts();
@@ -482,8 +493,8 @@ export function Forum() {
         <p className="text-sm text-soft-cream/60">Anonymous campus-wide posts.</p>
       </div>
 
-      {/* Floating Create Post Button - Above Bottom Nav */}
-      <div className="fixed bottom-20 right-4 z-40" style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}>
+      {/* Floating Create Post Button - Above Bottom Nav, Centered */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
         <button
           onClick={() => setShowPostComposer(true)}
           className="w-14 h-14 bg-gradient-to-r from-teal-blue to-ocean-blue rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
