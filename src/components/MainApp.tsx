@@ -4,24 +4,20 @@ import { InstagramGrid } from './InstagramGrid';
 import { ChatView } from './ChatView';
 import { MatchSuggestions } from './MatchSuggestions';
 import { MyProfile } from './MyProfile';
-import { ModeToggle } from './ModeToggle';
-import { LoveModeNew } from './LoveModeNew';
+import { Scrapbook } from './Scrapbook';
 import { AppTutorial } from './AppTutorial';
 import { Forum } from './Forum';
-import { isFeatureEnabled } from '../config/features';
 import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimization';
 import { useAppStore } from '../store/useAppStore';
+import { MessageCircle } from 'lucide-react';
 
-type View = 'discover' | 'matches' | 'messages' | 'forum';
-type AppMode = 'friend' | 'love';
+type View = 'discover' | 'matches' | 'messages' | 'forum' | 'scrapbook';
 
 export function MainApp() {
   const { userProfile, accessToken, handleLogout } = useAppStore();
   const [currentView, setCurrentView] = useState<View>('discover');
-  const [mode, setMode] = useState<AppMode>('friend');
   const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
-  const loveModeEnabled = isFeatureEnabled('LOVE_MODE_ENABLED');
 
   useEffect(() => {
     // Check if user has seen tutorial
@@ -30,16 +26,6 @@ export function MainApp() {
       setShowTutorial(true);
     }
   }, []);
-
-  // Love Mode has its own full-screen view (no mode toggle inside)
-  // Only show if feature is enabled
-  if (loveModeEnabled && mode === 'love') {
-    return (
-      <LoveModeNew
-        onExit={() => setMode('friend')}
-      />
-    );
-  }
 
   // Friend Mode uses the standard layout
   const profilePicture = getProfilePictureUrl(
@@ -89,12 +75,15 @@ export function MainApp() {
           </h1>
         </div>
         
-        {/* Right side - placeholder for future features */}
-        <div className="w-10 h-10"></div>
+        {/* Right side - Messages icon */}
+        <button
+          onClick={() => setCurrentView('messages')}
+          className="flex items-center gap-2 focus:outline-none"
+        >
+          <MessageCircle className="w-6 h-6 text-[#1E4F74]" />
+        </button>
       </div>
 
-      {/* Only show mode toggle if Love Mode is enabled */}
-      {loveModeEnabled && <ModeToggle mode={mode} onChange={setMode} />}
       <div className="flex-1 overflow-hidden">
         <MobileLayout activeTab={currentView} onTabChange={setCurrentView} hideNavigation={isProfileDetailOpen}>
           {currentView === 'discover' && (
@@ -110,6 +99,11 @@ export function MainApp() {
           )}
           {currentView === 'forum' && (
             <Forum />
+          )}
+          {currentView === 'scrapbook' && (
+            <Scrapbook
+              onExit={() => setCurrentView('discover')}
+            />
           )}
         </MobileLayout>
       </div>

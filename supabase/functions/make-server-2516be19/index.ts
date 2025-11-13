@@ -5218,6 +5218,226 @@ app.get("/user/blocked", async (c) => {
   }
 });
 
+// ============================================
+// FRIENDSHIPS ENDPOINTS (New PostgreSQL-based)
+// ============================================
+
+// Send friend request
+app.post("/friendships/request", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { friendId } = await c.req.json();
+    if (!friendId) {
+      return c.json({ error: 'friendId is required' }, 400);
+    }
+
+    if (userId === friendId) {
+      return c.json({ error: 'Cannot send friend request to yourself' }, 400);
+    }
+
+    // Check if friendship already exists
+    const { data: existing } = await supabase
+      .from('friendships')
+      .select('*')
+      .or(`and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`)
+      .single();
+
+    if (existing) {
+      return c.json({ error: 'Friendship already exists', friendship: existing }, 400);
+    }
+
+    // Create friend request
+    const { data: friendship, error } = await supabase
+      .from('friendships')
+      .insert({
+        user_id: userId,
+        friend_id: friendId,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Create friendship error:', error);
+      return c.json({ error: 'Failed to send friend request' }, 500);
+    }
+
+    // Create notification
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: friendId,
+        type: 'friend_request',
+        title: 'New friend request',
+        body: 'You have a new friend request',
+        action_url: '/friends',
+      });
+
+    return c.json({ friendship });
+  } catch (error: any) {
+    console.error('Friend request error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Accept friend request
+app.post("/friendships/:friendshipId/accept", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const friendshipId = c.req.param('friendshipId');
+
+    // Get friendship
+    const { data: friendship, error: fetchError } = await supabase
+      .from('friendships')
+      .select('*')
+      .eq('id', friendshipId)
+      .single();
+
+    if (fetchError || !friendship) {
+      return c.json({ error: 'Friendship not found' }, 404);
+    }
+
+    if (friendship.friend_id !== userId) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+
+    // Update status
+    const { data: updated, error } = await supabase
+      .from('friendships')
+      .update({ status: 'accepted' })
+      .eq('id', friendshipId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Accept friendship error:', error);
+      return c.json({ error: 'Failed to accept friend request' }, 500);
+    }
+
+    // Create notification for requester
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: friendship.user_id,
+        type: 'friend_request',
+        title: 'Friend request accepted',
+        body: 'Your friend request was accepted',
+        action_url: '/friends',
+      });
+
+    return c.json({ friendship: updated });
+  } catch (error: any) {
+    console.error('Accept friendship error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Decline friend request
+app.post("/friendships/:friendshipId/decline", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const friendshipId = c.req.param('friendshipId');
+
+    // Get friendship
+    const { data: friendship, error: fetchError } = await supabase
+      .from('friendships')
+      .select('*')
+      .eq('id', friendshipId)
+      .single();
+
+    if (fetchError || !friendship) {
+      return c.json({ error: 'Friendship not found' }, 404);
+    }
+
+    if (friendship.friend_id !== userId) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+
+    // Update status
+    const { error } = await supabase
+      .from('friendships')
+      .update({ status: 'declined' })
+      .eq('id', friendshipId);
+
+    if (error) {
+      console.error('Decline friendship error:', error);
+      return c.json({ error: 'Failed to decline friend request' }, 500);
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Decline friendship error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get friendships (with profile data)
+app.get("/friendships", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const status = c.req.query('status') || 'accepted'; // pending, accepted, declined
+
+    // Get friendships where user is either user_id or friend_id
+    const { data: friendships, error } = await supabase
+      .from('friendships')
+      .select('*')
+      .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
+      .eq('status', status);
+
+    if (error) {
+      console.error('Get friendships error:', error);
+      return c.json({ error: 'Failed to load friendships' }, 500);
+    }
+
+    // Get profile data for friends
+    const friendIds = friendships.map(f => 
+      f.user_id === userId ? f.friend_id : f.user_id
+    );
+
+    if (friendIds.length > 0) {
+      // Get profiles from KV (for now, until migration)
+      const profiles = await Promise.all(
+        friendIds.map(async (id) => {
+          const profile = await kv.get(`user:${id}`);
+          return profile ? { ...profile, id } : null;
+        })
+      );
+
+      const friendshipsWithProfiles = friendships.map(f => {
+        const friendId = f.user_id === userId ? f.friend_id : f.user_id;
+        const profile = profiles.find(p => p && p.id === friendId);
+        return {
+          ...f,
+          friend: profile,
+        };
+      });
+
+      return c.json({ friendships: friendshipsWithProfiles });
+    }
+
+    return c.json({ friendships: [] });
+  } catch (error: any) {
+    console.error('Get friendships error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Catch-all route for debugging unmatched routes (must be last)
 app.all("*", (c) => {
   const path = c.req.path;

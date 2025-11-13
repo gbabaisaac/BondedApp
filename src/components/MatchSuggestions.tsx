@@ -22,15 +22,16 @@ import { ConnectionCardSkeleton } from './LoadingSkeletons';
 import { EmptyState } from './EmptyStates';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
 
-type Tab = 'pending' | 'sent' | 'connections';
+type Tab = 'friends' | 'requests' | 'suggestions';
 
 export function MatchSuggestions() {
   const userProfile = useUserProfile();
   const accessToken = useAccessToken();
-  const [activeTab, setActiveTab] = useState<Tab>('pending');
+  const [activeTab, setActiveTab] = useState<Tab>('friends');
   const [pendingIntros, setPendingIntros] = useState<any[]>([]);
   const [sentIntros, setSentIntros] = useState<any[]>([]);
   const [connections, setConnections] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -42,15 +43,45 @@ export function MatchSuggestions() {
   const loadData = async () => {
     setLoading(true);
     try {
-      if (activeTab === 'pending') {
-        await loadPendingIntros();
-      } else if (activeTab === 'sent') {
-        await loadSentIntros();
-      } else {
+      if (activeTab === 'friends') {
         await loadConnections();
+      } else if (activeTab === 'requests') {
+        await loadPendingIntros();
+      } else {
+        await loadSuggestions();
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSuggestions = async () => {
+    try {
+      // Use AI assistant to get suggestions
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/search`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            query: 'Find people I might connect with',
+            criteria: {}
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestions(data.matches || []);
+      } else {
+        setSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Load suggestions error:', error);
+      setSuggestions([]);
     }
   };
 
@@ -175,6 +206,37 @@ export function MatchSuggestions() {
     }
   };
 
+  const handleSendRequest = async (targetUserId: string) => {
+    setProcessing(targetUserId);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/soft-intro`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            targetUserId,
+            reason: 'I think we could be a great connection!',
+            context: 'Sent from Friends suggestions'
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to send request');
+
+      toast.success('Connection request sent!');
+      loadSuggestions();
+    } catch (error) {
+      console.error('Send request error:', error);
+      toast.error('Failed to send connection request');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -215,39 +277,42 @@ export function MatchSuggestions() {
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
       <div className="bg-white border-b px-4 py-4">
-        <h1 className="text-xl font-semibold mb-4">Connections</h1>
+        <h1 className="text-xl font-semibold mb-4">Friends</h1>
         
         {/* Tabs */}
         <div className="flex gap-2">
           <Button
-            variant={activeTab === 'pending' ? 'default' : 'outline'}
+            variant={activeTab === 'friends' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setActiveTab('pending')}
-            className={activeTab === 'pending' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+            onClick={() => setActiveTab('friends')}
+            className={activeTab === 'friends' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            My Friends
+            {connections.length > 0 && (
+              <Badge className="ml-2 bg-[#2E7B91] text-white">{connections.length}</Badge>
+            )}
+          </Button>
+          <Button
+            variant={activeTab === 'requests' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('requests')}
+            className={activeTab === 'requests' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
           >
             <UserCheck className="w-4 h-4 mr-2" />
-            Pending
+            Requests
             {pendingIntros.length > 0 && (
               <Badge className="ml-2 bg-red-500 text-white">{pendingIntros.length}</Badge>
             )}
           </Button>
           <Button
-            variant={activeTab === 'sent' ? 'default' : 'outline'}
+            variant={activeTab === 'suggestions' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setActiveTab('sent')}
-            className={activeTab === 'sent' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
+            onClick={() => setActiveTab('suggestions')}
+            className={activeTab === 'suggestions' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
           >
-            <Send className="w-4 h-4 mr-2" />
-            Sent
-          </Button>
-          <Button
-            variant={activeTab === 'connections' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('connections')}
-            className={activeTab === 'connections' ? 'bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white' : ''}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Friends
+            <Sparkles className="w-4 h-4 mr-2" />
+            Suggestions
           </Button>
         </div>
       </div>
@@ -260,8 +325,60 @@ export function MatchSuggestions() {
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            {/* Pending Requests */}
-            {activeTab === 'pending' && (
+            {/* My Friends */}
+            {activeTab === 'friends' && (
+              <>
+                {connections.length === 0 ? (
+                  <EmptyState
+                    type="no-connections"
+                    description="Accept connection requests to start building your network!"
+                    actionLabel="Check Requests"
+                    onAction={() => setActiveTab('requests')}
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {connections.map((connection) => {
+                      if (!connection || !connection.id) {
+                        console.warn('Invalid connection data:', connection);
+                        return null;
+                      }
+                      
+                      return (
+                        <Card 
+                          key={connection.id} 
+                          className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => {
+                            if (connection.name) {
+                              setSelectedProfile(connection);
+                            }
+                          }}
+                        >
+                          <CardContent className="p-0">
+                            <div className="h-32 bg-gradient-to-br from-[#2E7B91] to-[#25658A] relative">
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Avatar className="w-20 h-20 border-4 border-white">
+                                  <AvatarImage src={connection.profilePicture || connection.imageUrl} />
+                                  <AvatarFallback className="text-xl bg-white text-[#2E7B91]">
+                                    {getInitials(connection.name || 'U')}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
+                            </div>
+                            <div className="p-3 text-center">
+                              <h3 className="font-medium text-sm mb-1">{connection.name || 'Unknown'}</h3>
+                              <p className="text-xs text-[#475569]">{connection.major || ''}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Requests */}
+            {activeTab === 'requests' && (
               <>
                 {pendingIntros.length === 0 ? (
                   <EmptyState
@@ -337,120 +454,54 @@ export function MatchSuggestions() {
               </>
             )}
 
-            {/* Sent Requests */}
-            {activeTab === 'sent' && (
+            {/* Suggestions */}
+            {activeTab === 'suggestions' && (
               <>
-                {sentIntros.length === 0 ? (
+                {suggestions.length === 0 ? (
                   <EmptyState
                     type="no-matches"
-                    description="Find people on the Discover tab and send them connection requests!"
-                    actionLabel="Discover People"
-                    onAction={() => {
-                      // This would need to be passed as a prop to navigate
-                      // For now, just show the message
-                    }}
-                  />
-                ) : (
-                  sentIntros.map((intro) => (
-                    <Card key={intro.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex gap-4">
-                          <Avatar 
-                            className="w-16 h-16 cursor-pointer"
-                            onClick={() => setSelectedProfile(intro.receiverProfile)}
-                          >
-                            <AvatarImage src={intro.receiverProfile?.profilePicture} />
-                            <AvatarFallback className="bg-gradient-to-br from-[#2E7B91] to-[#25658A] text-white">
-                              {getInitials(intro.receiverProfile?.name || 'U')}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-1">
-                              <h3 
-                                className="font-medium cursor-pointer hover:text-indigo-600"
-                                onClick={() => setSelectedProfile(intro.receiverProfile)}
-                              >
-                                {intro.receiverProfile?.name}
-                              </h3>
-                              <div className="flex items-center gap-1">
-                                {getStatusIcon(intro.status)}
-                              </div>
-                            </div>
-                            <p className="text-xs text-[#475569] mb-2">
-                              {intro.receiverProfile?.school} • {intro.receiverProfile?.major}
-                            </p>
-                            
-                            <Badge 
-                              variant="secondary"
-                              className={
-                                intro.status === 'accepted' 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : intro.status === 'denied'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-yellow-100 text-yellow-700'
-                              }
-                            >
-                              {intro.status === 'pending' ? 'Waiting for response' : intro.status}
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </>
-            )}
-
-            {/* Connections */}
-            {activeTab === 'connections' && (
-              <>
-                {connections.length === 0 ? (
-                  <EmptyState
-                    type="no-connections"
-                    description="Accept connection requests to start building your network!"
-                    actionLabel="Check Pending Requests"
-                    onAction={() => setActiveTab('pending')}
+                    description="AI will suggest people you might want to connect with based on your profile and interests."
+                    actionLabel="Refresh Suggestions"
+                    onAction={() => loadSuggestions()}
                   />
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
-                    {connections.map((connection) => {
-                      // Ensure connection has required fields
-                      if (!connection || !connection.id) {
-                        console.warn('Invalid connection data:', connection);
-                        return null;
-                      }
-                      
-                      return (
-                        <Card 
-                          key={connection.id} 
-                          className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => {
-                            // Ensure profile has required fields before setting
-                            if (connection.name) {
-                              setSelectedProfile(connection);
-                            }
-                          }}
-                        >
-                          <CardContent className="p-0">
-                            <div className="h-32 bg-gradient-to-br from-[#2E7B91] to-[#25658A] relative">
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <Avatar className="w-20 h-20 border-4 border-white">
-                                  <AvatarImage src={connection.profilePicture || connection.imageUrl} />
-                                  <AvatarFallback className="text-xl bg-white text-[#2E7B91]">
-                                    {getInitials(connection.name || 'U')}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </div>
+                    {suggestions.map((suggestion) => (
+                      <Card 
+                        key={suggestion.id} 
+                        className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => setSelectedProfile(suggestion)}
+                      >
+                        <CardContent className="p-0">
+                          <div className="h-32 bg-gradient-to-br from-purple-400 to-pink-400 relative">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Avatar className="w-20 h-20 border-4 border-white">
+                                <AvatarImage src={suggestion.profilePicture || suggestion.imageUrl} />
+                                <AvatarFallback className="text-xl bg-white text-purple-600">
+                                  {getInitials(suggestion.name || 'U')}
+                                </AvatarFallback>
+                              </Avatar>
                             </div>
-                            <div className="p-3 text-center">
-                              <h3 className="font-medium text-sm mb-1">{connection.name || 'Unknown'}</h3>
-                              <p className="text-xs text-[#475569]">{connection.major || ''}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                          </div>
+                          <div className="p-3 text-center">
+                            <h3 className="font-medium text-sm mb-1">{suggestion.name || 'Unknown'}</h3>
+                            <p className="text-xs text-[#475569] mb-2">{suggestion.major || ''}</p>
+                            <Button
+                              size="sm"
+                              className="w-full bg-gradient-to-r from-[#2E7B91] to-[#25658A] text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Send friend request
+                                handleSendRequest(suggestion.id);
+                              }}
+                            >
+                              <Send className="w-3 h-3 mr-1" />
+                              Connect
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 )}
               </>
