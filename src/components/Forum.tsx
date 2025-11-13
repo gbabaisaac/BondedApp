@@ -476,35 +476,15 @@ export function Forum() {
         <h1 className="text-xl font-bold text-soft-cream">
           The Quad
         </h1>
-        <p className="text-xs text-soft-cream/70 mt-0.5">Post anonymous messages, pictures or videos to everyone on campus</p>
-      </div>
-
-      {/* Trending Now Section */}
-      <div className="px-4 py-3">
-        <div className="bg-midnight-indigo/80 rounded-2xl p-3 border border-soft-cream/10">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">🔥</span>
-            <h2 className="text-base font-bold text-soft-cream">Trending Now</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {['#Finals', '#CampusEvents', '#StudySpots', '#FoodRecs', '#Housing'].map((tag) => (
-              <button
-                key={tag}
-                className="px-2.5 py-1 rounded-full text-xs font-medium bg-teal-blue/30 text-teal-blue border border-teal-blue/40 hover:bg-teal-blue/40 transition-colors"
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
+        <p className="text-xs text-soft-cream/80 mt-0.5">Post anonymous messages, pictures or videos to everyone on campus</p>
       </div>
 
       {/* Create Post - Bonded Design */}
-      <div className="px-4 pb-3">
+      <div className="px-4 py-3">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-midnight-indigo/80 rounded-2xl p-3 border border-soft-cream/10"
+          className="bg-midnight-indigo/90 rounded-2xl p-3 border border-soft-cream/20 shadow-medium"
         >
           <div className="flex gap-2">
             <Avatar className="w-10 h-10 flex-shrink-0">
@@ -518,7 +498,7 @@ export function Forum() {
                 placeholder="What's on your mind? Share with your campus..."
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                className="min-h-[60px] resize-none rounded-xl bg-soft-cream/5 border-soft-cream/20 text-soft-cream placeholder:text-soft-cream/50 text-sm"
+                className="min-h-[60px] resize-none rounded-xl bg-soft-cream/10 border-soft-cream/30 text-soft-cream placeholder:text-soft-cream/60 text-sm focus:border-teal-blue/50 focus:ring-2 focus:ring-teal-blue/20"
               />
               {selectedMedia && (
                 <div className="mt-2 relative rounded-2xl overflow-hidden">
@@ -554,7 +534,7 @@ export function Forum() {
                     onCheckedChange={setIsAnonymous}
                     className="data-[state=checked]:bg-teal-blue"
                   />
-                  <Label htmlFor="anonymous" className="text-xs text-soft-cream cursor-pointer">
+                  <Label htmlFor="anonymous" className="text-xs text-soft-cream font-medium cursor-pointer">
                     Anonymous
                   </Label>
                   <div className="flex gap-1.5 ml-2">
@@ -649,11 +629,11 @@ export function Forum() {
                 className="relative"
               >
                 <Card
-                  className={`bg-midnight-indigo/80 rounded-2xl border border-soft-cream/10 overflow-hidden transition-all ${
+                  className={`bg-midnight-indigo/90 rounded-2xl border border-soft-cream/20 shadow-medium overflow-hidden transition-all ${
                     isExpanded ? 'ring-2 ring-teal-blue' : ''
                   }`}
                 >
-                  <CardContent className="p-3">
+                  <CardContent className="p-4">
                     {/* Post Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div
@@ -670,16 +650,9 @@ export function Forum() {
                           <p className="text-sm font-bold text-soft-cream truncate">
                             {post.isAnonymous ? 'Anonymous Student' : post.authorName}
                           </p>
-                          {!post.isAnonymous && (
-                            <p className="text-xs text-soft-cream/50">
-                              {formatTimeAgo(post.createdAt)}
-                            </p>
-                          )}
-                          {post.isAnonymous && (
-                            <p className="text-xs text-soft-cream/50">
-                              {formatTimeAgo(post.createdAt)}
-                            </p>
-                          )}
+                          <p className="text-xs text-soft-cream/70">
+                            {formatTimeAgo(post.createdAt)}
+                          </p>
                         </div>
                       </div>
                       <div className="relative">
@@ -725,7 +698,7 @@ export function Forum() {
                     )}
 
                     {/* Post Content */}
-                    <p className="text-sm text-soft-cream/80 mb-3 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-sm text-soft-cream mb-3 whitespace-pre-wrap leading-relaxed">
                       {post.content}
                     </p>
 
@@ -735,7 +708,7 @@ export function Forum() {
                         {post.tags.map((tag: string, index: number) => (
                           <span
                             key={index}
-                            className="px-3 py-1 rounded-full text-xs font-medium bg-lavender-mist/20 text-lavender-mist border border-lavender-mist/30"
+                            className="px-3 py-1 rounded-full text-xs font-medium bg-lavender-mist/30 text-lavender-mist border border-lavender-mist/40"
                           >
                             #{tag}
                           </span>
@@ -755,25 +728,25 @@ export function Forum() {
                     )}
 
                     {/* Engagement Metrics */}
-                    <div className="flex items-center gap-3 pt-2 border-t border-soft-cream/10">
+                    <div className="flex items-center gap-4 pt-3 border-t border-soft-cream/20">
                       <button
                         onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-1 text-soft-cream/70 hover:text-peach-glow transition-colors ${
+                        className={`flex items-center gap-1.5 text-soft-cream hover:text-peach-glow transition-colors ${
                           post.userLiked ? 'text-peach-glow' : ''
                         }`}
                       >
-                        <Heart className={`w-4 h-4 ${post.userLiked ? 'fill-current' : ''}`} />
-                        <span className="text-xs font-medium">{post.likes}</span>
+                        <Heart className={`w-5 h-5 ${post.userLiked ? 'fill-current' : ''}`} />
+                        <span className="text-sm font-medium">{post.likes}</span>
                       </button>
 
                       <button
                         onClick={() => handleDislike(post.id)}
-                        className={`flex items-center gap-1 text-soft-cream/70 hover:text-red-400 transition-colors ${
+                        className={`flex items-center gap-1.5 text-soft-cream hover:text-red-400 transition-colors ${
                           post.userDisliked ? 'text-red-400' : ''
                         }`}
                       >
-                        <ThumbsDown className={`w-4 h-4 ${post.userDisliked ? 'fill-current' : ''}`} />
-                        <span className="text-xs font-medium">{post.dislikes}</span>
+                        <ThumbsDown className={`w-5 h-5 ${post.userDisliked ? 'fill-current' : ''}`} />
+                        <span className="text-sm font-medium">{post.dislikes}</span>
                       </button>
 
                       <button
@@ -784,43 +757,43 @@ export function Forum() {
                             loadComments(post.id);
                           }
                         }}
-                        className="flex items-center gap-1 text-soft-cream/70 hover:text-teal-blue transition-colors"
+                        className="flex items-center gap-1.5 text-soft-cream hover:text-teal-blue transition-colors"
                       >
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="text-xs font-medium">{post.comments}</span>
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="text-sm font-medium">{post.comments}</span>
                       </button>
 
                       <button
                         onClick={() => openShareDialog(post.id)}
-                        className="flex items-center gap-1 text-soft-cream/70 hover:text-teal-blue transition-colors ml-auto"
+                        className="flex items-center gap-1.5 text-soft-cream hover:text-teal-blue transition-colors ml-auto"
                       >
-                        <Share2 className="w-4 h-4" />
+                        <Share2 className="w-5 h-5" />
                       </button>
                     </div>
 
                     {/* Preview Comments (1-2 comments) - Bonded Design */}
                     {!isExpanded && previewComments.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-soft-cream/10">
+                      <div className="mt-3 pt-3 border-t border-soft-cream/20">
                         <div className="space-y-2">
                           {previewComments.map((comment) => (
                             <div key={comment.id} className="flex gap-2 text-sm">
                               <Avatar className="w-6 h-6 flex-shrink-0">
                                 <AvatarImage src={comment.authorAvatar} />
-                                <AvatarFallback className="bg-purple-200 text-purple-700 text-xs">
+                                <AvatarFallback className="bg-teal-blue/30 text-teal-blue text-xs font-bold">
                                   {comment.isAnonymous ? '?' : comment.authorName[0]}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-xs text-gray-900">
+                                <p className="font-semibold text-xs text-soft-cream">
                                   {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
                                 </p>
-                                <p className="text-gray-700">{comment.content}</p>
+                                <p className="text-soft-cream/90 text-sm">{comment.content}</p>
                               </div>
                               {comment.canDelete && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-6 w-6 text-gray-400 hover:text-red-600"
+                                  className="h-6 w-6 text-soft-cream/40 hover:text-red-400"
                                   onClick={() => handleDeleteComment(post.id, comment.id)}
                                 >
                                   <Trash2 className="w-3 h-3" />
@@ -852,7 +825,7 @@ export function Forum() {
                                initial={{ opacity: 0, height: 0 }}
                                animate={{ opacity: 1, height: 'auto' }}
                                exit={{ opacity: 0, height: 0 }}
-                               className="mt-3 pt-3 border-t border-soft-cream/10"
+                               className="mt-3 pt-3 border-t border-soft-cream/20"
                              >
                                {isExpanded && (
                                  <button
@@ -873,7 +846,7 @@ export function Forum() {
                                        handleComment(post.id);
                                      }
                                    }}
-                                   className="flex-1 h-9 text-sm rounded-full input-field"
+                                   className="flex-1 h-9 text-sm rounded-full bg-soft-cream/10 border-soft-cream/30 text-soft-cream placeholder:text-soft-cream/60 focus:border-teal-blue/50 focus:ring-2 focus:ring-teal-blue/20"
                                  />
                                  <Button
                                    onClick={() => handleComment(post.id)}
@@ -888,16 +861,16 @@ export function Forum() {
                                    <div key={comment.id} className="flex gap-2 text-sm group">
                                      <Avatar className="w-6 h-6 flex-shrink-0">
                                        <AvatarImage src={comment.authorAvatar} />
-                                       <AvatarFallback className="bg-teal-blue/20 text-teal-blue text-xs">
+                                       <AvatarFallback className="bg-teal-blue/30 text-teal-blue text-xs font-bold">
                                          {comment.isAnonymous ? '?' : comment.authorName[0]}
                                        </AvatarFallback>
                                      </Avatar>
                                      <div className="flex-1 min-w-0">
-                                       <p className="font-medium text-xs text-soft-cream">
+                                       <p className="font-semibold text-xs text-soft-cream">
                                          {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
                                        </p>
-                                       <p className="text-soft-cream/80">{comment.content}</p>
-                                       <p className="text-[10px] text-soft-cream/50 mt-0.5">
+                                       <p className="text-soft-cream/90 text-sm">{comment.content}</p>
+                                       <p className="text-[10px] text-soft-cream/60 mt-0.5">
                                          {formatTimeAgo(comment.createdAt)}
                                        </p>
                                      </div>
