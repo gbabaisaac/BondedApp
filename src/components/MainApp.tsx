@@ -9,7 +9,7 @@ import { AppTutorial } from './AppTutorial';
 import { Forum } from './Forum';
 import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimization';
 import { useAppStore } from '../store/useAppStore';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Search, Bell } from 'lucide-react';
 
 type View = 'discover' | 'matches' | 'messages' | 'forum' | 'scrapbook';
 
@@ -49,45 +49,50 @@ export function MainApp() {
             overflow: 'hidden'
           }}
       >
-      {/* Top Banner with Profile Picture - Bonded Design */}
-      <div className="sticky top-0 z-50 bg-midnight-indigo border-b border-teal-blue/30 px-4 py-3 flex items-center justify-between safe-top">
+      {/* Top Navigation - Modern Mobile Social App Style */}
+      <div className="sticky top-0 z-50 bg-midnight-indigo/80 backdrop-blur-xl border-b border-soft-cream/10 px-4 py-2.5 flex items-center justify-between safe-top">
+        {/* Left: Bonded Icon */}
         <button
           onClick={() => {
-            // Profile is now accessed via top-left avatar, so just show profile view
-            // Could navigate to profile if needed
+            // Profile access
           }}
-          className="btn-icon"
+          className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0"
         >
           <img
             {...getLazyImageProps(profilePicture, userProfile?.name || 'Profile')}
-            className="w-10 h-10 rounded-full object-cover border-2 border-teal-blue/50"
+            className="w-full h-full object-cover"
           />
         </button>
         
-        {/* Logo/Center */}
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('discover')}>
+        {/* Center: Bonded Title */}
+        <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setCurrentView('discover')}>
           <img 
             src="/Bonded_transparent_icon.png" 
             alt="bonded logo" 
-            className="w-6 h-6"
+            className="w-5 h-5"
           />
-          <h1 className="text-xl text-gradient lowercase font-bold tracking-brand">
+          <h1 className="text-base text-soft-cream font-medium tracking-tight">
             bonded
           </h1>
         </div>
         
-        {/* Right side - Messages icon */}
-        <button
-          onClick={() => setCurrentView('messages')}
-          className="btn-icon relative"
-        >
-          <MessageCircle className="w-6 h-6 text-soft-cream" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-peach-glow text-midnight-indigo text-xs font-bold rounded-full flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
+        {/* Right: Search & Notifications */}
+        <div className="flex items-center gap-2">
+          <button
+            className="w-9 h-9 flex items-center justify-center text-soft-cream/80 hover:text-soft-cream transition-colors"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setCurrentView('messages')}
+            className="w-9 h-9 flex items-center justify-center text-soft-cream/80 hover:text-soft-cream transition-colors relative"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-peach-glow rounded-full" />
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden">

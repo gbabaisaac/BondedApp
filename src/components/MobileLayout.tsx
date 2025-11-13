@@ -112,68 +112,74 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' // Increased for taller bottom nav
+          paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' // Space for floating nav
         }}
       >
         {children}
       </div>
 
-      {/* Bottom Navigation - Hidden when profile detail is open - Bonded Design */}
+      {/* Bottom Navigation - Modern Floating Style */}
       {!hideNavigation && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-midnight-indigo border-t border-teal-blue/30 z-50 shadow-strong"
+          className="fixed bottom-0 left-0 right-0 z-50"
           style={{
-            paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))',
-            paddingTop: '0.75rem'
+            paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
+            paddingTop: '0.75rem',
+            paddingLeft: '1rem',
+            paddingRight: '1rem'
           }}
         >
-          <div className="flex items-center justify-around h-20 px-2 max-w-2xl mx-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
-                  className={`flex flex-col items-center justify-center gap-1.5 flex-1 h-full transition-all duration-300 relative ${
-                    isActive 
-                      ? 'text-teal-blue' 
-                      : 'text-soft-cream/50'
-                  }`}
-                >
-                  {/* Active Tab Background Pill */}
-                  {isActive && (
-                    <div className="absolute inset-0 mx-2 my-1 bg-teal-blue/20 rounded-2xl backdrop-blur-sm border border-teal-blue/30" />
-                  )}
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-midnight-indigo/95 backdrop-blur-2xl rounded-3xl border border-soft-cream/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+              <div className="flex items-center justify-around h-16 px-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
                   
-                  {/* Icon Container */}
-                  <div className="relative z-10 flex items-center justify-center">
-                    <Icon 
-                      className={`w-7 h-7 transition-all duration-300 ${
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => onTabChange(tab.id)}
+                      className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-300 relative ${
                         isActive 
-                          ? 'fill-teal-blue text-teal-blue scale-110' 
+                          ? 'text-teal-blue' 
                           : 'text-soft-cream/50'
-                      }`} 
-                    />
-                    {tab.badge > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg border-2 border-midnight-indigo">
-                        {tab.badge > 9 ? '9+' : tab.badge}
+                      }`}
+                    >
+                      {/* Active Tab Indicator */}
+                      {isActive && (
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-teal-blue rounded-full" />
+                      )}
+                      
+                      {/* Icon Container */}
+                      <div className="relative z-10 flex items-center justify-center">
+                        <Icon 
+                          className={`w-5.5 h-5.5 transition-all duration-300 ${
+                            isActive 
+                              ? 'fill-teal-blue text-teal-blue scale-110' 
+                              : 'text-soft-cream/50'
+                          }`} 
+                        />
+                        {tab.badge > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full w-4.5 h-4.5 flex items-center justify-center shadow-md">
+                            {tab.badge > 9 ? '9+' : tab.badge}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Label */}
+                      <span className={`text-[10px] font-medium z-10 transition-all duration-300 ${
+                        isActive 
+                          ? 'text-teal-blue' 
+                          : 'text-soft-cream/50'
+                      }`}>
+                        {tab.label}
                       </span>
-                    )}
-                  </div>
-                  
-                  {/* Label */}
-                  <span className={`text-xs font-semibold z-10 transition-all duration-300 ${
-                    isActive 
-                      ? 'text-teal-blue' 
-                      : 'text-soft-cream/50'
-                  }`}>
-                    {tab.label}
-                  </span>
-                </button>
-              );
-            })}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
