@@ -295,9 +295,8 @@ export function MyProfile() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
-      {/* Header - Minimal */}
-      <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-xl border-b border-gray-800/50 px-4 py-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-soft-cream">My Profile</h2>
+      {/* Header - Icons Only */}
+      <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-xl border-b border-gray-800/50 px-4 py-3 flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
@@ -426,24 +425,6 @@ export function MyProfile() {
             )}
           </div>
         )}
-      </div>
-
-      {/* Action Buttons - Bottom */}
-      <div className="sticky bottom-0 bg-black/80 backdrop-blur-xl border-t border-gray-800/50 px-4 py-4 flex items-center justify-center gap-4">
-        <Button
-          onClick={() => setCurrentView('edit')}
-          className="flex-1 bg-teal-blue text-white hover:bg-teal-blue/90"
-        >
-          <Edit3 className="w-4 h-4 mr-2" />
-          Edit Profile
-        </Button>
-        <Button
-          onClick={() => setCurrentView('settings')}
-          variant="outline"
-          className="border-gray-700/50 text-soft-cream"
-        >
-          <Settings className="w-4 h-4" />
-        </Button>
       </div>
     </div>
   );

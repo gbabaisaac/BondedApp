@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Sparkles, Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Sparkles, Filter, ChevronDown, ChevronUp, X, Users, Camera, CheckCircle2, Plus } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { projectId } from '../utils/supabase/config';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
@@ -342,8 +342,8 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         )}
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-2 gap-3 p-3">
+      {/* Grid - Card Style */}
+      <div className="grid grid-cols-2 gap-4 p-4">
         {filteredProfiles.map((profile, index) => {
           const bondPrintScore = bondPrintScores[profile.id];
           const isHighMatch = bondPrintScore && bondPrintScore >= 70;
@@ -360,50 +360,78 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
                 index > 0 ? () => handleProfileClick(index - 1) : undefined
               )}
               aria-label={getProfileCardAriaLabel(profile)}
-              className={`relative overflow-hidden bg-gray-900/80 rounded-2xl border border-gray-700/30 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-blue focus:ring-offset-2 ${
+              className={`relative overflow-hidden bg-gray-900/90 rounded-2xl border border-gray-700/50 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-blue transition-all ${
                 isHighMatch 
-                  ? 'ring-2 ring-teal-blue ring-offset-2' 
+                  ? 'ring-2 ring-teal-blue/50' 
                   : isMediumMatch 
-                  ? 'ring-1 ring-ocean-blue'
+                  ? 'ring-1 ring-ocean-blue/50'
                   : ''
               }`}
             >
-              {/* Bond Print Badge - Bonded Design */}
-              {bondPrintScore && bondPrintScore >= 50 && (
-                <div className={`absolute top-2 right-2 z-10 ${
-                  isHighMatch 
-                    ? 'bg-gradient-to-r from-teal-blue to-lavender-mist' 
-                    : 'bg-ocean-blue'
-                } text-soft-cream text-[10px] font-bold px-2 py-1 rounded-full shadow-glow-teal flex items-center gap-1`}>
-                  <Sparkles className="w-3 h-3" />
-                  {bondPrintScore}% Match
-                </div>
-              )}
-              
-              <div className="aspect-[3/4] relative">
+              {/* Profile Picture - Top Section */}
+              <div className="relative w-full h-48 overflow-hidden">
                 <img
                   src={profile.imageUrl}
                   alt={profile.name}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-3 text-white text-left">
-                  <p className="text-sm font-semibold truncate">{profile.name}</p>
-                  <p className="text-xs text-gray-200 truncate">{profile.major}</p>
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {profile.lookingFor?.slice(0, 2).map((item: string, i: number) => {
-                      // Convert normalized format (study-partner) to display format (Study Partner)
-                      const displayText = item.split('-').map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1)
-                      ).join(' ');
-                      return (
-                        <span key={i} className="text-[10px] bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full whitespace-nowrap">
-                          {displayText}
-                        </span>
-                      );
-                    })}
+                {/* Verified Badge - Top Right */}
+                {bondPrintScore && bondPrintScore >= 70 && (
+                  <div className="absolute top-3 right-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-gray-900">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  </div>
+                )}
+              </div>
+
+              {/* Card Content */}
+              <div className="p-4 space-y-3">
+                {/* Name with Verified Badge */}
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-soft-cream truncate">{profile.name}</h3>
+                  {bondPrintScore && bondPrintScore >= 70 && (
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  )}
+                </div>
+
+                {/* Bio/Profession */}
+                {profile.bio && (
+                  <p className="text-sm text-soft-cream/70 line-clamp-2 leading-relaxed">
+                    {profile.bio}
+                  </p>
+                )}
+                {!profile.bio && profile.major && (
+                  <p className="text-sm text-soft-cream/70">
+                    {profile.major} {profile.year && `• ${profile.year}`}
+                  </p>
+                )}
+
+                {/* Stats Row */}
+                <div className="flex items-center gap-4 pt-2 border-t border-gray-700/50">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-soft-cream/60" />
+                    <span className="text-sm font-medium text-soft-cream">
+                      {profile.connectionsCount || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-soft-cream/60" />
+                    <span className="text-sm font-medium text-soft-cream">
+                      {profile.postsCount || 0}
+                    </span>
                   </div>
                 </div>
+
+                {/* Follow Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Handle follow action
+                  }}
+                  className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800/70 hover:bg-gray-700/70 text-soft-cream rounded-full text-sm font-medium transition-colors border border-gray-700/50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Connect
+                </button>
               </div>
             </button>
           );
