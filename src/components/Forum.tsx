@@ -545,7 +545,7 @@ export function Forum({ onPostComposerChange, openComposer, onComposerOpened }: 
   };
 
   return (
-    <div className="min-h-screen pb-20 w-full overflow-x-hidden bg-black" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+    <div className="min-h-screen pb-20 w-full overflow-x-hidden bg-black pt-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
 
       {/* Create Post Modal - Dark Mode */}
       <AnimatePresence>
@@ -614,48 +614,40 @@ export function Forum({ onPostComposerChange, openComposer, onComposerOpened }: 
                     )}
                     <div className="flex items-center justify-between mt-4 gap-3">
                       <div className="flex items-center gap-3 flex-1">
-                        {/* Anonymous Toggle - More Visible */}
+                        {/* Anonymous Toggle - Glowing when selected */}
                         <button
                           onClick={() => setIsAnonymous(!isAnonymous)}
                           className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold transition-all ${
                             isAnonymous
-                              ? 'bg-teal-blue text-white border-2 border-teal-blue shadow-lg shadow-teal-blue/30'
-                              : 'bg-gray-800/70 text-gray-400 border-2 border-gray-700/70'
+                              ? 'bg-teal-blue text-white border-2 border-teal-blue shadow-lg shadow-teal-blue/50 ring-2 ring-teal-blue/30'
+                              : 'bg-gray-800/70 text-gray-400 border-2 border-gray-700/70 hover:border-gray-600/70'
                           }`}
                         >
                           <span className={`w-2.5 h-2.5 rounded-full transition-all ${
-                            isAnonymous ? 'bg-white' : 'bg-gray-500'
+                            isAnonymous ? 'bg-white shadow-sm' : 'bg-gray-500'
                           }`} />
                           Anonymous
                         </button>
                         
-                        {/* Media Icons - Evenly Spaced */}
-                        <div className="flex gap-2">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleMediaSelect(e, 'image')}
-                            className="hidden"
-                            id="forum-image-upload"
-                          />
-                          <label htmlFor="forum-image-upload" className="cursor-pointer">
-                            <button className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-teal-blue transition-colors bg-gray-800/50 rounded-full">
-                              <ImageIcon className="w-4.5 h-4.5" />
-                            </button>
-                          </label>
-                          <input
-                            type="file"
-                            accept="video/*"
-                            onChange={(e) => handleMediaSelect(e, 'video')}
-                            className="hidden"
-                            id="forum-video-upload"
-                          />
-                          <label htmlFor="forum-video-upload" className="cursor-pointer">
-                            <button className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-lavender-mist transition-colors bg-gray-800/50 rounded-full">
-                              <Video className="w-4.5 h-4.5" />
-                            </button>
-                          </label>
-                        </div>
+                        {/* Single Media Button - Pics and Vids */}
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const type = file.type.startsWith('image/') ? 'image' : 'video';
+                              handleMediaSelect(e, type);
+                            }
+                          }}
+                          className="hidden"
+                          id="forum-media-upload"
+                        />
+                        <label htmlFor="forum-media-upload" className="cursor-pointer">
+                          <button className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-teal-blue transition-colors bg-gray-800/50 rounded-full">
+                            <ImageIcon className="w-4.5 h-4.5" />
+                          </button>
+                        </label>
                       </div>
                       
                       {/* Post Button */}
@@ -815,26 +807,30 @@ export function Forum({ onPostComposerChange, openComposer, onComposerOpened }: 
                       </div>
                     )}
 
-                    {/* Engagement Metrics - Properly Sized & Spaced */}
-                    <div className="flex items-center gap-4 pt-3 border-t border-soft-cream/10">
+                    {/* Engagement Metrics - Better Styled Pills */}
+                    <div className="flex items-center gap-2 pt-3 border-t border-gray-700/30">
                       <button
                         onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-1.5 text-soft-cream/60 hover:text-peach-glow transition-colors ${
-                          post.userLiked ? 'text-peach-glow' : ''
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          post.userLiked 
+                            ? 'bg-peach-glow/20 text-peach-glow border border-peach-glow/30' 
+                            : 'bg-gray-800/50 text-soft-cream/60 hover:bg-gray-700/50 border border-gray-700/30'
                         }`}
                       >
                         <Heart className={`w-4 h-4 ${post.userLiked ? 'fill-current' : ''}`} />
-                        <span className="text-xs font-medium">{post.likes}</span>
+                        <span>{post.likes}</span>
                       </button>
 
                       <button
                         onClick={() => handleDislike(post.id)}
-                        className={`flex items-center gap-1.5 text-soft-cream/60 hover:text-red-400 transition-colors ${
-                          post.userDisliked ? 'text-red-400' : ''
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          post.userDisliked 
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                            : 'bg-gray-800/50 text-soft-cream/60 hover:bg-gray-700/50 border border-gray-700/30'
                         }`}
                       >
                         <ThumbsDown className={`w-4 h-4 ${post.userDisliked ? 'fill-current' : ''}`} />
-                        <span className="text-xs font-medium">{post.dislikes}</span>
+                        <span>{post.dislikes}</span>
                       </button>
 
                       <button
@@ -845,143 +841,163 @@ export function Forum({ onPostComposerChange, openComposer, onComposerOpened }: 
                             loadComments(post.id);
                           }
                         }}
-                        className="flex items-center gap-1.5 text-soft-cream/60 hover:text-teal-blue transition-colors"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          showComments === post.id
+                            ? 'bg-teal-blue/20 text-teal-blue border border-teal-blue/30'
+                            : 'bg-gray-800/50 text-soft-cream/60 hover:bg-gray-700/50 border border-gray-700/30'
+                        }`}
                       >
                         <MessageCircle className="w-4 h-4" />
-                        <span className="text-xs font-medium">{post.comments}</span>
+                        <span>{post.comments}</span>
                       </button>
 
                       <button
                         onClick={() => openShareDialog(post.id)}
-                        className="flex items-center gap-1.5 text-soft-cream/60 hover:text-teal-blue transition-colors ml-auto"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800/50 text-soft-cream/60 hover:bg-gray-700/50 border border-gray-700/30 transition-all ml-auto"
                       >
                         <Share2 className="w-4 h-4" />
                       </button>
                     </div>
 
-                    {/* Preview Comments (1-2 comments) - Clean Design */}
-                    {!isExpanded && previewComments.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-soft-cream/10">
-                        <div className="space-y-2">
-                          {previewComments.map((comment) => (
-                            <div key={comment.id} className="flex gap-2 text-sm">
-                              <Avatar className="w-6 h-6 flex-shrink-0">
-                                <AvatarImage src={comment.authorAvatar} />
-                                <AvatarFallback className="bg-teal-blue/30 text-teal-blue text-xs font-bold">
-                                  {comment.isAnonymous ? '?' : comment.authorName[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-xs text-soft-cream">
-                                  {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
-                                </p>
-                                <p className="text-soft-cream/90 text-sm">{comment.content}</p>
-                              </div>
-                              {comment.canDelete && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 text-soft-cream/40 hover:text-red-400"
-                                  onClick={() => handleDeleteComment(post.id, comment.id)}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        {allComments.length > 2 && (
+                    {/* Top Comment Preview - Slack Thread Style */}
+                    {!showAllComments && previewComments.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-700/30">
+                        {/* Show only top comment */}
+                        {previewComments[0] && (
                           <button
                             onClick={() => {
-                              setExpandedPost(post.id);
+                              setShowComments(post.id);
                               if (!postComments[post.id]) {
                                 loadComments(post.id);
                               }
                             }}
-                            className="text-xs text-purple-600 font-medium mt-2 flex items-center gap-1"
+                            className="w-full text-left"
                           >
-                            View all {allComments.length} comments
+                            <div className="flex gap-2 text-sm group hover:bg-gray-800/30 rounded-lg p-2 -mx-2 transition-colors">
+                              <Avatar className="w-6 h-6 flex-shrink-0">
+                                <AvatarImage src={previewComments[0].authorAvatar} />
+                                <AvatarFallback className="bg-teal-blue/30 text-teal-blue text-xs font-bold">
+                                  {previewComments[0].isAnonymous ? '?' : previewComments[0].authorName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-xs text-soft-cream">
+                                    {previewComments[0].isAnonymous ? 'Anonymous Student' : previewComments[0].authorName}
+                                  </p>
+                                  <p className="text-soft-cream/90 text-xs">{previewComments[0].content}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        )}
+                        {allComments.length > 1 && (
+                          <button
+                            onClick={() => {
+                              setShowComments(post.id);
+                              if (!postComments[post.id]) {
+                                loadComments(post.id);
+                              }
+                            }}
+                            className="text-xs text-teal-blue font-medium mt-2 flex items-center gap-1 hover:text-teal-blue/80 transition-colors"
+                          >
+                            View {allComments.length} {allComments.length === 1 ? 'comment' : 'comments'}
                             <ChevronDown className="w-3 h-3" />
                           </button>
                         )}
                       </div>
                     )}
 
-                           {/* Expanded View / Full Comments - Bonded Design */}
-                           {(isExpanded || showAllComments) && (
-                             <motion.div
-                               initial={{ opacity: 0, height: 0 }}
-                               animate={{ opacity: 1, height: 'auto' }}
-                               exit={{ opacity: 0, height: 0 }}
-                               className="mt-3 pt-3 border-t border-soft-cream/10"
-                             >
-                               {isExpanded && (
-                                 <button
-                                   onClick={() => setExpandedPost(null)}
-                                   className="text-xs text-teal-blue font-medium mb-3 flex items-center gap-1 hover:text-lavender-mist transition-colors"
-                                 >
-                                   Show less
-                                   <ChevronUp className="w-3 h-3" />
-                                 </button>
-                               )}
-                               <div className="flex gap-2 mb-3">
-                                 <Input
-                                   placeholder="Add a comment..."
-                                   value={commentText}
-                                   onChange={(e) => setCommentText(e.target.value)}
-                                   onKeyPress={(e) => {
-                                     if (e.key === 'Enter') {
-                                       handleComment(post.id);
-                                     }
-                                   }}
-                                   className="flex-1 h-9 text-sm rounded-full bg-soft-cream/8 border-soft-cream/20 text-soft-cream placeholder:text-soft-cream/50 focus:border-teal-blue/40 focus:ring-1 focus:ring-teal-blue/20"
-                                 />
-                                 <Button
-                                   onClick={() => handleComment(post.id)}
-                                   size="sm"
-                                   className="h-9 rounded-full bg-gradient-to-r from-teal-blue to-ocean-blue text-soft-cream px-4 hover:opacity-90 transition-opacity"
-                                 >
-                                   <Send className="w-3.5 h-3.5" />
-                                 </Button>
-                               </div>
-                               <div className="space-y-2 max-h-96 overflow-y-auto">
-                                 {allComments.map((comment) => (
-                                   <div key={comment.id} className="flex gap-2 text-sm group">
-                                     <Avatar className="w-6 h-6 flex-shrink-0">
-                                       <AvatarImage src={comment.authorAvatar} />
-                                       <AvatarFallback className="bg-teal-blue/30 text-teal-blue text-xs font-bold">
-                                         {comment.isAnonymous ? '?' : comment.authorName[0]}
-                                       </AvatarFallback>
-                                     </Avatar>
-                                     <div className="flex-1 min-w-0">
-                                       <p className="font-semibold text-xs text-soft-cream">
-                                         {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
-                                       </p>
-                                       <p className="text-soft-cream/90 text-sm">{comment.content}</p>
-                                       <p className="text-[10px] text-soft-cream/60 mt-0.5">
-                                         {formatTimeAgo(comment.createdAt)}
-                                       </p>
-                                     </div>
-                                     {comment.canDelete && (
-                                       <Button
-                                         variant="ghost"
-                                         size="icon"
-                                         className="h-6 w-6 text-soft-cream/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                                         onClick={() => handleDeleteComment(post.id, comment.id)}
-                                       >
-                                         <Trash2 className="w-3 h-3" />
-                                       </Button>
-                                     )}
-                                   </div>
-                                 ))}
-                                 {allComments.length === 0 && (
-                                   <p className="text-xs text-soft-cream/50 text-center py-4">
-                                     No comments yet. Be the first!
-                                   </p>
-                                 )}
-                               </div>
-                             </motion.div>
-                           )}
+                    {/* Comment Thread - Instagram Style (Slack Thread) */}
+                    {showAllComments && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-3 pt-3 border-t border-gray-700/30"
+                      >
+                        {/* Close Thread Button */}
+                        <button
+                          onClick={() => setShowComments(null)}
+                          className="text-xs text-teal-blue font-medium mb-3 flex items-center gap-1 hover:text-teal-blue/80 transition-colors"
+                        >
+                          <ChevronUp className="w-3 h-3" />
+                          Close thread
+                        </button>
+                        
+                        {/* Comment Input - Instagram Style */}
+                        <div className="flex gap-2 mb-4">
+                          <Avatar className="w-8 h-8 flex-shrink-0">
+                            <AvatarImage src={userProfile?.profilePicture} />
+                            <AvatarFallback className="bg-teal-blue/30 text-teal-blue text-xs font-bold">
+                              {userProfile?.name?.[0] || 'A'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 flex gap-2">
+                            <Input
+                              placeholder="Add a comment..."
+                              value={commentText}
+                              onChange={(e) => setCommentText(e.target.value)}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleComment(post.id);
+                                }
+                              }}
+                              className="flex-1 h-9 text-sm rounded-full bg-gray-800/50 border-gray-700/50 text-soft-cream placeholder:text-gray-400 focus:border-teal-blue/40 focus:ring-1 focus:ring-teal-blue/20"
+                            />
+                            <Button
+                              onClick={() => handleComment(post.id)}
+                              size="sm"
+                              disabled={!commentText.trim()}
+                              className="h-9 rounded-full bg-teal-blue text-white px-4 hover:bg-teal-blue/90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Send className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Comments List - Instagram Style */}
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                          {allComments.map((comment) => (
+                            <div key={comment.id} className="flex gap-3 group">
+                              <Avatar className="w-8 h-8 flex-shrink-0">
+                                <AvatarImage src={comment.authorAvatar} />
+                                <AvatarFallback className="bg-teal-blue/30 text-teal-blue text-xs font-bold">
+                                  {comment.isAnonymous ? '?' : comment.authorName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-semibold text-sm text-soft-cream">
+                                    {comment.isAnonymous ? 'Anonymous Student' : comment.authorName}
+                                  </p>
+                                  <p className="text-xs text-gray-400">
+                                    {formatTimeAgo(comment.createdAt)}
+                                  </p>
+                                </div>
+                                <p className="text-sm text-soft-cream/90 leading-relaxed">{comment.content}</p>
+                              </div>
+                              {comment.canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => handleDeleteComment(post.id, comment.id)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          {allComments.length === 0 && (
+                            <p className="text-sm text-gray-400 text-center py-8">
+                              No comments yet. Be the first to comment!
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </motion.div>

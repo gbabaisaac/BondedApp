@@ -21,6 +21,8 @@ export function MainApp() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPostComposerOpen, setIsPostComposerOpen] = useState(false);
   const [shouldOpenComposer, setShouldOpenComposer] = useState(false);
+  const [showTopNav, setShowTopNav] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     // Check if user has seen tutorial
@@ -29,6 +31,29 @@ export function MainApp() {
       setShowTutorial(true);
     }
   }, []);
+
+  // Handle scroll for top nav (YouTube-style) - works with content area
+  useEffect(() => {
+    const contentArea = document.querySelector('[data-content-area]');
+    if (!contentArea) return;
+
+    const handleScroll = () => {
+      const currentScrollY = contentArea.scrollTop;
+      if (currentScrollY < 10) {
+        setShowTopNav(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down
+        setShowTopNav(false);
+      } else if (currentScrollY < lastScrollY) {
+        // Scrolling up
+        setShowTopNav(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    contentArea.addEventListener('scroll', handleScroll, { passive: true });
+    return () => contentArea.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Friend Mode uses the standard layout
   const profilePicture = getProfilePictureUrl(
@@ -51,8 +76,12 @@ export function MainApp() {
             overflow: 'hidden'
           }}
       >
-      {/* Top Navigation - Dark Mode */}
-      <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-2.5 flex items-center justify-between safe-top">
+      {/* Top Navigation - Hide/Show on Scroll (YouTube-style) */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-2.5 flex items-center justify-between safe-top transition-transform duration-300 ${
+          showTopNav ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
         {/* Left: Profile Icon */}
         <button
           onClick={() => setCurrentView('profile')}
@@ -110,7 +139,7 @@ export function MainApp() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden" style={{ paddingTop: showTopNav ? '3.5rem' : '0', transition: 'padding-top 0.3s' }}>
         <MobileLayout 
           activeTab={currentView} 
           onTabChange={setCurrentView} 

@@ -286,7 +286,7 @@ export function MyProfile() {
     );
   }
 
-  // Profile View (Default) - Tinder-like Design
+  // Profile View (Default) - Clean Modern Design
   const profilePhotos = userProfile.photos && userProfile.photos.length > 0 
     ? userProfile.photos 
     : userProfile.profilePicture 
@@ -318,128 +318,121 @@ export function MyProfile() {
         </div>
       </div>
 
-      {/* Profile Content - Tinder Style */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Large Photo Section */}
-        <div className="relative w-full" style={{ aspectRatio: '3/4', maxHeight: '70vh' }}>
-          {profilePhotos.length > 0 ? (
-            <img
-              src={profilePhotos[0]}
-              alt={userProfile.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-teal-blue to-ocean-blue flex items-center justify-center">
-              <Avatar className="w-32 h-32 border-4 border-white/20">
-                <AvatarFallback className="text-4xl bg-white/10 text-white">
-                  {getInitials(userProfile.name)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          )}
-          
-          {/* Gradient Overlay at Bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black via-black/80 to-transparent" />
-          
-          {/* Name and Age Overlay */}
-          <div className="absolute bottom-6 left-4 right-4">
-            <h1 className="text-3xl font-bold text-white mb-1">
-              {userProfile.name}
-              {userProfile.age && <span className="font-normal text-2xl ml-2">{userProfile.age}</span>}
-            </h1>
-            <div className="flex items-center gap-2 text-white/90 text-sm mb-2">
-              {userProfile.year && (
-                <>
-                  <GraduationCap className="w-4 h-4" />
-                  <span>{userProfile.year}</span>
-                </>
-              )}
-              {userProfile.major && (
-                <>
-                  <span>•</span>
-                  <span>{userProfile.major}</span>
-                </>
-              )}
-            </div>
-            {userProfile.school && (
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <MapPin className="w-4 h-4" />
-                <span>{userProfile.school}</span>
-              </div>
-            )}
+      {/* Profile Content - Clean Modern Design */}
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        {/* Profile Picture - Large Circular */}
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            <Avatar className="w-32 h-32 border-4 border-gradient-to-br from-teal-blue to-ocean-blue">
+              {profilePhotos.length > 0 ? (
+                <AvatarImage src={profilePhotos[0]} className="object-cover" />
+              ) : null}
+              <AvatarFallback className="text-4xl bg-gradient-to-br from-teal-blue to-ocean-blue text-white font-bold">
+                {getInitials(userProfile.name)}
+              </AvatarFallback>
+            </Avatar>
+            <button className="absolute bottom-0 right-0 w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center border-2 border-gray-700 hover:bg-gray-700 transition-colors">
+              <Camera className="w-5 h-5 text-soft-cream" />
+            </button>
           </div>
         </div>
 
-        {/* Bio Section */}
-        <div className="px-4 py-6 space-y-4">
-          {userProfile.bio && (
-            <div>
-              <h3 className="text-lg font-semibold text-soft-cream mb-2">About</h3>
-              <p className="text-soft-cream/80 leading-relaxed">{userProfile.bio}</p>
-            </div>
-          )}
-
-          {/* Interests */}
-          {userProfile.interests && userProfile.interests.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold text-soft-cream mb-3">Interests</h3>
-              <div className="flex flex-wrap gap-2">
-                {userProfile.interests.map((interest, idx) => (
-                  <Badge
-                    key={idx}
-                    className="bg-gray-800/50 text-soft-cream border border-gray-700/50 px-3 py-1.5 text-sm"
-                  >
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Looking For */}
-          {userProfile.lookingFor && userProfile.lookingFor.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold text-soft-cream mb-3">Looking For</h3>
-              <div className="flex flex-wrap gap-2">
-                {userProfile.lookingFor.map((item, idx) => (
-                  <Badge
-                    key={idx}
-                    className="bg-teal-blue/20 text-teal-blue border border-teal-blue/30 px-3 py-1.5 text-sm"
-                  >
-                    {item}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Bond Print */}
-          {userProfile.bondPrint && (
-            <div className="bg-gradient-to-br from-teal-blue/10 to-ocean-blue/10 rounded-2xl p-4 border border-teal-blue/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-teal-blue" />
-                <h3 className="font-semibold text-soft-cream">Bond Print</h3>
-              </div>
-              {userProfile.bondPrint.personality && (
-                <div>
-                  <Badge className="bg-teal-blue text-white mb-2">
-                    {userProfile.bondPrint.personality.primaryType}
-                  </Badge>
-                  <p className="text-sm text-soft-cream/80">
-                    {userProfile.bondPrint.personality.description}
-                  </p>
-                </div>
-              )}
+        {/* Name and Basic Info */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-soft-cream mb-1">
+            {userProfile.name}
+            {userProfile.age && <span className="font-normal text-xl ml-2">{userProfile.age}</span>}
+          </h1>
+          <div className="flex items-center justify-center gap-2 text-soft-cream/70 text-sm mb-2">
+            {userProfile.year && (
+              <>
+                <GraduationCap className="w-4 h-4" />
+                <span>{userProfile.year}</span>
+              </>
+            )}
+            {userProfile.major && (
+              <>
+                <span>•</span>
+                <span>{userProfile.major}</span>
+              </>
+            )}
+          </div>
+          {userProfile.school && (
+            <div className="flex items-center justify-center gap-2 text-soft-cream/60 text-sm">
+              <MapPin className="w-4 h-4" />
+              <span>{userProfile.school}</span>
             </div>
           )}
         </div>
+
+        {/* Bio Section */}
+        {userProfile.bio && (
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-soft-cream mb-2">About</h3>
+            <p className="text-soft-cream/80 leading-relaxed text-sm">{userProfile.bio}</p>
+          </div>
+        )}
+
+        {/* Interests - Tag Style */}
+        {userProfile.interests && userProfile.interests.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-soft-cream mb-3">Interests</h3>
+            <div className="flex flex-wrap gap-2">
+              {userProfile.interests.map((interest, idx) => (
+                <Badge
+                  key={idx}
+                  className="bg-gray-800/70 text-soft-cream border border-gray-700/50 px-3 py-1.5 text-sm rounded-full"
+                >
+                  {interest}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Looking For */}
+        {userProfile.lookingFor && userProfile.lookingFor.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-soft-cream mb-3">Looking For</h3>
+            <div className="flex flex-wrap gap-2">
+              {userProfile.lookingFor.map((item, idx) => (
+                <Badge
+                  key={idx}
+                  className="bg-teal-blue/20 text-teal-blue border border-teal-blue/30 px-3 py-1.5 text-sm rounded-full"
+                >
+                  {item}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bond Print */}
+        {userProfile.bondPrint && (
+          <div className="bg-gradient-to-br from-teal-blue/10 to-ocean-blue/10 rounded-2xl p-4 border border-teal-blue/20 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-teal-blue" />
+              <h3 className="font-semibold text-soft-cream">Bond Print</h3>
+            </div>
+            {userProfile.bondPrint.personality && (
+              <div>
+                <Badge className="bg-teal-blue text-white mb-2">
+                  {userProfile.bondPrint.personality.primaryType}
+                </Badge>
+                <p className="text-sm text-soft-cream/80">
+                  {userProfile.bondPrint.personality.description}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Buttons - Bottom */}
       <div className="sticky bottom-0 bg-black/80 backdrop-blur-xl border-t border-gray-800/50 px-4 py-4 flex items-center justify-center gap-4">
         <Button
           onClick={() => setCurrentView('edit')}
-          className="flex-1 bg-gray-800/50 text-soft-cream hover:bg-gray-700/50 border border-gray-700/50"
+          className="flex-1 bg-teal-blue text-white hover:bg-teal-blue/90"
         >
           <Edit3 className="w-4 h-4 mr-2" />
           Edit Profile

@@ -562,8 +562,8 @@ export function ChatView() {
   // Chat List View
   if (!selectedChat && !isAIChat) {
     return (
-      <div className="h-full flex flex-col bg-white">
-        <div className="bg-white border-b px-4 py-4">
+      <div className="h-full flex flex-col bg-black">
+        <div className="bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-4">
           <h1 className="text-xl font-semibold">Messages</h1>
         </div>
 
@@ -576,7 +576,7 @@ export function ChatView() {
               {isFeatureEnabled('AI_ASSISTANT_ENABLED') && (
                 <div
                   onClick={() => setIsAIChat(true)}
-                  className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 border-b-2 border-[#2E7B91]/20"
+                  className="p-4 hover:bg-gray-800/50 cursor-pointer transition-colors flex items-center gap-3 border-b border-gray-700/30"
                 >
                   <div className="w-14 h-14 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center">
                     <Sparkles className="w-7 h-7 text-white" />
@@ -585,7 +585,7 @@ export function ChatView() {
                     <div className="flex items-baseline justify-between mb-1">
                       <h3 className="font-medium">Link - AI Assistant</h3>
                     </div>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-soft-cream/80 truncate">
                       Find co-founders, study partners, and connections
                     </p>
                   </div>
@@ -618,7 +618,7 @@ export function ChatView() {
                       role="button"
                       tabIndex={0}
                       aria-label={`Chat with ${chat.otherUser?.name || 'user'}`}
-                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-[#2E7B91]"
+                      className="p-4 hover:bg-gray-800/50 cursor-pointer transition-colors flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-teal-blue"
                     >
                       <Avatar className="w-14 h-14">
                         <AvatarImage src={chat.otherUser?.profilePicture} />
@@ -637,18 +637,18 @@ export function ChatView() {
                               </span>
                             )}
                             {chat.lastMessage && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-400">
                                 {formatTime(chat.lastMessageTimestamp || new Date().toISOString())}
                               </span>
                             )}
                           </div>
                         </div>
                         {chat.lastMessage ? (
-                          <p className={`text-sm truncate ${chat.unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-600'}`}>
+                          <p className={`text-sm truncate ${chat.unreadCount > 0 ? 'font-medium text-soft-cream' : 'text-soft-cream/70'}`}>
                             {chat.lastMessage}
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-400 italic">
+                          <p className="text-sm text-gray-500 italic">
                             Start a conversation
                           </p>
                         )}
@@ -717,16 +717,16 @@ export function ChatView() {
     }
     
     return (
-      <div className="h-full flex flex-col bg-white">
+      <div className="h-full flex flex-col bg-black">
         {/* AI Chat Header */}
-        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
+        <div className="bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-3 flex items-center gap-3 flex-shrink-0">
           <button
             onClick={() => {
               setIsAIChat(false);
               setSuggestedProfiles([]);
               setPendingIntroRequest(null);
             }}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors -ml-2"
+            className="p-2 hover:bg-gray-800/50 rounded-full transition-colors -ml-2 text-soft-cream"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -737,7 +737,7 @@ export function ChatView() {
 
           <div className="flex-1 min-w-0">
             <h2 className="font-medium">Link - AI Assistant</h2>
-            <p className="text-xs text-gray-600">Finding connections for you</p>
+            <p className="text-xs text-gray-400">Finding connections for you</p>
           </div>
         </div>
 
@@ -756,7 +756,7 @@ export function ChatView() {
                   <Sparkles className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-lg font-medium mb-2">Hi! I'm Link</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-soft-cream/80 mb-4">
                   I can help you find co-founders, study partners, roommates, and friends on campus. Just tell me what you're looking for!
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
@@ -795,12 +795,12 @@ export function ChatView() {
                           className={`px-4 py-2 rounded-2xl ${
                             isUser
                               ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-100 text-gray-900'
+                              : 'bg-gray-800/50 text-soft-cream'
                           }`}
                         >
                           <p className="text-sm leading-relaxed">{message.content}</p>
                         </div>
-                        <span className="text-xs text-gray-500 mt-1 px-2">
+                        <span className="text-xs text-gray-400 mt-1 px-2">
                           {formatTime(message.timestamp)}
                         </span>
                       </div>
@@ -876,9 +876,9 @@ export function ChatView() {
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-medium text-sm">{profile.name}</h4>
-                                  <p className="text-xs text-gray-600">{profile.major} • {profile.year}</p>
+                                  <p className="text-xs text-soft-cream/70">{profile.major} • {profile.year}</p>
                                   {profile.bio && (
-                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{profile.bio}</p>
+                                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{profile.bio}</p>
                                   )}
                                   <Button
                                     size="sm"
@@ -926,7 +926,7 @@ export function ChatView() {
                   <div className="w-8 h-8 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                  <div className="bg-gray-100 rounded-2xl px-4 py-2">
+                  <div className="bg-gray-800/50 rounded-2xl px-4 py-2">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -941,7 +941,7 @@ export function ChatView() {
 
         {/* AI Message Input */}
         <div
-          className="bg-white border-t px-4 flex-shrink-0"
+          className="bg-gray-900/95 backdrop-blur-xl border-t border-gray-700/50 px-4 flex-shrink-0"
           style={{
             paddingTop: '0.75rem',
             paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'
@@ -978,12 +978,12 @@ export function ChatView() {
 
   // Chat View
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-black">
       {/* Chat Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
+      <div className="bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-3 flex items-center gap-3 flex-shrink-0">
         <button
           onClick={() => setSelectedChat(null)}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors -ml-2"
+          className="p-2 hover:bg-gray-800/50 rounded-full transition-colors -ml-2 text-soft-cream"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -997,7 +997,7 @@ export function ChatView() {
 
         <div className="flex-1 min-w-0">
           <h2 className="font-medium">{selectedChat.otherUser?.name || 'Unknown'}</h2>
-          <p className="text-xs text-gray-600">{selectedChat.otherUser?.major || ''}</p>
+          <p className="text-xs text-soft-cream/70">{selectedChat.otherUser?.major || ''}</p>
         </div>
       </div>
 
@@ -1012,8 +1012,8 @@ export function ChatView() {
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <Smile className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-600">
+              <Smile className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+              <p className="text-sm text-soft-cream/70">
                 Say hi to {selectedChat.otherUser?.name}!
               </p>
             </div>
@@ -1062,7 +1062,7 @@ export function ChatView() {
                     <p className="text-sm leading-relaxed">{message.content}</p>
                   </div>
                   <div className={`flex items-center gap-1 mt-1 px-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-400">
                       {formatTime(message.timestamp)}
                     </span>
                     {isMe && readReceiptsEnabled && (
@@ -1070,7 +1070,7 @@ export function ChatView() {
                         {message.readBy && message.readBy.length > 0 && message.readBy.includes(selectedChat.otherUser?.id) ? (
                           <CheckCheck className="w-3.5 h-3.5 text-indigo-400" />
                         ) : (
-                          <Check className="w-3.5 h-3.5 text-gray-400" />
+                          <Check className="w-3.5 h-3.5 text-gray-500" />
                         )}
                       </div>
                     )}

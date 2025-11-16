@@ -108,6 +108,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
     >
       {/* Main Content Area */}
       <div
+        data-content-area
         className="flex-1 overflow-y-auto overflow-x-hidden"
         style={{
           WebkitOverflowScrolling: 'touch',
