@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { projectId } from '../utils/supabase/config';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
@@ -52,6 +52,7 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [bondPrintScores, setBondPrintScores] = useState<Record<string, number>>({});
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadProfiles();
@@ -264,18 +265,81 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
     );
   }
 
+  const activeFilterCount = Object.values(filters).filter(
+    (v) => v && v !== 'all' && v !== 'All'
+  ).length;
+
+  const clearFilters = () => {
+    setFilters({
+      major: 'all',
+      year: 'all',
+      lookingFor: 'all',
+      academicGoal: 'all',
+      leisureGoal: 'all',
+      sortBy: 'newest',
+    });
+  };
+
   return (
     <div className="min-h-screen bg-black">
-      {/* Stats Bar - Moved to Top - Dark Mode */}
-      <div className="bg-gray-900/80 rounded-2xl mx-4 mt-3 mb-3 px-4 py-3 flex justify-around text-center border border-gray-700/30">
-        <div>
-          <p className="font-semibold text-teal-blue">{filteredProfiles.length}</p>
-          <p className="text-xs text-gray-400">Students</p>
+      {/* Stats Bar with Expandable Filters */}
+      <div className="mx-4 mt-3 mb-3">
+        <div className="bg-gray-900/80 rounded-2xl px-4 py-3 border border-gray-700/30">
+          <div className="flex items-center justify-between">
+            {/* Student Counter */}
+            <div className="text-center">
+              <p className="font-semibold text-teal-blue">{filteredProfiles.length}</p>
+              <p className="text-xs text-gray-400">Students</p>
+            </div>
+            
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                showFilters || activeFilterCount > 0
+                  ? 'bg-teal-blue text-white'
+                  : 'bg-gray-800/50 text-soft-cream/70'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
+              {showFilters ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
-        <div>
-          <p className="font-semibold text-teal-blue">Active</p>
-          <p className="text-xs text-gray-400">Community</p>
-        </div>
+
+        {/* Expandable Filters Panel */}
+        {showFilters && (
+          <div className="mt-2 bg-gray-900/80 rounded-2xl p-4 border border-gray-700/30">
+            <EnhancedSearch
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              filters={filters}
+              onFiltersChange={setFilters}
+              availableMajors={availableMajors}
+              availableAcademicGoals={availableAcademicGoals}
+              availableLeisureGoals={availableLeisureGoals}
+            />
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800/50 text-soft-cream/70 rounded-full text-sm font-medium hover:bg-gray-700/50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Clear Filters
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Grid */}

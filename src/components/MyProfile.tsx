@@ -286,316 +286,172 @@ export function MyProfile() {
     );
   }
 
-  // Profile View (Default)
+  // Profile View (Default) - Tinder-like Design
+  const profilePhotos = userProfile.photos && userProfile.photos.length > 0 
+    ? userProfile.photos 
+    : userProfile.profilePicture 
+      ? [userProfile.profilePicture] 
+      : [];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-4 flex items-center justify-between">
-        <h2 className="text-xl">My Profile</h2>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => setCurrentView('settings')}
-        >
-          <Settings className="w-5 h-5" />
-        </Button>
+    <div className="min-h-screen bg-black flex flex-col">
+      {/* Header - Minimal */}
+      <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-xl border-b border-gray-800/50 px-4 py-3 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-soft-cream">My Profile</h2>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setCurrentView('edit')}
+            className="text-soft-cream/80 hover:text-soft-cream"
+          >
+            <Edit3 className="w-5 h-5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setCurrentView('settings')}
+            className="text-soft-cream/80 hover:text-soft-cream"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
-      {/* Profile Content */}
-      <div className="p-4 space-y-4">
-        {/* Profile Completeness */}
-        <ProfileCompleteness
-          userProfile={userProfile}
-          onComplete={() => setCurrentView('edit')}
-        />
-
-        {/* Profile Header Card */}
-        <Card>
-          <div className="relative">
-            <div className="h-32 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-t-lg" />
-            <div className="px-4 pb-4">
-              <div className="relative">
-                <Avatar className="w-24 h-24 border-4 border-white -mt-12 mb-3">
-                  <AvatarImage src={userProfile.profilePicture} />
-                  <AvatarFallback className="text-2xl bg-gradient-to-br from-indigo-400 to-purple-400 text-white">
-                    {getInitials(userProfile.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <button className="absolute left-16 -mt-8 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow">
-                  <Camera className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-              
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h2 className="text-2xl mb-1">{userProfile.name}</h2>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                    <GraduationCap className="w-4 h-4" />
-                    <span>{userProfile.year || 'Student'}</span>
-                    {userProfile.major && <span>• {userProfile.major}</span>}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{userProfile.school}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Mail className="w-4 h-4" />
-                    <span>{userProfile.email}</span>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentView('edit')}
-                  className="gap-2"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  Edit
-                </Button>
-              </div>
+      {/* Profile Content - Tinder Style */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Large Photo Section */}
+        <div className="relative w-full" style={{ aspectRatio: '3/4', maxHeight: '70vh' }}>
+          {profilePhotos.length > 0 ? (
+            <img
+              src={profilePhotos[0]}
+              alt={userProfile.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-teal-blue to-ocean-blue flex items-center justify-center">
+              <Avatar className="w-32 h-32 border-4 border-white/20">
+                <AvatarFallback className="text-4xl bg-white/10 text-white">
+                  {getInitials(userProfile.name)}
+                </AvatarFallback>
+              </Avatar>
             </div>
+          )}
+          
+          {/* Gradient Overlay at Bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black via-black/80 to-transparent" />
+          
+          {/* Name and Age Overlay */}
+          <div className="absolute bottom-6 left-4 right-4">
+            <h1 className="text-3xl font-bold text-white mb-1">
+              {userProfile.name}
+              {userProfile.age && <span className="font-normal text-2xl ml-2">{userProfile.age}</span>}
+            </h1>
+            <div className="flex items-center gap-2 text-white/90 text-sm mb-2">
+              {userProfile.year && (
+                <>
+                  <GraduationCap className="w-4 h-4" />
+                  <span>{userProfile.year}</span>
+                </>
+              )}
+              {userProfile.major && (
+                <>
+                  <span>•</span>
+                  <span>{userProfile.major}</span>
+                </>
+              )}
+            </div>
+            {userProfile.school && (
+              <div className="flex items-center gap-2 text-white/80 text-sm">
+                <MapPin className="w-4 h-4" />
+                <span>{userProfile.school}</span>
+              </div>
+            )}
           </div>
-        </Card>
+        </div>
 
-        {/* Social Connections */}
-        <SocialConnections
-          onUpdate={async () => {
-            const { refreshUserProfile } = useAppStore.getState();
-            await refreshUserProfile();
-          }}
-        />
+        {/* Bio Section */}
+        <div className="px-4 py-6 space-y-4">
+          {userProfile.bio && (
+            <div>
+              <h3 className="text-lg font-semibold text-soft-cream mb-2">About</h3>
+              <p className="text-soft-cream/80 leading-relaxed">{userProfile.bio}</p>
+            </div>
+          )}
 
-        {/* Bond Print */}
-        {userProfile.bondPrint && (
-          <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                <h3 className="font-medium">Your Bond Print</h3>
-              </div>
-              {userProfile.bondPrint.personality && (
-                <div className="mb-3">
-                  <Badge className="bg-purple-600 text-white mb-2">
-                    {userProfile.bondPrint.personality.primaryType}
-                  </Badge>
-                  <p className="text-sm text-gray-700">
-                    {userProfile.bondPrint.personality.description}
-                  </p>
-                </div>
-              )}
-              {userProfile.bondPrint.summary && (
-                <p className="text-sm text-gray-600 mb-3">
-                  {userProfile.bondPrint.summary}
-                </p>
-              )}
-              {userProfile.bondPrint.values && userProfile.bondPrint.values.length > 0 && (
-                <div>
-                  <p className="text-xs text-gray-500 mb-2">Core Values:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {userProfile.bondPrint.values.map((value: string) => (
-                      <Badge key={value} variant="outline" className="text-xs border-purple-300">
-                        {value}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Bio */}
-        {userProfile.bio && (
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-sm text-gray-500 mb-2">About</h3>
-              <p className="text-gray-700">{userProfile.bio}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Looking For */}
-        {userProfile.lookingFor && userProfile.lookingFor.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-sm text-gray-500 mb-3">Looking For</h3>
+          {/* Interests */}
+          {userProfile.interests && userProfile.interests.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-soft-cream mb-3">Interests</h3>
               <div className="flex flex-wrap gap-2">
-                {userProfile.lookingFor.map((item: string) => {
-                  // Convert normalized format (study-partner) to display format (Study Partner)
-                  const displayText = item.split('-').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ');
-                  return (
-                    <Badge key={item} className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 whitespace-nowrap">
-                      {displayText}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Interests */}
-        {userProfile.interests && userProfile.interests.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-sm text-gray-500 mb-3">Interests</h3>
-              <div className="flex flex-wrap gap-2">
-                {userProfile.interests.map((interest: string) => (
-                  <Badge key={interest} variant="outline">
+                {userProfile.interests.map((interest, idx) => (
+                  <Badge
+                    key={idx}
+                    className="bg-gray-800/50 text-soft-cream border border-gray-700/50 px-3 py-1.5 text-sm"
+                  >
                     {interest}
                   </Badge>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* Personality */}
-        {userProfile.personality && userProfile.personality.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-sm text-gray-500 mb-3">Personality</h3>
+          {/* Looking For */}
+          {userProfile.lookingFor && userProfile.lookingFor.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-soft-cream mb-3">Looking For</h3>
               <div className="flex flex-wrap gap-2">
-                {userProfile.personality.map((trait: string) => (
-                  <Badge key={trait} variant="secondary">{trait}</Badge>
+                {userProfile.lookingFor.map((item, idx) => (
+                  <Badge
+                    key={idx}
+                    className="bg-teal-blue/20 text-teal-blue border border-teal-blue/30 px-3 py-1.5 text-sm"
+                  >
+                    {item}
+                  </Badge>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          )}
 
-        {/* Living Habits */}
-        {userProfile.livingHabits && (
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-sm text-gray-500 mb-4">Living Habits</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {userProfile.livingHabits.sleepSchedule && (
-                  <div className="flex items-center gap-2">
-                    {getSleepIcon()}
-                    <div>
-                      <p className="text-xs text-gray-500">Sleep</p>
-                      <p className="text-sm capitalize">{userProfile.livingHabits.sleepSchedule}</p>
-                    </div>
-                  </div>
-                )}
-                {userProfile.livingHabits.cleanliness && (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    <div>
-                      <p className="text-xs text-gray-500">Cleanliness</p>
-                      <p className="text-sm capitalize">{userProfile.livingHabits.cleanliness}</p>
-                    </div>
-                  </div>
-                )}
-                {userProfile.livingHabits.guests && (
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    <div>
-                      <p className="text-xs text-gray-500">Guests</p>
-                      <p className="text-sm capitalize">{userProfile.livingHabits.guests}</p>
-                    </div>
-                  </div>
-                )}
-                {userProfile.livingHabits.noise && (
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4" />
-                    <div>
-                      <p className="text-xs text-gray-500">Noise</p>
-                      <p className="text-sm capitalize">{userProfile.livingHabits.noise}</p>
-                    </div>
-                  </div>
-                )}
+          {/* Bond Print */}
+          {userProfile.bondPrint && (
+            <div className="bg-gradient-to-br from-teal-blue/10 to-ocean-blue/10 rounded-2xl p-4 border border-teal-blue/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-teal-blue" />
+                <h3 className="font-semibold text-soft-cream">Bond Print</h3>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Social Media */}
-        {userProfile.socials && (
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-sm text-gray-500 mb-3">Social Media</h3>
-              <div className="space-y-2">
-                {userProfile.socials.instagram && (
-                  <a
-                    href={`https://instagram.com/${userProfile.socials.instagram.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-indigo-600 hover:underline"
-                  >
-                    <Instagram className="w-4 h-4" />
-                    {userProfile.socials.instagram}
-                  </a>
-                )}
-                {userProfile.socials.twitter && (
-                  <a
-                    href={`https://x.com/${userProfile.socials.twitter.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-indigo-600 hover:underline"
-                  >
-                    <Twitter className="w-4 h-4" />
-                    {userProfile.socials.twitter}
-                  </a>
-                )}
-                {userProfile.socials.snapchat && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500">Snapchat:</span>
-                    <span>{userProfile.socials.snapchat}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Quick Actions */}
-        <Card>
-          <CardContent className="pt-6 space-y-2">
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2"
-              onClick={() => setCurrentView('settings')}
-            >
-              <Settings className="w-4 h-4" />
-              Settings & Privacy
-            </Button>
-          </CardContent>
-        </Card>
+              {userProfile.bondPrint.personality && (
+                <div>
+                  <Badge className="bg-teal-blue text-white mb-2">
+                    {userProfile.bondPrint.personality.primaryType}
+                  </Badge>
+                  <p className="text-sm text-soft-cream/80">
+                    {userProfile.bondPrint.personality.description}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Logout Confirmation Dialog */}
-      <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Logout?</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to logout? You'll need to sign in again to access your account.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-3 mt-4">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setShowLogoutConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="flex-1 bg-red-600 hover:bg-red-700"
-              onClick={() => {
-                setShowLogoutConfirm(false);
-                handleLogout();
-              }}
-            >
-              Logout
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Action Buttons - Bottom */}
+      <div className="sticky bottom-0 bg-black/80 backdrop-blur-xl border-t border-gray-800/50 px-4 py-4 flex items-center justify-center gap-4">
+        <Button
+          onClick={() => setCurrentView('edit')}
+          className="flex-1 bg-gray-800/50 text-soft-cream hover:bg-gray-700/50 border border-gray-700/50"
+        >
+          <Edit3 className="w-4 h-4 mr-2" />
+          Edit Profile
+        </Button>
+        <Button
+          onClick={() => setCurrentView('settings')}
+          variant="outline"
+          className="border-gray-700/50 text-soft-cream"
+        >
+          <Settings className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }

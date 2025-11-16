@@ -112,7 +112,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
-          paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom))', // Space for bottom nav
+          paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))', // Space for bottom nav
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}
@@ -120,15 +120,19 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         {children}
       </div>
 
-      {/* Bottom Navigation - Regular Bar Style (Instagram-like) */}
+      {/* Bottom Navigation - Translucent with Heavy Blur (YouTube-style) */}
       {!hideNavigation && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-xl border-t border-gray-700/50"
+          className="fixed bottom-0 left-0 right-0 z-50"
           style={{
             paddingBottom: 'env(safe-area-inset-bottom)',
+            background: 'rgba(17, 24, 39, 0.7)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
           }}
         >
-          <div className="flex items-center justify-between px-2 py-2">
+          <div className="flex items-center justify-between px-2 py-3">
             {/* First two tabs */}
             {tabs.slice(0, 2).map((tab) => {
               const Icon = tab.icon;
@@ -138,45 +142,28 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className="flex-1 flex flex-col items-center justify-center min-w-0 transition-all duration-300 relative"
+                  className="flex-1 flex items-center justify-center transition-all duration-300 relative"
                 >
                   {/* Active Tab Indicator */}
                   {isActive && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-teal-blue rounded-full" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-teal-blue rounded-full" />
                   )}
                   
                   {/* Icon Container */}
-                  <div className="relative flex items-center justify-center mb-1">
+                  <div className="relative flex items-center justify-center">
                     <Icon 
-                      className={`w-5 h-5 transition-all duration-300 ${
+                      className={`w-6 h-6 transition-all duration-300 ${
                         isActive 
                           ? 'fill-teal-blue text-teal-blue scale-110' 
                           : 'text-soft-cream/60'
                       }`} 
                     />
                     {tab.badge > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-md">
+                      <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full min-w-[18px] h-4.5 px-1.5 flex items-center justify-center shadow-md">
                         {tab.badge > 9 ? '9+' : tab.badge}
                       </span>
                     )}
                   </div>
-                  
-                  {/* Label */}
-                  <span 
-                    className={`text-[11px] font-medium transition-all duration-300 leading-tight text-center truncate w-full px-0.5 ${
-                      isActive 
-                        ? 'text-teal-blue' 
-                        : 'text-soft-cream/60'
-                    }`}
-                    style={{
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {tab.label}
-                  </span>
                 </button>
               );
             })}
@@ -188,9 +175,9 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                   onPostComposerOpen();
                 }
               }}
-              className="w-12 h-12 bg-gradient-to-r from-teal-blue to-ocean-blue rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform mx-2"
+              className="w-14 h-14 bg-gradient-to-r from-teal-blue to-ocean-blue rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform mx-2"
             >
-              <Plus className="w-6 h-6 text-white" />
+              <Plus className="w-7 h-7 text-white" />
             </button>
 
             {/* Last two tabs */}
@@ -202,45 +189,28 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className="flex-1 flex flex-col items-center justify-center min-w-0 transition-all duration-300 relative"
+                  className="flex-1 flex items-center justify-center transition-all duration-300 relative"
                 >
                   {/* Active Tab Indicator */}
                   {isActive && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-teal-blue rounded-full" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-teal-blue rounded-full" />
                   )}
                   
                   {/* Icon Container */}
-                  <div className="relative flex items-center justify-center mb-1">
+                  <div className="relative flex items-center justify-center">
                     <Icon 
-                      className={`w-5 h-5 transition-all duration-300 ${
+                      className={`w-6 h-6 transition-all duration-300 ${
                         isActive 
                           ? 'fill-teal-blue text-teal-blue scale-110' 
                           : 'text-soft-cream/60'
                       }`} 
                     />
                     {tab.badge > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-md">
+                      <span className="absolute -top-1 -right-1 bg-peach-glow text-midnight-indigo text-[10px] font-bold rounded-full min-w-[18px] h-4.5 px-1.5 flex items-center justify-center shadow-md">
                         {tab.badge > 9 ? '9+' : tab.badge}
                       </span>
                     )}
                   </div>
-                  
-                  {/* Label */}
-                  <span 
-                    className={`text-[11px] font-medium transition-all duration-300 leading-tight text-center truncate w-full px-0.5 ${
-                      isActive 
-                        ? 'text-teal-blue' 
-                        : 'text-soft-cream/60'
-                    }`}
-                    style={{
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {tab.label}
-                  </span>
                 </button>
               );
             })}

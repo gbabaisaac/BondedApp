@@ -11,7 +11,7 @@ import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimiza
 import { useAppStore } from '../store/useAppStore';
 import { MessageCircle } from 'lucide-react';
 
-type View = 'discover' | 'matches' | 'messages' | 'forum' | 'scrapbook';
+type View = 'discover' | 'matches' | 'messages' | 'forum' | 'scrapbook' | 'profile';
 
 export function MainApp() {
   const { userProfile, accessToken, handleLogout } = useAppStore();
@@ -53,11 +53,9 @@ export function MainApp() {
       >
       {/* Top Navigation - Dark Mode */}
       <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-2.5 flex items-center justify-between safe-top">
-        {/* Left: Bonded Icon */}
+        {/* Left: Profile Icon */}
         <button
-          onClick={() => {
-            // Profile access
-          }}
+          onClick={() => setCurrentView('profile')}
           className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0"
         >
           <img
@@ -154,6 +152,9 @@ export function MainApp() {
             <Scrapbook
               onExit={() => setCurrentView('discover')}
             />
+          )}
+          {currentView === 'profile' && (
+            <MyProfile />
           )}
         </MobileLayout>
       </div>

@@ -279,41 +279,59 @@ export function MatchSuggestions() {
       <div className="glass-card mx-4 mt-4 mb-2 px-4 py-4">
         <h1 className="text-2xl font-bold text-gradient mb-4">Friends</h1>
         
-        {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          <Button
-            variant={activeTab === 'friends' ? 'default' : 'outline'}
-            size="sm"
+        {/* Tabs - Mobile Optimized Pills */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <button
             onClick={() => setActiveTab('friends')}
-            className={activeTab === 'friends' ? 'btn-primary' : 'btn-secondary'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              activeTab === 'friends' 
+                ? 'bg-teal-blue text-white shadow-lg' 
+                : 'bg-gray-800/50 text-soft-cream/70'
+            }`}
           >
-            <Users className="w-4 h-4 mr-2" />
-            My Friends
+            <Users className="w-4 h-4" />
+            <span>My Friends</span>
             {connections.length > 0 && (
-              <Badge className="ml-2 bg-teal-blue text-soft-cream">{connections.length}</Badge>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                activeTab === 'friends' 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-teal-blue/20 text-teal-blue'
+              }`}>
+                {connections.length}
+              </span>
             )}
-          </Button>
-          <Button
-            variant={activeTab === 'requests' ? 'default' : 'outline'}
-            size="sm"
+          </button>
+          <button
             onClick={() => setActiveTab('requests')}
-            className={activeTab === 'requests' ? 'btn-primary' : 'btn-secondary'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              activeTab === 'requests' 
+                ? 'bg-teal-blue text-white shadow-lg' 
+                : 'bg-gray-800/50 text-soft-cream/70'
+            }`}
           >
-            <UserCheck className="w-4 h-4 mr-2" />
-            Requests
+            <UserCheck className="w-4 h-4" />
+            <span>Requests</span>
             {pendingIntros.length > 0 && (
-              <Badge className="ml-2 bg-peach-glow text-midnight-indigo">{pendingIntros.length}</Badge>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                activeTab === 'requests' 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-peach-glow/20 text-peach-glow'
+              }`}>
+                {pendingIntros.length}
+              </span>
             )}
-          </Button>
-          <Button
-            variant={activeTab === 'suggestions' ? 'default' : 'outline'}
-            size="sm"
+          </button>
+          <button
             onClick={() => setActiveTab('suggestions')}
-            className={activeTab === 'suggestions' ? 'btn-primary' : 'btn-secondary'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              activeTab === 'suggestions' 
+                ? 'bg-teal-blue text-white shadow-lg' 
+                : 'bg-gray-800/50 text-soft-cream/70'
+            }`}
           >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Suggestions
-          </Button>
+            <Sparkles className="w-4 h-4" />
+            <span>Suggestions</span>
+          </button>
         </div>
       </div>
 
