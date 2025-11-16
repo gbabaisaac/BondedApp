@@ -62,9 +62,11 @@ interface ForumComment {
 
 interface ForumProps {
   onPostComposerChange?: (isOpen: boolean) => void;
+  openComposer?: boolean; // External trigger to open composer
+  onComposerOpened?: () => void; // Callback when composer is opened
 }
 
-export function Forum({ onPostComposerChange }: ForumProps = {}) {
+export function Forum({ onPostComposerChange, openComposer, onComposerOpened }: ForumProps = {}) {
   const userProfile = useUserProfile();
   const accessToken = useAccessToken();
   const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -92,6 +94,19 @@ export function Forum({ onPostComposerChange }: ForumProps = {}) {
       onPostComposerChange(showPostComposer);
     }
   }, [showPostComposer, onPostComposerChange]);
+
+  // Handle external trigger to open composer
+  useEffect(() => {
+    if (openComposer && !showPostComposer) {
+      setShowPostComposer(true);
+      if (onPostComposerChange) {
+        onPostComposerChange(true);
+      }
+      if (onComposerOpened) {
+        onComposerOpened();
+      }
+    }
+  }, [openComposer, showPostComposer, onPostComposerChange, onComposerOpened]);
 
   useEffect(() => {
     loadPosts();
@@ -530,24 +545,7 @@ export function Forum({ onPostComposerChange }: ForumProps = {}) {
   };
 
   return (
-    <div className="min-h-screen pb-28 w-full overflow-x-hidden bg-black" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-      {/* Quad Section Header - Dark Mode */}
-      <div className="px-4 pt-4 pb-3">
-        <h1 className="text-2xl font-bold text-soft-cream mb-1 text-center">
-          The Quad
-        </h1>
-        <p className="text-sm text-soft-cream/60 text-center">Anonymous campus-wide posts.</p>
-      </div>
-
-      {/* Floating Create Post Button - Above Bottom Nav, Centered */}
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40" style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}>
-        <button
-          onClick={() => setShowPostComposer(true)}
-          className="w-14 h-14 bg-gradient-to-r from-teal-blue to-ocean-blue rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-        >
-          <Plus className="w-6 h-6 text-white" />
-        </button>
-      </div>
+    <div className="min-h-screen pb-20 w-full overflow-x-hidden bg-black" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
 
       {/* Create Post Modal - Dark Mode */}
       <AnimatePresence>

@@ -40,3 +40,4 @@ echo "  2. npx cap sync"
 echo "  3. Build in Xcode/Android Studio"
 
 
+

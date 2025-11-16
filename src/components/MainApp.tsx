@@ -9,7 +9,7 @@ import { AppTutorial } from './AppTutorial';
 import { Forum } from './Forum';
 import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimization';
 import { useAppStore } from '../store/useAppStore';
-import { MessageCircle, Search, Bell } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
 type View = 'discover' | 'matches' | 'messages' | 'forum' | 'scrapbook';
 
@@ -20,6 +20,7 @@ export function MainApp() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPostComposerOpen, setIsPostComposerOpen] = useState(false);
+  const [shouldOpenComposer, setShouldOpenComposer] = useState(false);
 
   useEffect(() => {
     // Check if user has seen tutorial
@@ -65,30 +66,45 @@ export function MainApp() {
           />
         </button>
         
-        {/* Center: Bonded Title */}
+        {/* Center: School Name/Logo */}
         <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setCurrentView('discover')}>
-          <img 
-            src="/Bonded_transparent_icon.png" 
-            alt="bonded logo" 
-            className="w-5 h-5"
-          />
-          <h1 className="text-base text-soft-cream font-medium tracking-tight">
-            bonded
+          {userProfile?.schoolLogo ? (
+            <img 
+              src={userProfile.schoolLogo} 
+              alt="school logo" 
+              className="w-5 h-5"
+            />
+          ) : (
+            <img 
+              src="/Bonded_transparent_icon.png" 
+              alt="school logo" 
+              className="w-5 h-5"
+            />
+          )}
+          <h1 className="text-base text-soft-cream font-medium tracking-tight max-w-[120px] truncate">
+            {userProfile?.school ? (() => {
+              const schoolName = userProfile.school;
+              // Abbreviate if longer than 15 characters
+              if (schoolName.length > 15) {
+                // Try to abbreviate intelligently (e.g., "University of California" -> "UC")
+                const words = schoolName.split(' ');
+                if (words.length > 2) {
+                  return words.map(w => w[0]).join('').toUpperCase();
+                }
+                return schoolName.substring(0, 12) + '...';
+              }
+              return schoolName;
+            })() : 'Bonded'}
           </h1>
         </div>
         
-        {/* Right: Search & Notifications */}
+        {/* Right: Messages */}
         <div className="flex items-center gap-2">
-          <button
-            className="w-9 h-9 flex items-center justify-center text-soft-cream/80 hover:text-soft-cream transition-colors"
-          >
-            <Search className="w-5 h-5" />
-          </button>
           <button
             onClick={() => setCurrentView('messages')}
             className="w-9 h-9 flex items-center justify-center text-soft-cream/80 hover:text-soft-cream transition-colors relative"
           >
-            <Bell className="w-5 h-5" />
+            <MessageCircle className="w-5 h-5" />
             {unreadCount > 0 && (
               <span className="absolute top-1 right-1 w-2 h-2 bg-peach-glow rounded-full" />
             )}
@@ -102,6 +118,14 @@ export function MainApp() {
           onTabChange={setCurrentView} 
           hideNavigation={isProfileDetailOpen || isPostComposerOpen}
           onUnreadCountChange={setUnreadCount}
+          onPostComposerOpen={() => {
+            if (currentView === 'forum') {
+              setIsPostComposerOpen(true);
+            } else {
+              setCurrentView('forum');
+              setShouldOpenComposer(true);
+            }
+          }}
         >
           {currentView === 'discover' && (
             <InstagramGrid 
@@ -115,7 +139,16 @@ export function MainApp() {
             <ChatView />
           )}
           {currentView === 'forum' && (
-            <Forum onPostComposerChange={setIsPostComposerOpen} />
+            <Forum 
+              onPostComposerChange={(isOpen) => {
+                setIsPostComposerOpen(isOpen);
+                if (!isOpen) {
+                  setShouldOpenComposer(false);
+                }
+              }}
+              openComposer={shouldOpenComposer}
+              onComposerOpened={() => setShouldOpenComposer(false)}
+            />
           )}
           {currentView === 'scrapbook' && (
             <Scrapbook

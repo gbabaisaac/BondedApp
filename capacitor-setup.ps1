@@ -36,3 +36,4 @@ Write-Host "  2. npx cap sync" -ForegroundColor White
 Write-Host "  3. Build in Xcode/Android Studio" -ForegroundColor White
 
 
+

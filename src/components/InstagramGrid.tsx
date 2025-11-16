@@ -266,28 +266,11 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Enhanced Search and Filter Bar - Dark Mode */}
-      <div className="sticky top-[60px] bg-gray-900/95 border-b border-gray-700/50 px-4 py-2 z-10">
-        <EnhancedSearch
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filters={filters}
-          onFiltersChange={setFilters}
-          availableMajors={availableMajors}
-          availableAcademicGoals={availableAcademicGoals}
-          availableLeisureGoals={availableLeisureGoals}
-        />
-      </div>
-
-      {/* Stats Bar - Dark Mode */}
-      <div className="bg-gray-900/80 rounded-2xl mx-4 my-3 px-4 py-3 flex justify-around text-center border border-gray-700/30">
+      {/* Stats Bar - Moved to Top - Dark Mode */}
+      <div className="bg-gray-900/80 rounded-2xl mx-4 mt-3 mb-3 px-4 py-3 flex justify-around text-center border border-gray-700/30">
         <div>
           <p className="font-semibold text-teal-blue">{filteredProfiles.length}</p>
           <p className="text-xs text-gray-400">Students</p>
-        </div>
-        <div>
-          <p className="font-semibold text-soft-cream">{userProfile?.school || 'Your School'}</p>
-          <p className="text-xs text-gray-400">University</p>
         </div>
         <div>
           <p className="font-semibold text-teal-blue">Active</p>
