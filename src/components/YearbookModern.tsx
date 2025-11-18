@@ -64,7 +64,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
   }, [accessToken, activeFilter]);
 
   // Calculate distance between two touch points
-  const getTouchDistance = (touch1: Touch, touch2: Touch): number => {
+  const getTouchDistance = (touch1: React.Touch, touch2: React.Touch): number => {
     const dx = touch2.clientX - touch1.clientX;
     const dy = touch2.clientY - touch1.clientY;
     return Math.sqrt(dx * dx + dy * dy);
@@ -91,13 +91,15 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
     if (Math.abs(distanceChange) > threshold) {
       if (distanceChange > 0 && pinchStartColumns < 5) {
         // Pinch out - expand (more columns)
-        const newColumns = Math.min(5, (pinchStartColumns + 1) as 2 | 3 | 4 | 5);
+        const nextCol = pinchStartColumns + 1;
+        const newColumns = (nextCol <= 5 ? nextCol : 5) as 2 | 3 | 4 | 5;
         setGridColumns(newColumns);
         setPinchStartDistance(currentDistance);
         setPinchStartColumns(newColumns);
       } else if (distanceChange < 0 && pinchStartColumns > 2) {
         // Pinch in - contract (fewer columns)
-        const newColumns = Math.max(2, (pinchStartColumns - 1) as 2 | 3 | 4 | 5);
+        const nextCol = pinchStartColumns - 1;
+        const newColumns = (nextCol >= 2 ? nextCol : 2) as 2 | 3 | 4 | 5;
         setGridColumns(newColumns);
         setPinchStartDistance(currentDistance);
         setPinchStartColumns(newColumns);
@@ -121,10 +123,14 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
     if (Math.abs(delta) > threshold) {
       if (delta < 0 && gridColumns < 5) {
         // Scroll up - expand (more columns)
-        setGridColumns(Math.min(5, (gridColumns + 1) as 2 | 3 | 4 | 5));
+        const nextCol = gridColumns + 1;
+        const newColumns = (nextCol <= 5 ? nextCol : 5) as 2 | 3 | 4 | 5;
+        setGridColumns(newColumns);
       } else if (delta > 0 && gridColumns > 2) {
         // Scroll down - contract (fewer columns)
-        setGridColumns(Math.max(2, (gridColumns - 1) as 2 | 3 | 4 | 5));
+        const nextCol = gridColumns - 1;
+        const newColumns = (nextCol >= 2 ? nextCol : 2) as 2 | 3 | 4 | 5;
+        setGridColumns(newColumns);
       }
     }
   };
@@ -151,7 +157,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
         filters.year = activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1);
       }
       
-      const data = await getAllProfiles(accessToken, filters);
+      const data = await getAllProfiles(accessToken, filters) as any[];
       
       // Transform backend data to match component interface
       const transformedProfiles = data.map((p: any) => ({
@@ -207,7 +213,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
       <ProfileDetailView
         profile={filteredProfiles[selectedProfileIndex]}
         onClose={handleCloseProfileDetail}
-        accessToken={accessToken}
+        accessToken={accessToken || undefined}
       />
     );
   }
@@ -250,29 +256,6 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
             Bonded
           </h1>
           <div className="flex items-center gap-2">
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1" style={{ borderRadius: '8px' }}>
-              <button
-                onClick={() => setViewMode('card')}
-                className="p-1.5 rounded transition-all"
-                style={{
-                  background: viewMode === 'card' ? 'white' : 'transparent',
-                  boxShadow: viewMode === 'card' ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
-                }}
-              >
-                <List className="w-4 h-4" style={{ color: viewMode === 'card' ? '#FF6B6B' : '#6B6B6B' }} />
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className="p-1.5 rounded transition-all"
-                style={{
-                  background: viewMode === 'grid' ? 'white' : 'transparent',
-                  boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
-                }}
-              >
-                <LayoutGrid className="w-4 h-4" style={{ color: viewMode === 'grid' ? '#FF6B6B' : '#6B6B6B' }} />
-              </button>
-            </div>
             <button 
               className="w-10 h-10 rounded-full flex items-center justify-center border transition-all hover:border-pink-500 hover:scale-105"
               style={{ 
@@ -585,7 +568,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
                         {profile.school || 'University of Illinois Urbana-Champaign'}
                       </div>
                     </div>
-                    {profile.mutualFriends > 0 && (
+                    {profile.mutualFriends !== undefined && profile.mutualFriends > 0 && (
                       <div 
                         className="px-2.5 py-1 rounded-xl text-xs font-semibold whitespace-nowrap"
                         style={{ 
