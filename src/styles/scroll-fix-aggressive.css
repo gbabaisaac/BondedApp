@@ -1,0 +1,120 @@
+/* AGGRESSIVE SCROLL FIXES FOR ALL BROWSERS */
+
+/* Lock html and body to prevent outer scroll - EXCEPT on Welcome screen */
+html:not(:has([class*="WelcomeScreen"])) {
+  position: fixed;
+  height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+body:not(:has([class*="WelcomeScreen"])) {
+  position: fixed;
+  height: 100%;
+  height: 100vh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* When on Welcome screen, allow natural scroll */
+html:has([class*="WelcomeScreen"]) {
+  position: relative;
+  height: auto;
+  overflow: visible;
+}
+
+body:has([class*="WelcomeScreen"]) {
+  position: relative;
+  height: auto;
+  overflow: visible;
+}
+
+/* Onboarding container should fill viewport */
+.onboarding-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100vh;
+  height: 100dvh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Content areas MUST scroll */
+[class*="InterestsPersonality"] [class*="content"],
+[class*="Goals"] [class*="content"],
+[class*="BasicProfile"] [class*="content"],
+[class*="SchoolSelection"] [class*="content"],
+[class*="PhotoUpload"] [class*="content"] {
+  /* Force scrolling */
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  
+  /* Flex properties */
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  
+  /* Prevent scroll blocking */
+  overscroll-behavior-y: contain !important;
+  -webkit-overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
+  -ms-touch-action: pan-y !important;
+  
+  /* GPU acceleration */
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
+  will-change: scroll-position !important;
+  
+  /* Ensure content is layered properly */
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Container must be flex column and not scroll */
+[class*="InterestsPersonality"] [class*="container"],
+[class*="Goals"] [class*="container"],
+[class*="BasicProfile"] [class*="container"],
+[class*="SchoolSelection"] [class*="container"],
+[class*="PhotoUpload"] [class*="container"] {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .onboarding-container {
+    height: -webkit-fill-available !important;
+  }
+  
+  [class*="content"] {
+    -webkit-overflow-scrolling: touch !important;
+    -webkit-transform: translateZ(0) !important;
+  }
+}
+
+/* Firefox specific */
+@-moz-document url-prefix() {
+  [class*="content"] {
+    overflow-y: scroll !important;
+    scrollbar-width: thin !important;
+  }
+}
+
+/* Edge/Chrome specific */
+@supports (overflow: overlay) {
+  [class*="content"] {
+    overflow-y: overlay !important;
+  }
+}
+

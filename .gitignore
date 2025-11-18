@@ -1,80 +1,37 @@
 # Dependencies
-node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+node_modules
+/.pnp
+.pnp.js
 
-# Build outputs
-dist/
-build/
-*.local
+# Testing
+/coverage
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Next.js
+/.next/
+/out/
 
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Production
+/build
+
+# Misc
 .DS_Store
+*.pem
 
-# Logs
-logs
-*.log
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-# Testing
-coverage/
-.nyc_output/
-
-# Temporary files
-*.tmp
-*.temp
-.cache/
-
-# Claude AI
-.claude/
-
-# OS files
-Thumbs.db
-.DS_Store
+# Local env files
+.env*.local
+.env
 
 # Vercel
 .vercel
 
 # TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
-# Windows reserved device names (cannot be used as filenames)
+# Windows reserved names
 NUL
-CON
-PRN
-AUX
-COM1
-COM2
-COM3
-COM4
-COM5
-COM6
-COM7
-COM8
-COM9
-LPT1
-LPT2
-LPT3
-LPT4
-LPT5
-LPT6
-LPT7
-LPT8
-LPT9

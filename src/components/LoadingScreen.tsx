@@ -1,6 +1,9 @@
-import { motion } from 'motion/react';
+import React from 'react';
+import { motion } from 'framer-motion';
 
 export function LoadingScreen() {
+  console.log('⏳ Loading Screen rendered');
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#F9F6F3] to-[#EAEAEA]">
       <div className="text-center">

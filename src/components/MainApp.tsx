@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MobileLayout } from './MobileLayout';
-import { InstagramGrid } from './InstagramGrid';
-import { ChatView } from './ChatView';
-import { MatchSuggestions } from './MatchSuggestions';
-import { MyProfile } from './MyProfile';
+import { YearbookModern } from './YearbookModern';
+import { ForumModern } from './ForumModern';
+import { FriendsModern } from './FriendsModern';
+import { MessagesModern } from './MessagesModern';
+import { ProfileModern } from './ProfileModern';
 import { Scrapbook } from './Scrapbook';
 import { AppTutorial } from './AppTutorial';
-import { Forum } from './Forum';
+import { PostComposerDialog } from './PostComposerDialog';
 import { getProfilePictureUrl, getLazyImageProps } from '../utils/image-optimization';
 import { useAppStore } from '../store/useAppStore';
 import { MessageCircle } from 'lucide-react';
@@ -69,18 +70,21 @@ export function MainApp() {
           onSkip={() => setShowTutorial(false)}
         />
       )}
-      <div
-        className="fixed inset-0 flex flex-col bg-black"
-          style={{
-            height: '100dvh',
-            overflow: 'hidden'
-          }}
-      >
-      {/* Top Navigation - Hide/Show on Scroll (YouTube-style) */}
+    <div
+        className="fixed inset-0 flex flex-col"
+        style={{
+          height: '100dvh',
+          overflow: 'hidden',
+          background: 'linear-gradient(180deg, #FAFAFF 0%, #F3F4FF 100%)'
+        }}
+    >
+      {/* Top Navigation - Hidden for modern views */}
+      {false && (
       <div 
-        className={`fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-xl border-b border-gray-700/50 px-4 py-2.5 flex items-center justify-between safe-top transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b px-4 py-2.5 flex items-center justify-between safe-top transition-transform duration-300 shadow-md ${
           showTopNav ? 'translate-y-0' : '-translate-y-full'
         }`}
+        style={{ borderColor: '#E8E8F0' }}
       >
         {/* Left: Profile Icon */}
         <button
@@ -102,13 +106,18 @@ export function MainApp() {
               className="w-5 h-5"
             />
           ) : (
-            <img 
-              src="/Bonded_transparent_icon.png" 
+          <img 
+            src="/Bonded_transparent_icon.png" 
               alt="school logo" 
               className="w-5 h-5"
-            />
+          />
           )}
-          <h1 className="text-base text-soft-cream font-medium tracking-tight max-w-[120px] truncate">
+          <h1 className="text-base font-bold tracking-tight max-w-[120px] truncate" style={{ 
+            background: 'linear-gradient(135deg, #FF6B6B 0%, #A78BFA 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
             {userProfile?.school ? (() => {
               const schoolName = userProfile.school;
               // Abbreviate if longer than 15 characters
@@ -138,8 +147,9 @@ export function MainApp() {
           </button>
         </div>
       </div>
+      )}
 
-      <div className="flex-1 overflow-hidden" style={{ paddingTop: showTopNav ? '3.5rem' : '0', transition: 'padding-top 0.3s' }}>
+      <div className="flex-1 overflow-hidden" style={{ paddingTop: '0' }}>
         <MobileLayout 
           activeTab={currentView} 
           onTabChange={setCurrentView} 
@@ -147,34 +157,50 @@ export function MainApp() {
           onUnreadCountChange={setUnreadCount}
           onPostComposerOpen={() => {
             if (currentView === 'forum') {
-              setIsPostComposerOpen(true);
+              // Toggle composer - if already open, close it
+              setIsPostComposerOpen(prev => {
+                const newState = !prev;
+                // If closing, also reset the shouldOpenComposer flag
+                if (!newState) {
+                  setShouldOpenComposer(false);
+                }
+                return newState;
+              });
             } else {
               setCurrentView('forum');
               setShouldOpenComposer(true);
+              setIsPostComposerOpen(true);
             }
           }}
         >
           {currentView === 'discover' && (
-            <InstagramGrid 
+            <YearbookModern 
               onProfileDetailOpen={setIsProfileDetailOpen}
+              onNavigateToProfile={() => setCurrentView('profile')}
             />
           )}
           {currentView === 'matches' && (
-            <MatchSuggestions />
+            <FriendsModern onNavigateToProfile={() => setCurrentView('profile')} />
           )}
           {currentView === 'messages' && (
-            <ChatView />
+            <MessagesModern onNavigateToProfile={() => setCurrentView('profile')} />
           )}
           {currentView === 'forum' && (
-            <Forum 
+            <ForumModern 
               onPostComposerChange={(isOpen) => {
-                setIsPostComposerOpen(isOpen);
-                if (!isOpen) {
-                  setShouldOpenComposer(false);
+                // Prevent rapid state changes
+                if (isPostComposerOpen !== isOpen) {
+                  setIsPostComposerOpen(isOpen);
+                  if (!isOpen) {
+                    setShouldOpenComposer(false);
+                  }
                 }
               }}
               openComposer={shouldOpenComposer}
-              onComposerOpened={() => setShouldOpenComposer(false)}
+              onComposerOpened={() => {
+                setShouldOpenComposer(false);
+              }}
+              onNavigateToProfile={() => setCurrentView('profile')}
             />
           )}
           {currentView === 'scrapbook' && (
@@ -183,7 +209,7 @@ export function MainApp() {
             />
           )}
           {currentView === 'profile' && (
-            <MyProfile />
+            <ProfileModern onBack={() => setCurrentView('discover')} />
           )}
         </MobileLayout>
       </div>

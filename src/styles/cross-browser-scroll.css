@@ -1,0 +1,150 @@
+/* Cross-Browser Scroll Fixes */
+/* Ensures scrolling works on Chrome, Safari, Firefox, Edge, and all mobile browsers */
+
+/* Force content areas to be scrollable */
+[class*="content"] {
+  /* Ensure scroll works */
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  
+  /* iOS Safari smooth scrolling */
+  -webkit-overflow-scrolling: touch !important;
+  
+  /* Firefox scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: #D1D1E0 #F3F4FF;
+  
+  /* Force GPU acceleration for smooth scroll */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: scroll-position;
+  
+  /* Prevent scroll blocking */
+  overscroll-behavior-y: contain;
+  -webkit-overscroll-behavior-y: contain;
+  
+  /* Allow vertical touch gestures */
+  touch-action: pan-y;
+  -webkit-touch-action: pan-y;
+  
+  /* Ensure content takes space */
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+/* Ensure containers don't interfere with scroll */
+[class*="container"] {
+  /* Allow container to flex within parent */
+  height: 100% !important;
+  min-height: 0 !important;
+  
+  /* Prevent container from scrolling */
+  overflow: hidden !important;
+  
+  /* Flexbox for proper content sizing */
+  display: flex !important;
+  flex-direction: column !important;
+  
+  /* Position relative for fixed elements */
+  position: relative !important;
+}
+
+/* Webkit scrollbar styling (Chrome, Safari, Edge) */
+[class*="content"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[class*="content"]::-webkit-scrollbar-track {
+  background: #F3F4FF;
+  border-radius: 10px;
+}
+
+[class*="content"]::-webkit-scrollbar-thumb {
+  background: #D1D1E0;
+  border-radius: 10px;
+  border: 2px solid #F3F4FF;
+}
+
+[class*="content"]::-webkit-scrollbar-thumb:hover {
+  background: #9B9B9B;
+}
+
+/* Fix for screens with back button header */
+[class*="ScreenHeader"] {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+/* Fix for bottom CTA buttons */
+[class*="bottomCta"],
+[class*="bottom-cta"],
+[class*="BottomCta"] {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  flex-shrink: 0;
+  pointer-events: auto !important;
+  touch-action: auto !important;
+}
+
+[class*="bottomCta"] button,
+[class*="bottom-cta"] button,
+[class*="BottomCta"] button {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+}
+
+/* Ensure proper spacing for fixed bottom button */
+[class*="content"] {
+  padding-bottom: 180px !important;
+}
+
+/* Mobile specific enhancements */
+@media (max-width: 768px) {
+  [class*="content"] {
+    /* Force scroll on mobile */
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    /* Prevent bounce at top/bottom */
+    overscroll-behavior: contain !important;
+  }
+}
+
+/* Very small screens */
+@media (max-height: 600px) {
+  [class*="content"] {
+    padding-bottom: 200px !important;
+  }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  [class*="content"] {
+    padding-bottom: 160px !important;
+  }
+}
+
+/* Fix for iOS Safari address bar */
+@supports (-webkit-touch-callout: none) {
+  [class*="container"] {
+    height: -webkit-fill-available !important;
+  }
+  
+  [class*="content"] {
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* Firefox specific */
+@-moz-document url-prefix() {
+  [class*="content"] {
+    overflow-y: scroll !important;
+    scrollbar-width: thin !important;
+  }
+}
+
+

@@ -115,16 +115,33 @@ export const useAppStore = create<AppStore>()(
       },
 
       // Load user profile from backend
-      loadUserProfile: async (userId: string) => {
+      loadUserProfile: async (userId: string, isNewUser = false) => {
         try {
+          // If it's a new user from signup, skip profile load and go straight to setup
+          if (isNewUser) {
+            if (import.meta.env.DEV) {
+              console.log('New user - going to profile setup');
+            }
+            set({ appState: 'profile-setup' });
+            return;
+          }
+          
           if (import.meta.env.DEV) {
             console.log('Loading profile for user:', userId);
           }
+          
+          const accessToken = get().accessToken;
+          if (!accessToken) {
+            console.error('No access token available');
+            set({ appState: 'profile-setup' });
+            return;
+          }
+          
           const response = await fetch(
             `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/profile/${userId}`,
             {
               headers: {
-                'Authorization': `Bearer ${publicAnonKey}`,
+                'Authorization': `Bearer ${accessToken}`,
               },
             }
           );
@@ -142,9 +159,16 @@ export const useAppStore = create<AppStore>()(
             } else {
               set({ appState: 'main' });
             }
-          } else {
+          } else if (response.status === 404) {
+            // Profile doesn't exist yet - go to setup
             if (import.meta.env.DEV) {
-              console.log('Profile not found, going to profile setup');
+              console.log('Profile not found (404), going to profile setup');
+            }
+            set({ appState: 'profile-setup' });
+          } else {
+            // Other error - log and go to setup
+            if (import.meta.env.DEV) {
+              console.error('Profile load error:', response.status, response.statusText);
             }
             set({ appState: 'profile-setup' });
           }
@@ -157,10 +181,10 @@ export const useAppStore = create<AppStore>()(
       },
 
       // Handle successful authentication
-      handleAuthSuccess: async (token: string, userId: string) => {
-        console.log('Auth success, loading profile for user:', userId);
-        set({ accessToken: token });
-        await get().loadUserProfile(userId);
+      handleAuthSuccess: async (token: string, userId: string, isNewUser = false) => {
+        console.log('Auth success, loading profile for user:', userId, 'isNewUser:', isNewUser);
+        set({ accessToken: token, userId });
+        await get().loadUserProfile(userId, isNewUser);
       },
 
       // Handle logout

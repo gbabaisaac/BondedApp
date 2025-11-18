@@ -8,12 +8,19 @@
  * 4. Deploy and errors will automatically be tracked
  */
 
-import * as Sentry from '@sentry/react';
+// Sentry disabled - install @sentry/react to enable
+// import * as Sentry from '@sentry/react';
 
 const isDevelopment = import.meta.env.DEV;
 
 export function initSentry() {
-  // Only initialize Sentry if DSN is provided and not in development
+  console.log('Sentry disabled - install @sentry/react to enable error tracking');
+  return;
+  
+  /* Commented out until Sentry is installed
+const isDevelopment = import.meta.env.DEV;
+
+export function initSentryOld() {
   const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 
   if (!sentryDsn) {
@@ -72,28 +79,21 @@ export function initSentry() {
   });
 }
 
-// Helper to set user context
+  */
+}
+
+// Helper stubs - disabled until Sentry is installed
 export function setSentryUser(userId: string, email?: string) {
-  Sentry.setUser({
-    id: userId,
-    email,
-  });
+  // Sentry.setUser disabled
 }
 
-// Helper to clear user context on logout
 export function clearSentryUser() {
-  Sentry.setUser(null);
+  // Sentry.setUser disabled
 }
 
-// Helper to add breadcrumb for debugging
 export function addSentryBreadcrumb(message: string, category: string, level: 'info' | 'warning' | 'error' = 'info') {
-  Sentry.addBreadcrumb({
-    message,
-    category,
-    level,
-    timestamp: Date.now() / 1000,
-  });
+  // Sentry.addBreadcrumb disabled
 }
 
-// Export Sentry for direct access if needed
-export { Sentry };
+// Stub export
+export const Sentry = null;

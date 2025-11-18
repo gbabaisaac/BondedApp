@@ -485,22 +485,22 @@ export function MatchSuggestions() {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {suggestions.map((suggestion) => (
-                      <Card 
+                        <Card 
                         key={suggestion.id} 
                         className="glass-card glass-card-hover overflow-hidden"
                         onClick={() => setSelectedProfile(suggestion)}
-                      >
-                        <CardContent className="p-0">
+                        >
+                          <CardContent className="p-0">
                           <div className="h-32 bg-gradient-to-br from-lavender-mist to-peach-glow relative">
-                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="absolute inset-0 flex items-center justify-center">
                               <Avatar className="w-20 h-20 border-4 border-soft-cream/20">
                                 <AvatarImage src={suggestion.profilePicture || suggestion.imageUrl} />
                                 <AvatarFallback className="text-xl bg-soft-cream text-lavender-mist">
                                   {getInitials(suggestion.name || 'U')}
-                                </AvatarFallback>
-                              </Avatar>
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
                             </div>
-                          </div>
                           <div className="p-3 text-center bg-midnight-indigo/50">
                             <h3 className="font-medium text-sm mb-1 text-soft-cream">{suggestion.name || 'Unknown'}</h3>
                             <p className="text-xs text-soft-cream/60 mb-2">{suggestion.major || ''}</p>
@@ -516,9 +516,9 @@ export function MatchSuggestions() {
                               <Send className="w-3 h-3 mr-1" />
                               Connect
                             </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
+                            </div>
+                          </CardContent>
+                        </Card>
                     ))}
                   </div>
                 )}

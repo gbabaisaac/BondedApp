@@ -6,6 +6,7 @@ import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { SchoolSelector } from './SchoolSelector';
 import { 
   ArrowRight, 
@@ -20,6 +21,7 @@ import {
   Sun,
   Users,
   Volume2,
+  MapPin,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
@@ -249,8 +251,9 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
     }
     // Step 3 (Photos) - make optional but show warning
     if (step === 3 && photos.length === 0) {
-      const proceed = window.confirm('Add a photo later? You can skip for now and add photos in your profile.');
-      if (!proceed) return;
+      toast.info('You can add photos later in your profile settings', {
+        duration: 3000,
+      });
     }
     // Steps 4-9 are all optional - no validation needed
     // Step 10 (Bond Print) is optional - can skip
@@ -410,6 +413,18 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
 
   const handleComplete = async () => {
     try {
+      if (!accessToken) {
+        toast.error('Please log in to create your profile');
+        console.error('❌ No access token available. User may not be authenticated.');
+        return;
+      }
+
+      // Log for debugging in dev
+      if (import.meta.env.DEV) {
+        console.log('✅ Access token available:', accessToken.substring(0, 20) + '...');
+        console.log('📝 Profile data:', { name, school, major, year });
+      }
+
       // Process academic goals (include custom if "Other" selected)
       const processedAcademicGoals = academicGoals.map(g => {
         if (g === 'Other' && customAcademicGoal) {
@@ -426,32 +441,46 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
         return g.toLowerCase().replace(/ /g, '-');
       });
 
+      // Validate required fields
+      if (!name || !name.trim()) {
+        toast.error('Please enter your name');
+        return;
+      }
+      if (!school || !school.trim()) {
+        toast.error('Please select your school');
+        return;
+      }
+      if (!age || isNaN(parseInt(age)) || parseInt(age) < 18) {
+        toast.error('Please enter a valid age (18+)');
+        return;
+      }
+
       const profileData = {
-        name,
-        school,
+        name: name.trim(),
+        school: school.trim(),
         age: parseInt(age),
-        major: major === 'Other' ? customMajor : major,
-        year,
-        bio,
-        interests: selectedInterests,
-        personality: selectedTraits,
+        major: major === 'Other' ? (customMajor?.trim() || '') : (major || ''),
+        year: year || '',
+        bio: bio?.trim() || '',
+        interests: selectedInterests || [],
+        personality: selectedTraits || [],
         lookingFor: lookingFor.map(item => {
           // Extract the text without emoji
           return item.replace(/^[^\s]+\s/, '').toLowerCase().replace(/ /g, '-');
         }),
-        photos,
+        photos: photos || [],
         profilePicture: photos[0] || '',
-        sleepSchedule,
-        cleanliness,
-        guests,
-        noise,
+        sleepSchedule: sleepSchedule || 'moderate',
+        cleanliness: cleanliness || 'moderate',
+        guests: guests || 'sometimes',
+        noise: noise || 'moderate',
         goals: {
-          academic: processedAcademicGoals,
-          leisure: processedLeisureGoals,
-          career: careerGoal.trim() || undefined,
-          personal: personalGoal.trim() || undefined,
+          academic: processedAcademicGoals || [],
+          leisure: processedLeisureGoals || [],
+          career: careerGoal?.trim() || undefined,
+          personal: personalGoal?.trim() || undefined,
         },
-        additionalInfo: additionalInfo.trim() || undefined,
+        additionalInfo: additionalInfo?.trim() || undefined,
       };
 
       const response = await fetch(
@@ -467,7 +496,21 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
       );
 
       if (!response.ok) {
-        throw new Error('Failed to save profile');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Failed to save profile';
+        
+        // Better error logging for debugging
+        if (import.meta.env.DEV) {
+          console.error('❌ Profile creation failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorMessage,
+            errorData,
+            endpoint: `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/profile`
+          });
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const profile = await response.json();
@@ -483,9 +526,21 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
       }
       
       onComplete(profile);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile save error:', error);
-      toast.error(existingProfile ? 'Failed to update profile' : 'Failed to create profile');
+      const errorMessage = error?.message || (existingProfile ? 'Failed to update profile' : 'Failed to create profile');
+      
+      // More helpful error message for common issues
+      let userMessage = errorMessage;
+      if (errorMessage.includes('Unauthorized') || errorMessage.includes('401')) {
+        userMessage = 'Please log in again. Your session may have expired.';
+      } else if (errorMessage.includes('Network') || errorMessage.includes('fetch')) {
+        userMessage = 'Network error. Please check your internet connection.';
+      } else if (import.meta.env.DEV && errorMessage.includes('Failed to save profile')) {
+        userMessage = 'Profile creation failed. Check console for details. Make sure you have a .env file with VITE_SUPABASE_ANON_KEY set.';
+      }
+      
+      toast.error(userMessage);
     }
   };
 
@@ -540,8 +595,9 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
 
   return (
     <div
-      className="fixed inset-0 bg-gradient-to-br from-purple-50 to-pink-50 flex flex-col"
+      className="fixed inset-0 flex flex-col"
       style={{
+        backgroundColor: '#05070B',
         height: '100vh',
         height: '100dvh',
         WebkitOverflowScrolling: 'touch',
@@ -549,25 +605,44 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
       }}
     >
       {/* Header with Progress */}
-      <div className="bg-white border-b px-4 py-4 flex-shrink-0 z-10">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl">Create Your Profile</h2>
-            <span className="text-sm text-[#64748b]">Step {step} of {totalSteps}</span>
-          </div>
-          <Progress value={progress} className="h-2" />
+      <div 
+        className="px-4 pt-4 pb-3 flex-shrink-0 z-10"
+        style={{
+          backgroundColor: '#05070B',
+          paddingTop: 'max(16px, env(safe-area-inset-top))'
+        }}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span 
+            className="text-sm font-medium"
+            style={{ color: '#757A89' }}
+          >
+            Step {step} of {totalSteps}
+          </span>
         </div>
+        <Progress 
+          value={progress} 
+          className="h-1 rounded-full"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            '--progress-background': '#0A84FF'
+          } as React.CSSProperties}
+        />
       </div>
 
       {/* Content */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4"
+        className="flex-1 overflow-y-auto overflow-x-hidden"
         style={{
           WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain'
+          overscrollBehavior: 'contain',
+          paddingTop: '24px',
+          paddingBottom: '100px',
+          paddingLeft: '16px',
+          paddingRight: '16px'
         }}
       >
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full" style={{ maxWidth: '100%' }}>
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={step}
@@ -585,557 +660,960 @@ export function OnboardingWizard({ userEmail, userName, userSchool, onComplete, 
 
               {/* Step 2: Basic Info */}
               {step === 2 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">Let's start with the basics</h3>
-                      <p className="text-sm text-[#475569]">Tell us about yourself</p>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    Let's start with the basics
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-1"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Tell us about yourself
+                  </p>
+                  
+                  {school && (
+                    <p 
+                      className="text-sm font-medium mb-5"
+                      style={{ color: '#0A84FF' }}
+                    >
+                      Connected to: {school}
+                    </p>
+                  )}
+                  
+                  {!school && <div className="mb-5" />}
 
-                    <div>
-                      <Label htmlFor="name">Full Name</Label>
+                  <div className="space-y-4">
+                    {/* Full Name */}
+                    <div className="space-y-2">
+                      <Label 
+                        htmlFor="name" 
+                        className="text-[14px] font-medium block"
+                        style={{ color: '#F9FAFF' }}
+                      >
+                        Full Name
+                      </Label>
                       <Input
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Enter your name"
+                        className="w-full h-[48px] rounded-[12px] border px-4"
+                        style={{
+                          backgroundColor: '#171B24',
+                          color: '#F9FAFF',
+                          borderColor: 'rgba(255, 255, 255, 0.08)',
+                          fontSize: '15px'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#0A84FF';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(10, 132, 255, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                          e.target.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="age">Age</Label>
-                      <Input
-                        id="age"
-                        type="number"
-                        value={age}
-                        onChange={(e) => setAge(e.target.value)}
-                        placeholder="Enter your age"
-                        min="18"
-                        max="100"
-                      />
+                    {/* Age & Year Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label 
+                          htmlFor="age" 
+                          className="text-[14px] font-medium block"
+                          style={{ color: '#F9FAFF' }}
+                        >
+                          Age
+                        </Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          placeholder="Age"
+                          min="18"
+                          max="100"
+                          className="w-full h-[48px] rounded-[12px] border px-4"
+                          style={{
+                            backgroundColor: '#171B24',
+                            color: '#F9FAFF',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            fontSize: '15px'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#0A84FF';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(10, 132, 255, 0.1)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label 
+                          htmlFor="year" 
+                          className="text-[14px] font-medium block"
+                          style={{ color: '#F9FAFF' }}
+                        >
+                          Year
+                        </Label>
+                        <Select value={year} onValueChange={setYear}>
+                          <SelectTrigger 
+                            className="w-full h-[48px] rounded-[12px] border px-4"
+                            style={{
+                              backgroundColor: '#171B24',
+                              color: '#F9FAFF',
+                              borderColor: 'rgba(255, 255, 255, 0.08)',
+                              fontSize: '15px'
+                            }}
+                          >
+                            <SelectValue placeholder="Select year" />
+                          </SelectTrigger>
+                          <SelectContent 
+                            className="rounded-[12px] border z-[9999]"
+                            style={{
+                              backgroundColor: '#11141C',
+                              borderColor: 'rgba(255, 255, 255, 0.08)',
+                              maxHeight: '300px',
+                              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
+                            }}
+                          >
+                            {YEARS.map(y => (
+                              <SelectItem 
+                                key={y}
+                                value={y}
+                                className="rounded-lg"
+                                style={{
+                                  color: '#F9FAFF',
+                                  fontSize: '15px'
+                                }}
+                              >
+                                {y}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
-                    <div>
-                      <Label htmlFor="major">Major</Label>
-                      <select
-                        id="major"
-                        value={major}
-                        onChange={(e) => setMajor(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    {/* Major */}
+                    <div className="space-y-2">
+                      <Label 
+                        htmlFor="major" 
+                        className="text-[14px] font-medium block"
+                        style={{ color: '#F9FAFF' }}
                       >
-                        <option value="">Select your major</option>
-                        {MAJORS.map(m => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
-                      </select>
+                        Major
+                      </Label>
+                      <Select value={major} onValueChange={setMajor}>
+                        <SelectTrigger 
+                          className="w-full h-[48px] rounded-[12px] border px-4"
+                          style={{
+                            backgroundColor: '#171B24',
+                            color: '#F9FAFF',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            fontSize: '15px'
+                          }}
+                        >
+                          <SelectValue placeholder="Select your major" />
+                        </SelectTrigger>
+                        <SelectContent 
+                          className="rounded-[12px] border z-[9999]"
+                          style={{
+                            backgroundColor: '#11141C',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            maxHeight: '300px',
+                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)'
+                          }}
+                        >
+                          {MAJORS.map(m => (
+                            <SelectItem 
+                              key={m} 
+                              value={m}
+                              className="rounded-lg"
+                              style={{
+                                color: '#F9FAFF',
+                                fontSize: '15px'
+                              }}
+                            >
+                              {m}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {major === 'Other' && (
                         <Input
-                          className="mt-2"
+                          className="mt-2 w-full h-[48px] rounded-[12px] border px-4"
                           value={customMajor}
                           onChange={(e) => setCustomMajor(e.target.value)}
                           placeholder="Enter your major"
+                          style={{
+                            backgroundColor: '#171B24',
+                            color: '#F9FAFF',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            fontSize: '15px'
+                          }}
                         />
                       )}
                     </div>
-
-                    <div>
-                      <Label htmlFor="year">Year</Label>
-                      <select
-                        id="year"
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select your year</option>
-                        {YEARS.map(y => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="bg-[#2E7B9115] rounded-2xl p-3 text-sm text-[#1E4F74]">
-                      📍 School: <span className="font-medium">{school}</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
 
               {/* Step 3: Photos */}
               {step === 3 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <Camera className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">Add your photos</h3>
-                      <p className="text-sm text-[#475569]">Upload 1-6 photos (first photo will be your profile picture)</p>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    Add your photos
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-1"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Upload 1-6 photos
+                  </p>
+                  
+                  <p 
+                    className="text-sm mb-5"
+                    style={{ color: '#757A89' }}
+                  >
+                    Your first photo will be your profile photo.
+                  </p>
 
-                    <div className="grid grid-cols-3 gap-3">
-                      {photos.map((photo, index) => (
-                        <div key={index} className="relative aspect-square">
-                          <img 
-                            src={photo} 
-                            alt={`Photo ${index + 1}`}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                          <button
-                            onClick={() => removePhoto(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                          {index === 0 && (
-                            <div className="absolute bottom-1 left-1 bg-purple-600 text-white text-xs px-2 py-1 rounded">
-                              Profile
-                            </div>
+                  {/* Photo Grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {Array.from({ length: 6 }).map((_, index) => {
+                      const photo = photos[index];
+                      return (
+                        <div key={index} className="relative aspect-[4/5] rounded-[12px] overflow-hidden border" style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}>
+                          {photo ? (
+                            <>
+                              <img 
+                                src={photo} 
+                                alt={`Photo ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                onClick={() => removePhoto(index)}
+                                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-transform active:scale-90"
+                                style={{
+                                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                  backdropFilter: 'blur(4px)'
+                                }}
+                              >
+                                <X className="w-4 h-4 text-white" />
+                              </button>
+                              {index === 0 && (
+                                <div 
+                                  className="absolute bottom-2 left-2 px-2 py-1 rounded-[6px] text-xs font-medium"
+                                  style={{
+                                    backgroundColor: '#0A84FF',
+                                    color: '#FFFFFF'
+                                  }}
+                                >
+                                  Profile
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <label 
+                              className="w-full h-full border-2 border-dashed rounded-[12px] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-[0.98]"
+                              style={{
+                                borderColor: 'rgba(255, 255, 255, 0.08)',
+                                backgroundColor: '#171B24'
+                              }}
+                            >
+                              <Upload 
+                                className="w-6 h-6 mb-2" 
+                                style={{ color: '#757A89' }}
+                              />
+                              <span 
+                                className="text-xs font-medium"
+                                style={{ color: '#A7AABB' }}
+                              >
+                                {index === 0 ? 'Profile' : 'Add'}
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handlePhotoUpload}
+                                className="hidden"
+                                disabled={uploading}
+                              />
+                            </label>
                           )}
                         </div>
-                      ))}
-                      
-                      {photos.length < 6 && (
-                        <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-colors">
-                          <Upload className="w-8 h-8 text-gray-400 mb-1" />
-                          <span className="text-xs text-[#64748b]">Upload</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={handlePhotoUpload}
-                            className="hidden"
-                            disabled={uploading}
-                          />
-                        </label>
-                      )}
-                    </div>
+                      );
+                    })}
+                  </div>
 
-                    {uploading && (
-                      <p className="text-center text-sm text-purple-600">Uploading...</p>
-                    )}
+                  {uploading && (
+                    <p 
+                      className="text-center text-sm font-medium mb-2"
+                      style={{ color: '#0A84FF' }}
+                    >
+                      Uploading...
+                    </p>
+                  )}
 
-                    <div className="bg-[#2E7B9115] rounded-2xl p-3 text-sm text-[#1E4F74]">
-                      💡 Tip: Choose clear photos that show your personality!
-                    </div>
-                  </CardContent>
-                </Card>
+                  <p 
+                    className="text-sm text-center"
+                    style={{ color: '#757A89' }}
+                  >
+                    You can change or rearrange these later.
+                  </p>
+                </div>
               )}
 
               {/* Step 4: Interests */}
               {step === 4 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <Heart className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">What are you into?</h3>
-                      <p className="text-sm text-[#475569]">Select 3-10 interests</p>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    What are you into?
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-1"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Select 3-10 interests
+                  </p>
+                  
+                  <p 
+                    className="text-sm font-medium mb-5"
+                    style={{ color: '#0A84FF' }}
+                  >
+                    {selectedInterests.length} / 10 selected
+                  </p>
 
-                    <div className="flex flex-wrap gap-2">
-                      {INTERESTS.map(interest => (
-                        <Badge
+                  {/* Interest Chips */}
+                  <div className="flex flex-wrap gap-2">
+                    {INTERESTS.map(interest => {
+                      const isSelected = selectedInterests.includes(interest);
+                      return (
+                        <button
                           key={interest}
                           onClick={() => toggleInterest(interest)}
-                          className={`cursor-pointer transition-all ${
-                            selectedInterests.includes(interest)
-                              ? 'bg-purple-600 text-white hover:bg-purple-700'
-                              : 'bg-[#F9F6F3] text-[#1E4F74] hover:bg-[#EAEAEA]'
-                          }`}
+                          className="px-4 h-[36px] rounded-full text-sm font-medium transition-all active:scale-[0.97] border"
+                          style={{
+                            backgroundColor: isSelected ? '#0A84FF' : '#171B24',
+                            color: isSelected ? '#FFFFFF' : '#F9FAFF',
+                            borderColor: isSelected ? 'transparent' : 'rgba(255, 255, 255, 0.08)'
+                          }}
                         >
-                          {interest}
-                          {selectedInterests.includes(interest) && (
-                            <Check className="w-3 h-3 ml-1" />
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 mr-1.5 inline" />
                           )}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <p className="text-sm text-center text-[#64748b]">
-                      {selectedInterests.length} selected
-                    </p>
-                  </CardContent>
-                </Card>
+                          {interest}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* Step 5: Personality */}
               {step === 5 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">Describe your personality</h3>
-                      <p className="text-sm text-[#475569]">Select 3-8 traits that fit you</p>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    Describe your personality
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-1"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Select 3-8 traits that fit you
+                  </p>
+                  
+                  <p 
+                    className="text-sm font-medium mb-5"
+                    style={{ color: '#0A84FF' }}
+                  >
+                    {selectedTraits.length} / 8 selected
+                  </p>
 
-                    <div className="flex flex-wrap gap-2">
-                      {PERSONALITY_TRAITS.map(trait => (
-                        <Badge
+                  {/* Personality Chips */}
+                  <div className="flex flex-wrap gap-2">
+                    {PERSONALITY_TRAITS.map(trait => {
+                      const isSelected = selectedTraits.includes(trait);
+                      return (
+                        <button
                           key={trait}
                           onClick={() => toggleTrait(trait)}
-                          className={`cursor-pointer transition-all ${
-                            selectedTraits.includes(trait)
-                              ? 'bg-purple-600 text-white hover:bg-purple-700'
-                              : 'bg-[#F9F6F3] text-[#1E4F74] hover:bg-[#EAEAEA]'
-                          }`}
+                          className="px-4 h-[36px] rounded-full text-sm font-medium transition-all active:scale-[0.97] border"
+                          style={{
+                            backgroundColor: isSelected ? '#0A84FF' : '#171B24',
+                            color: isSelected ? '#FFFFFF' : '#F9FAFF',
+                            borderColor: isSelected ? 'transparent' : 'rgba(255, 255, 255, 0.08)'
+                          }}
                         >
-                          {trait}
-                          {selectedTraits.includes(trait) && (
-                            <Check className="w-3 h-3 ml-1" />
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 mr-1.5 inline" />
                           )}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <p className="text-sm text-center text-[#64748b]">
-                      {selectedTraits.length} selected
-                    </p>
-                  </CardContent>
-                </Card>
+                          {trait}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* Step 6: Living Habits */}
               {step === 6 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <Moon className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">Living preferences</h3>
-                      <p className="text-sm text-[#475569]">Help potential roommates know your style</p>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    Living preferences
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-5"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Help potential roommates know your style
+                  </p>
 
+                  <div className="space-y-6">
+                    {/* Sleep Schedule */}
                     <div>
-                      <Label className="flex items-center gap-2 mb-2">
-                        {sleepSchedule === 'early' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                      <Label 
+                        className="flex items-center gap-2 mb-3 text-[15px] font-semibold block"
+                        style={{ color: '#F9FAFF' }}
+                      >
+                        {sleepSchedule === 'early' ? (
+                          <Sun className="w-5 h-5" style={{ color: '#0A84FF' }} />
+                        ) : (
+                          <Moon className="w-5 h-5" style={{ color: '#0A84FF' }} />
+                        )}
                         Sleep Schedule
                       </Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant={sleepSchedule === 'early' ? 'default' : 'outline'}
-                          onClick={() => setSleepSchedule('early')}
-                          className="gap-2"
-                        >
-                          <Sun className="w-4 h-4" />
-                          Early Bird
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={sleepSchedule === 'night' ? 'default' : 'outline'}
-                          onClick={() => setSleepSchedule('night')}
-                          className="gap-2"
-                        >
-                          <Moon className="w-4 h-4" />
-                          Night Owl
-                        </Button>
+                      <div 
+                        className="flex gap-2 p-1 rounded-[12px] border"
+                        style={{
+                          backgroundColor: '#11141C',
+                          borderColor: 'rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        {[
+                          { value: 'early', label: 'Early Bird', icon: Sun },
+                          { value: 'night', label: 'Night Owl', icon: Moon }
+                        ].map(({ value, label, icon: Icon }) => {
+                          const isSelected = sleepSchedule === value;
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => setSleepSchedule(value)}
+                              className="flex-1 h-[44px] rounded-[10px] text-sm font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                              style={{
+                                backgroundColor: isSelected ? '#0A84FF' : 'transparent',
+                                color: isSelected ? '#FFFFFF' : '#A7AABB'
+                              }}
+                            >
+                              <Icon className="w-5 h-5" />
+                              {label}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
+                    {/* Cleanliness */}
                     <div>
-                      <Label className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4" />
+                      <Label 
+                        className="flex items-center gap-2 mb-3 text-[15px] font-semibold block"
+                        style={{ color: '#F9FAFF' }}
+                      >
+                        <Sparkles className="w-5 h-5" style={{ color: '#0A84FF' }} />
                         Cleanliness Level
                       </Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {['neat', 'moderate', 'relaxed'].map(level => (
-                          <Button
-                            key={level}
-                            type="button"
-                            variant={cleanliness === level ? 'default' : 'outline'}
-                            onClick={() => setCleanliness(level)}
-                            className="capitalize"
-                          >
-                            {level}
-                          </Button>
-                        ))}
+                      <div 
+                        className="flex gap-2 p-1 rounded-[12px] border"
+                        style={{
+                          backgroundColor: '#11141C',
+                          borderColor: 'rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        {['neat', 'moderate', 'relaxed'].map(level => {
+                          const isSelected = cleanliness === level;
+                          return (
+                            <button
+                              key={level}
+                              type="button"
+                              onClick={() => setCleanliness(level)}
+                              className="flex-1 h-[44px] rounded-[10px] text-sm font-medium capitalize transition-all active:scale-[0.98]"
+                              style={{
+                                backgroundColor: isSelected ? '#0A84FF' : 'transparent',
+                                color: isSelected ? '#FFFFFF' : '#A7AABB'
+                              }}
+                            >
+                              {level}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
+                    {/* Guests */}
                     <div>
-                      <Label className="flex items-center gap-2 mb-2">
-                        <Users className="w-4 h-4" />
+                      <Label 
+                        className="flex items-center gap-2 mb-3 text-[15px] font-semibold block"
+                        style={{ color: '#F9FAFF' }}
+                      >
+                        <Users className="w-5 h-5" style={{ color: '#0A84FF' }} />
                         Guests Policy
                       </Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {['often', 'sometimes', 'rarely'].map(freq => (
-                          <Button
-                            key={freq}
-                            type="button"
-                            variant={guests === freq ? 'default' : 'outline'}
-                            onClick={() => setGuests(freq)}
-                            className="capitalize"
-                          >
-                            {freq}
-                          </Button>
-                        ))}
+                      <div 
+                        className="flex gap-2 p-1 rounded-[12px] border"
+                        style={{
+                          backgroundColor: '#11141C',
+                          borderColor: 'rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        {['often', 'sometimes', 'rarely'].map(freq => {
+                          const isSelected = guests === freq;
+                          return (
+                            <button
+                              key={freq}
+                              type="button"
+                              onClick={() => setGuests(freq)}
+                              className="flex-1 h-[44px] rounded-[10px] text-sm font-medium capitalize transition-all active:scale-[0.98]"
+                              style={{
+                                backgroundColor: isSelected ? '#0A84FF' : 'transparent',
+                                color: isSelected ? '#FFFFFF' : '#A7AABB'
+                              }}
+                            >
+                              {freq}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
+                    {/* Noise */}
                     <div>
-                      <Label className="flex items-center gap-2 mb-2">
-                        <Volume2 className="w-4 h-4" />
+                      <Label 
+                        className="flex items-center gap-2 mb-3 text-[15px] font-semibold block"
+                        style={{ color: '#F9FAFF' }}
+                      >
+                        <Volume2 className="w-5 h-5" style={{ color: '#0A84FF' }} />
                         Noise Tolerance
                       </Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {['quiet', 'moderate', 'lively'].map(level => (
-                          <Button
-                            key={level}
-                            type="button"
-                            variant={noise === level ? 'default' : 'outline'}
-                            onClick={() => setNoise(level)}
-                            className="capitalize"
-                          >
-                            {level}
-                          </Button>
-                        ))}
+                      <div 
+                        className="flex gap-2 p-1 rounded-[12px] border"
+                        style={{
+                          backgroundColor: '#11141C',
+                          borderColor: 'rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        {['quiet', 'moderate', 'lively'].map(level => {
+                          const isSelected = noise === level;
+                          return (
+                            <button
+                              key={level}
+                              type="button"
+                              onClick={() => setNoise(level)}
+                              className="flex-1 h-[44px] rounded-[10px] text-sm font-medium capitalize transition-all active:scale-[0.98]"
+                              style={{
+                                backgroundColor: isSelected ? '#0A84FF' : 'transparent',
+                                color: isSelected ? '#FFFFFF' : '#A7AABB'
+                              }}
+                            >
+                              {level}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
 
               {/* Step 7: Bio */}
               {step === 7 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">Tell your story</h3>
-                      <p className="text-sm text-[#475569]">Write a short bio about yourself</p>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    Tell your story
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-5"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Write a short intro about yourself
+                  </p>
 
-                    <div>
-                      <Textarea
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        placeholder="Hi! I'm a [major] student who loves [interests]. Looking to connect with people who are into [activities]. Fun fact about me: [something unique]..."
-                        rows={8}
-                        className="resize-none"
-                      />
-                      <p className="text-sm text-[#64748b] mt-2">
-                        {bio.length} / 500 characters
-                      </p>
-                    </div>
-
-                    <div className="bg-[#2E7B9115] rounded-2xl p-3 text-sm text-[#1E4F74]">
-                      💡 Tip: Be authentic and show your personality!
-                    </div>
-                  </CardContent>
-                </Card>
+                  <div>
+                    <Textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Write a short intro about yourself…"
+                      rows={8}
+                      className="w-full resize-none rounded-[12px] border px-4 py-3"
+                      style={{
+                        backgroundColor: '#171B24',
+                        color: '#F9FAFF',
+                        borderColor: 'rgba(255, 255, 255, 0.08)',
+                        fontSize: '15px',
+                        lineHeight: '1.6',
+                        minHeight: '180px'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#0A84FF';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(10, 132, 255, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                      maxLength={500}
+                    />
+                    <p 
+                      className="text-sm font-medium mt-2 text-right"
+                      style={{ 
+                        color: bio.length > 450 ? '#0A84FF' : '#757A89' 
+                      }}
+                    >
+                      {bio.length} / 500
+                    </p>
+                  </div>
+                </div>
               )}
 
               {/* Step 8: Looking For */}
               {step === 8 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="text-center mb-4">
-                      <Users className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">What brings you here?</h3>
-                      <p className="text-sm text-[#475569]">Select all that apply</p>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    What brings you here?
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-1"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Select all that apply
+                  </p>
+                  
+                  <p 
+                    className="text-sm mb-5"
+                    style={{ color: '#757A89' }}
+                  >
+                    We'll match you with people who share your goals.
+                  </p>
 
-                    <div className="space-y-2">
-                      {LOOKING_FOR_OPTIONS.map(option => (
+                  {/* Options List - iOS Style */}
+                  <div 
+                    className="rounded-[12px] overflow-hidden border"
+                    style={{
+                      backgroundColor: '#11141C',
+                      borderColor: 'rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    {LOOKING_FOR_OPTIONS.map((option, index) => {
+                      const isSelected = lookingFor.includes(option);
+                      return (
                         <button
                           key={option}
                           onClick={() => toggleLookingFor(option)}
-                          className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                            lookingFor.includes(option)
-                              ? 'border-purple-600 bg-purple-50'
-                              : 'border-gray-200 hover:border-purple-300'
-                          }`}
+                          className="w-full h-[52px] px-4 flex items-center justify-between border-b last:border-b-0 transition-all active:opacity-70"
+                          style={{
+                            backgroundColor: isSelected ? 'rgba(10, 132, 255, 0.1)' : 'transparent',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            color: isSelected ? '#0A84FF' : '#F9FAFF',
+                            fontSize: '15px'
+                          }}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{option}</span>
-                            {lookingFor.includes(option) && (
-                              <Check className="w-5 h-5 text-purple-600" />
-                            )}
-                          </div>
+                          <span className="font-medium">{option}</span>
+                          {isSelected && (
+                            <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#0A84FF' }} />
+                          )}
                         </button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* Step 9: Future Goals (Optional) */}
               {step === 9 && (
-                <Card>
-                  <CardContent className="pt-6 space-y-6">
-                    <div className="text-center mb-4">
-                      <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-                      <h3 className="text-xl mb-1">What are your goals?</h3>
-                      <p className="text-sm text-[#475569] mb-2">
-                        Help us connect you with like-minded people on campus
-                      </p>
-                      <Badge variant="secondary" className="text-xs">
-                        Optional - You can skip this step
-                      </Badge>
-                    </div>
+                <div className="w-full">
+                  {/* Title */}
+                  <h2 
+                    className="text-[26px] font-semibold mb-1"
+                    style={{ color: '#F9FAFF' }}
+                  >
+                    What are your goals?
+                  </h2>
+                  
+                  {/* Subtitle */}
+                  <p 
+                    className="text-[15px] font-medium mb-1"
+                    style={{ color: '#A7AABB' }}
+                  >
+                    Help us connect you with like-minded people on campus
+                  </p>
+                  
+                  <p 
+                    className="text-xs mb-5"
+                    style={{ color: '#757A89' }}
+                  >
+                    Optional - You can skip this step
+                  </p>
 
+                  <div className="space-y-6">
                     {/* Academic Goals */}
                     <div>
-                      <Label className="text-base font-semibold mb-3 block">
+                      <Label 
+                        className="text-[15px] font-semibold mb-3 block"
+                        style={{ color: '#757A89' }}
+                      >
                         Academic Goals
                       </Label>
-                      <div className="space-y-2">
-                        {ACADEMIC_GOALS.map(goal => (
-                          <button
-                            key={goal}
-                            onClick={() => toggleAcademicGoal(goal)}
-                            className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
-                              academicGoals.includes(goal)
-                                ? 'border-purple-600 bg-purple-50'
-                                : 'border-gray-200 hover:border-purple-300'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">{goal}</span>
-                              {academicGoals.includes(goal) && (
-                                <Check className="w-4 h-4 text-purple-600" />
+                      <div 
+                        className="rounded-[12px] overflow-hidden border"
+                        style={{
+                          backgroundColor: '#11141C',
+                          borderColor: 'rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        {ACADEMIC_GOALS.map((goal, index) => {
+                          const isSelected = academicGoals.includes(goal);
+                          return (
+                            <button
+                              key={goal}
+                              onClick={() => toggleAcademicGoal(goal)}
+                              className="w-full h-[52px] px-4 flex items-center justify-between border-b last:border-b-0 transition-all active:opacity-70"
+                              style={{
+                                backgroundColor: isSelected ? 'rgba(10, 132, 255, 0.1)' : 'transparent',
+                                borderColor: 'rgba(255, 255, 255, 0.08)',
+                                color: isSelected ? '#0A84FF' : '#F9FAFF',
+                                fontSize: '15px'
+                              }}
+                            >
+                              <span className="font-medium">{goal}</span>
+                              {isSelected && (
+                                <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#0A84FF' }} />
                               )}
-                            </div>
-                          </button>
-                        ))}
+                            </button>
+                          );
+                        })}
                       </div>
                       {academicGoals.includes('Other') && (
                         <Input
                           placeholder="Describe your academic goal..."
                           value={customAcademicGoal}
                           onChange={(e) => setCustomAcademicGoal(e.target.value)}
-                          className="mt-2"
+                          className="mt-3 w-full h-[48px] rounded-[12px] border px-4"
+                          style={{
+                            backgroundColor: '#171B24',
+                            color: '#F9FAFF',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            fontSize: '15px'
+                          }}
                         />
                       )}
                     </div>
 
                     {/* Leisure Goals */}
                     <div>
-                      <Label className="text-base font-semibold mb-3 block">
+                      <Label 
+                        className="text-[15px] font-semibold mb-3 block"
+                        style={{ color: '#757A89' }}
+                      >
                         Leisure Goals
                       </Label>
-                      <div className="space-y-2">
-                        {LEISURE_GOALS.map(goal => (
-                          <button
-                            key={goal}
-                            onClick={() => toggleLeisureGoal(goal)}
-                            className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
-                              leisureGoals.includes(goal)
-                                ? 'border-purple-600 bg-purple-50'
-                                : 'border-gray-200 hover:border-purple-300'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">{goal}</span>
-                              {leisureGoals.includes(goal) && (
-                                <Check className="w-4 h-4 text-purple-600" />
+                      <div 
+                        className="rounded-[12px] overflow-hidden border"
+                        style={{
+                          backgroundColor: '#11141C',
+                          borderColor: 'rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        {LEISURE_GOALS.map((goal, index) => {
+                          const isSelected = leisureGoals.includes(goal);
+                          return (
+                            <button
+                              key={goal}
+                              onClick={() => toggleLeisureGoal(goal)}
+                              className="w-full h-[52px] px-4 flex items-center justify-between border-b last:border-b-0 transition-all active:opacity-70"
+                              style={{
+                                backgroundColor: isSelected ? 'rgba(10, 132, 255, 0.1)' : 'transparent',
+                                borderColor: 'rgba(255, 255, 255, 0.08)',
+                                color: isSelected ? '#0A84FF' : '#F9FAFF',
+                                fontSize: '15px'
+                              }}
+                            >
+                              <span className="font-medium">{goal}</span>
+                              {isSelected && (
+                                <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#0A84FF' }} />
                               )}
-                            </div>
-                          </button>
-                        ))}
+                            </button>
+                          );
+                        })}
                       </div>
                       {leisureGoals.includes('Other') && (
                         <Input
                           placeholder="Describe your leisure goal..."
                           value={customLeisureGoal}
                           onChange={(e) => setCustomLeisureGoal(e.target.value)}
-                          className="mt-2"
+                          className="mt-3 w-full h-[48px] rounded-[12px] border px-4"
+                          style={{
+                            backgroundColor: '#171B24',
+                            color: '#F9FAFF',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            fontSize: '15px'
+                          }}
                         />
                       )}
                     </div>
 
                     {/* Career Goal */}
                     <div>
-                      <Label className="text-base font-semibold mb-2 block">
+                      <Label 
+                        className="text-[15px] font-semibold mb-2 block"
+                        style={{ color: '#757A89' }}
+                      >
                         Career Goal (Optional)
                       </Label>
                       <Input
                         placeholder="e.g., Software Engineer at Google, Medical School, Start my own business"
                         value={careerGoal}
                         onChange={(e) => setCareerGoal(e.target.value)}
+                        className="w-full h-[48px] rounded-[12px] border px-4"
+                        style={{
+                          backgroundColor: '#171B24',
+                          color: '#F9FAFF',
+                          borderColor: 'rgba(255, 255, 255, 0.08)',
+                          fontSize: '15px'
+                        }}
                       />
                     </div>
 
                     {/* Personal Goal */}
                     <div>
-                      <Label className="text-base font-semibold mb-2 block">
+                      <Label 
+                        className="text-[15px] font-semibold mb-2 block"
+                        style={{ color: '#757A89' }}
+                      >
                         Personal Goal (Optional)
                       </Label>
                       <Input
                         placeholder="e.g., Get fit, Learn Spanish, Read more books"
                         value={personalGoal}
                         onChange={(e) => setPersonalGoal(e.target.value)}
+                        className="w-full h-[48px] rounded-[12px] border px-4"
+                        style={{
+                          backgroundColor: '#171B24',
+                          color: '#F9FAFF',
+                          borderColor: 'rgba(255, 255, 255, 0.08)',
+                          fontSize: '15px'
+                        }}
                       />
                     </div>
-
-                    {/* Additional Info */}
-                    <div>
-                      <Label className="text-base font-semibold mb-2 block">
-                        Anything else we should know? (Optional)
-                      </Label>
-                      <Textarea
-                        placeholder="Tell us anything else that would help our AI match you with the right people... (e.g., hobbies, values, what you're looking for in connections, etc.)"
-                        value={additionalInfo}
-                        onChange={(e) => setAdditionalInfo(e.target.value)}
-                        rows={4}
-                        className="resize-none"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        💡 This helps our AI understand you better and make more personalized connection suggestions
-                      </p>
-                    </div>
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                      💡 <strong>Note:</strong> Class schedule matching for study partners will be available soon!
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
 
-      {/* Navigation Buttons */}
+      {/* Floating Bottom Action Bar - iOS Style */}
       <div
-        className="bg-white border-t px-4 flex-shrink-0 z-10"
+        className="fixed bottom-0 left-0 right-0 flex-shrink-0 z-20 border-t"
         style={{
-          paddingTop: '1rem',
-          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))'
+          backgroundColor: '#090C13',
+          borderColor: 'rgba(255, 255, 255, 0.08)',
+          paddingTop: '12px',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          boxShadow: '0 -1px 0 rgba(0, 0, 0, 0.1)'
         }}
       >
-        <div className="max-w-2xl mx-auto flex gap-3">
+        <div className="w-full flex items-center gap-3">
           {step > 1 && (
-            <Button
-              variant="outline"
+            <button
               onClick={handleBack}
-              className="gap-2"
+              className="px-4 py-2.5 text-base font-medium"
+              style={{
+                color: '#A7AABB',
+                backgroundColor: 'transparent'
+              }}
             >
-              <ArrowLeft className="w-4 h-4" />
               Back
-            </Button>
+            </button>
           )}
           {step >= 4 && step < totalSteps && (
-            <Button
-              variant="ghost"
+            <button
               onClick={handleSkip}
-              className="gap-2 text-gray-600"
+              className="text-sm font-medium px-3 py-2.5"
+              style={{
+                color: '#757A89'
+              }}
             >
-              Skip for now
-            </Button>
+              Skip
+            </button>
           )}
-          <Button
+          <button
             onClick={handleNext}
-            className="flex-1 gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            className="flex-1 h-[52px] rounded-[14px] text-base font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            style={{
+              backgroundColor: '#0A84FF',
+              color: '#FFFFFF'
+            }}
           >
-            {step === totalSteps ? 'Complete' : step === 9 ? 'Skip or Complete' : 'Next'}
+            {step === totalSteps ? 'Complete' : step === 9 ? 'Complete' : 'Next'}
             {step < totalSteps && step !== 9 && <ArrowRight className="w-4 h-4" />}
             {step === totalSteps && <Check className="w-4 h-4" />}
-          </Button>
+          </button>
         </div>
       </div>
       
       {/* Bond Print Quiz Modal/Overlay */}
       {showQuiz && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700/50">
             <BondPrintQuiz
               userProfile={{
                 name,

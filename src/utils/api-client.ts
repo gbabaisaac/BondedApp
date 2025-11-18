@@ -1,174 +1,350 @@
 /**
- * Enhanced API client with retry logic and offline handling
+ * Unified API Client for Bonded App
+ * Handles all backend communication with proper error handling
  */
 
-import { fetchWithRetry } from './api-retry';
-import { isOnline } from './offline';
-import { projectId, supabaseUrl } from './supabase/config';
-import { checkRateLimit } from './rate-limiter';
-import { sanitizeProfile } from './sanitize';
+import { projectId } from './supabase/info';
 
-export interface ApiError {
-  message: string;
-  status?: number;
-  code?: string;
+const BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-2516be19`;
+
+interface ApiError {
+  error: string;
+  details?: string;
 }
 
-export class ApiClientError extends Error {
-  status?: number;
-  code?: string;
-
-  constructor(message: string, status?: number, code?: string) {
-    super(message);
-    this.name = 'ApiClientError';
-    this.status = status;
-    this.code = code;
-  }
-}
-
-export async function apiRequest(
+/**
+ * Generic API call with error handling
+ */
+async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {},
-  retryOptions?: { maxRetries?: number }
-): Promise<Response> {
-  // Check if offline
-  if (!isOnline()) {
-    throw new ApiClientError('No internet connection', 0, 'OFFLINE');
-  }
+  accessToken?: string
+): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
 
-  // Check rate limit
-  const rateLimitKey = `api:${endpoint.split('?')[0]}`;
-  if (!checkRateLimit(rateLimitKey, 30, 60000)) { // 30 requests per minute
-    throw new ApiClientError('Rate limit exceeded. Please try again later.', 429, 'RATE_LIMIT');
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
   }
-
-  const url = `${supabaseUrl}/functions/v1/make-server-2516be19${endpoint}`;
 
   try {
-    const response = await fetchWithRetry(url, options, retryOptions);
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
     if (!response.ok) {
-      let errorMessage = `Request failed: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch {
-        // If response is not JSON, use status text
-        errorMessage = response.statusText || errorMessage;
-      }
-
-      throw new ApiClientError(errorMessage, response.status);
+      const errorData: ApiError = await response.json().catch(() => ({
+        error: `HTTP ${response.status}: ${response.statusText}`,
+      }));
+      throw new Error(errorData.error || `Request failed with status ${response.status}`);
     }
 
-    return response;
-  } catch (error) {
-    if (error instanceof ApiClientError) {
-      throw error;
-    }
-
-    // Network errors
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new ApiClientError('Network error. Please check your connection.', 0, 'NETWORK_ERROR');
-    }
-
-    throw new ApiClientError(
-      error instanceof Error ? error.message : 'An unexpected error occurred',
-      0,
-      'UNKNOWN_ERROR'
-    );
+    return await response.json();
+  } catch (error: any) {
+    console.error(`API Error [${endpoint}]:`, error);
+    throw error;
   }
 }
 
-export async function apiGet<T>(
-  endpoint: string,
-  accessToken?: string,
-  retryOptions?: { maxRetries?: number }
-): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+// ============================================================
+// PROFILE APIs
+// ============================================================
 
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  const response = await apiRequest(endpoint, { method: 'GET', headers }, retryOptions);
-  return response.json();
+export async function createProfile(profileData: any, accessToken: string) {
+  return apiCall('/profile', {
+    method: 'POST',
+    body: JSON.stringify(profileData),
+  }, accessToken);
 }
 
-export async function apiPost<T>(
-  endpoint: string,
-  data?: any,
-  accessToken?: string,
-  retryOptions?: { maxRetries?: number }
-): Promise<T> {
-  // Sanitize profile data if it's a profile endpoint
-  const sanitizedData = endpoint.includes('/profile') && data 
-    ? sanitizeProfile(data) 
-    : data;
+export async function getProfile(userId: string, accessToken: string) {
+  return apiCall(`/profile/${userId}`, {
+    method: 'GET',
+  }, accessToken);
+}
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+export async function updateProfile(userId: string, updates: any, accessToken: string) {
+  return apiCall(`/profile/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  }, accessToken);
+}
 
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+export async function getUserInfo(accessToken: string) {
+  return apiCall('/user-info', {
+    method: 'GET',
+  }, accessToken);
+}
+
+// ============================================================
+// YEARBOOK / PROFILES APIs
+// ============================================================
+
+export async function getAllProfiles(accessToken: string, filters?: {
+  school?: string;
+  year?: string;
+  major?: string;
+  interests?: string[];
+}) {
+  const params = new URLSearchParams();
+  
+  // School is REQUIRED by the backend
+  if (!filters?.school) {
+    throw new Error('School parameter is required');
   }
+  
+  params.append('school', filters.school);
+  if (filters?.year) params.append('year', filters.year);
+  if (filters?.major) params.append('major', filters.major);
+  if (filters?.interests) params.append('interests', filters.interests.join(','));
+  
+  const queryString = params.toString();
+  const endpoint = `/profiles?${queryString}`;
+  
+  return apiCall(endpoint, {
+    method: 'GET',
+  }, accessToken);
+}
 
-  const response = await apiRequest(
-    endpoint,
-    {
-      method: 'POST',
-      headers,
-      body: sanitizedData ? JSON.stringify(sanitizedData) : undefined,
+export async function searchProfiles(query: string, accessToken: string) {
+  return apiCall(`/profiles/search?q=${encodeURIComponent(query)}`, {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function getCompatibility(targetUserId: string, accessToken: string) {
+  return apiCall(`/compatibility/${targetUserId}`, {
+    method: 'GET',
+  }, accessToken);
+}
+
+// ============================================================
+// FRIENDS APIs
+// ============================================================
+
+export async function getFriends(accessToken: string) {
+  return apiCall('/friendships?status=accepted', {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function getFriendRequests(accessToken: string) {
+  return apiCall('/friendships?status=pending', {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function sendFriendRequest(targetUserId: string, accessToken: string) {
+  return apiCall('/friendships/request', {
+    method: 'POST',
+    body: JSON.stringify({ friendId: targetUserId }),
+  }, accessToken);
+}
+
+export async function acceptFriendRequest(requestId: string, accessToken: string) {
+  return apiCall(`/friendships/${requestId}/accept`, {
+    method: 'POST',
+  }, accessToken);
+}
+
+export async function rejectFriendRequest(requestId: string, accessToken: string) {
+  return apiCall(`/friendships/${requestId}/decline`, {
+    method: 'POST',
+  }, accessToken);
+}
+
+export async function removeFriend(friendId: string, accessToken: string) {
+  return apiCall(`/friendships/${friendId}`, {
+    method: 'DELETE',
+  }, accessToken);
+}
+
+// ============================================================
+// FORUM / POSTS APIs
+// ============================================================
+
+export async function getPosts(accessToken: string, filter?: string) {
+  const endpoint = filter ? `/forum/posts?filter=${filter}` : '/forum/posts';
+  return apiCall(endpoint, {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function createPost(postData: {
+  content: string;
+  isAnonymous: boolean;
+  tags?: string[];
+  mediaUrls?: string[];
+}, accessToken: string) {
+  return apiCall('/forum/posts', {
+    method: 'POST',
+    body: JSON.stringify(postData),
+  }, accessToken);
+}
+
+export async function likePost(postId: string, accessToken: string) {
+  // This endpoint toggles the like - if already liked, it unlikes
+  return apiCall(`/forum/posts/${postId}/like`, {
+    method: 'POST',
+  }, accessToken);
+}
+
+export async function commentOnPost(postId: string, content: string, accessToken: string) {
+  return apiCall(`/forum/posts/${postId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  }, accessToken);
+}
+
+export async function getPostComments(postId: string, accessToken: string) {
+  return apiCall(`/forum/posts/${postId}/comments`, {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function reportPost(postId: string, reason: string, accessToken: string) {
+  return apiCall(`/forum/posts/${postId}/report`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  }, accessToken);
+}
+
+// ============================================================
+// MESSAGES / CHAT APIs
+// ============================================================
+
+export async function getConversations(accessToken: string) {
+  return apiCall('/messages/conversations', {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function getMessages(conversationId: string, accessToken: string) {
+  return apiCall(`/messages/conversations/${conversationId}`, {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function sendMessage(data: {
+  recipientId?: string;
+  conversationId?: string;
+  content: string;
+}, accessToken: string) {
+  return apiCall('/messages', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, accessToken);
+}
+
+export async function markMessagesAsRead(conversationId: string, accessToken: string) {
+  return apiCall(`/messages/conversations/${conversationId}/read`, {
+    method: 'POST',
+  }, accessToken);
+}
+
+// ============================================================
+// BOND PRINT APIs
+// ============================================================
+
+export async function startBondPrintQuiz(userProfile: any, accessToken: string) {
+  return apiCall('/bond-print/start', {
+    method: 'POST',
+    body: JSON.stringify({ userProfile }),
+  }, accessToken);
+}
+
+export async function submitBondPrintAnswer(data: {
+  answer: string;
+  questionText: string;
+}, accessToken: string) {
+  return apiCall('/bond-print/answer', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, accessToken);
+}
+
+export async function generateBondPrint(accessToken: string) {
+  return apiCall('/bond-print/generate', {
+    method: 'POST',
+  }, accessToken);
+}
+
+export async function getBondPrint(userId: string, accessToken: string) {
+  return apiCall(`/bond-print/${userId}`, {
+    method: 'GET',
+  }, accessToken);
+}
+
+// ============================================================
+// SOFT INTRO APIs
+// ============================================================
+
+export async function sendSoftIntro(data: {
+  targetUserId: string;
+  message: string;
+  method: 'chat' | 'instagram' | 'snapchat';
+}, accessToken: string) {
+  return apiCall('/soft-intro', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, accessToken);
+}
+
+// ============================================================
+// UTILITY APIs
+// ============================================================
+
+export async function uploadMedia(file: File, accessToken: string): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  // Determine file type
+  const isImage = file.type.startsWith('image/');
+  const isVideo = file.type.startsWith('video/');
+  const type = isImage ? 'image' : isVideo ? 'video' : 'image';
+  formData.append('type', type);
+
+  const response = await fetch(`${BASE_URL}/forum/upload-media`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
     },
-    retryOptions
-  );
+    body: formData,
+  });
 
-  return response.json();
-}
-
-export async function apiPut<T>(
-  endpoint: string,
-  data?: any,
-  accessToken?: string,
-  retryOptions?: { maxRetries?: number }
-): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Failed to upload media' }));
+    throw new Error(errorData.error || 'Failed to upload media');
   }
 
-  const response = await apiRequest(
-    endpoint,
-    {
-      method: 'PUT',
-      headers,
-      body: data ? JSON.stringify(data) : undefined,
-    },
-    retryOptions
-  );
-
-  return response.json();
+  return await response.json();
 }
 
-export async function apiDelete<T>(
-  endpoint: string,
-  accessToken?: string,
-  retryOptions?: { maxRetries?: number }
-): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+// ============================================================
+// LEGACY EXPORT (for backwards compatibility)
+// ============================================================
 
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  const response = await apiRequest(endpoint, { method: 'DELETE', headers }, retryOptions);
-  return response.json();
+export async function apiGet(endpoint: string, accessToken?: string) {
+  return apiCall(endpoint, { method: 'GET' }, accessToken);
 }
 
+export async function apiPost(endpoint: string, data: any, accessToken?: string) {
+  return apiCall(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, accessToken);
+}
+
+export async function apiPatch(endpoint: string, data: any, accessToken?: string) {
+  return apiCall(endpoint, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }, accessToken);
+}
+
+export async function apiDelete(endpoint: string, accessToken?: string) {
+  return apiCall(endpoint, { method: 'DELETE' }, accessToken);
+}

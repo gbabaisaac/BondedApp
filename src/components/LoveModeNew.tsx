@@ -22,9 +22,8 @@ import {
 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
-import { motion } from 'motion/react';
-
-import { useUserProfile, useAccessToken } from '../store/useAppStore';
+import { motion } from 'framer-motion';
+import { useAppStore } from '../store/useAppStore';
 
 interface LoveModeNewProps {
   onExit: () => void;
@@ -41,8 +40,8 @@ type LoveModeView =
 type LoveModeTab = 'discover' | 'matches' | 'profile';
 
 export function LoveModeNew({ onExit }: LoveModeNewProps) {
-  const userProfile = useUserProfile();
-  const accessToken = useAccessToken();
+  const userProfile = useAppStore((state) => state.userProfile);
+  const accessToken = useAppStore((state) => state.accessToken);
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<LoveModeView>('onboarding');

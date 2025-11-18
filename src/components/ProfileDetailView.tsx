@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronLeft, ChevronRight, Heart, Sparkles, Instagram, Send, Share2, MoreVertical } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart, Sparkles, Instagram, Send, Share2, MoreVertical, Users, Camera, CheckCircle2, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { SoftIntroFlow } from './SoftIntroFlow';
 import { projectId } from '../utils/supabase/config';
@@ -143,12 +143,10 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
 
   return (
     <div
-      className="fixed inset-0 bg-white z-[9999] flex flex-col"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
       style={{
         height: '100dvh',
         maxHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
         position: 'fixed',
         top: 0,
         left: 0,
@@ -159,54 +157,64 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
         transform: 'translateZ(0)',
         overflow: 'hidden',
       }}
+      onClick={onClose}
     >
-      {/* Header */}
-      <div className={`${theme.components.navigation.header} px-4 py-4 flex items-center justify-between flex-shrink-0`}>
-        <button onClick={onClose} className={`p-2 -ml-2 hover:bg-gray-100 rounded-full ${theme.transition.default}`}>
-          <X className="w-6 h-6" />
-        </button>
-        <div className="flex-1 text-center">
-          <h3 className="font-semibold text-lg">{profile.name}, {profile.age}</h3>
-          <p className="text-sm text-[#64748b]">{profile.school}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              shareProfile(profile.id, profile.name);
-              toast.success('Profile link copied!');
-            }}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Share profile"
-          >
-            <Share2 className="w-5 h-5 text-[#2E7B91]" />
-          </button>
-          {accessToken && (
-            <button
-              onClick={() => setShowReportBlock(true)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              aria-label="More options"
-            >
-              <MoreVertical className="w-5 h-5 text-[#2E7B91]" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Scrollable Content */}
-      <div
-        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+      {/* Profile Card - UNIFIED LIGHT DESIGN */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className="relative w-full max-w-md bg-white rounded-2xl overflow-hidden"
         style={{
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain',
-          paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', // Extra space for fixed buttons
+          borderRadius: 'var(--radius-2xl)',
+          boxShadow: 'var(--shadow-xl)',
         }}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
-        {/* Image with tap zones for navigation */}
+        {/* Close Button - UNIFIED */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center transition-all"
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(8px)',
+            boxShadow: 'var(--shadow-md)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Swipe Indicator - UNIFIED */}
         <div 
-          className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full"
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(8px)',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <p 
+            className="text-xs font-medium"
+            style={{
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 'var(--font-weight-semibold)',
+            }}
+          >
+            Swipe to see more profiles
+          </p>
+        </div>
+
+        {/* Upper Section - Profile Image */}
+        <div 
+          className="relative w-full h-80 overflow-hidden"
+          style={{ background: 'var(--gradient-accent)' }}
         >
           <motion.img
             key={profile.id}
@@ -219,247 +227,140 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
             className="w-full h-full object-cover"
           />
           
-          {/* Tap zones for navigation */}
+          {/* Navigation Arrows - UNIFIED */}
           {hasPrev && (
             <button
               onClick={onPrev}
-              className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-start pl-4 group"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all z-10"
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: 'var(--shadow-md)',
+                color: 'var(--color-text-primary)',
+              }}
             >
-              <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
-                <ChevronLeft className="w-6 h-6" />
-              </div>
+              <ChevronLeft className="w-6 h-6" />
             </button>
           )}
           {hasNext && (
             <button
               onClick={onNext}
-              className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-end pr-4 group"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all z-10"
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: 'var(--shadow-md)',
+                color: 'var(--color-text-primary)',
+              }}
             >
-              <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
-                <ChevronRight className="w-6 h-6" />
-              </div>
+              <ChevronRight className="w-6 h-6" />
             </button>
           )}
-
-          {/* Position indicator */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded-full">
-            <p className="text-white text-xs">Swipe to see more profiles</p>
-          </div>
         </div>
 
-        {/* Profile Info */}
-        <div className="p-4 space-y-4">
-          {/* Basic Info */}
-          <div>
-            <h2 className="text-2xl mb-1">{profile.name}, {profile.age}</h2>
-            <p className="text-[#475569]">{profile.major} • {profile.year}</p>
-            <p className="text-sm text-[#64748b]">{profile.school}</p>
+        {/* Lower Section - UNIFIED WHITE BACKGROUND */}
+        <div 
+          className="bg-white p-5 space-y-4"
+          style={{ padding: 'var(--space-6)' }}
+        >
+          {/* Name with Verified Badge */}
+          <div className="flex items-center gap-2">
+            <h2 
+              className="text-xl font-bold"
+              style={{
+                color: 'var(--color-text-primary)',
+                fontFamily: 'var(--font-heading)',
+                fontSize: 'var(--font-size-h3)',
+                fontWeight: 'var(--font-weight-bold)',
+              }}
+            >
+              {profile.name}, {profile.age}
+            </h2>
+            {compatibility && compatibility.score >= 70 && (
+              <div 
+                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: 'var(--color-success)' }}
+              >
+                <CheckCircle2 className="w-4 h-4 text-white" />
+              </div>
+            )}
           </div>
 
           {/* Bio */}
-          <div>
-            <h3 className="text-sm text-[#64748b] mb-2 font-medium">About</h3>
-            <p className="text-[#1E4F74]">{profile.bio}</p>
-          </div>
-
-          {/* Compatibility Analysis */}
-          {compatibility && (
-            <div className="bg-gradient-to-br from-[#2E7B9115] to-[#25658A15] rounded-2xl p-4 border border-[#2E7B9140]">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-[#2E7B91]" />
-                <h3 className="font-medium text-[#1E4F74]">Compatibility</h3>
-              </div>
-              <div className="space-y-3">
-                {compatibility.score && (
-                  <div>
-                    <p className="text-sm font-medium text-[#25658A]">
-                      {compatibility.score}% Match
-                    </p>
-                  </div>
-                )}
-                {compatibility.commonInterests && compatibility.commonInterests.length > 0 && (
-                  <div>
-                    <p className="text-xs text-[#64748b] mb-1">You both enjoy:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {compatibility.commonInterests.map((interest: string) => (
-                        <Badge key={interest} className="text-xs bg-[#2E7B9120] text-[#1E4F74]">
-                          {interest}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {compatibility.analysis && (
-                  <p className="text-sm text-[#1E4F74]">
-                    {compatibility.analysis}
-                  </p>
-                )}
-              </div>
-            </div>
+          {profile.bio && (
+            <p 
+              className="text-sm leading-relaxed line-clamp-3"
+              style={{
+                color: 'var(--color-text-secondary)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--font-size-body-sm)',
+                lineHeight: 'var(--line-height-relaxed)',
+              }}
+            >
+              {profile.bio}
+            </p>
+          )}
+          {!profile.bio && (
+            <p 
+              className="text-sm"
+              style={{
+                color: 'var(--color-text-secondary)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--font-size-caption)',
+              }}
+            >
+              {profile.major} {profile.year && `• ${profile.year}`}
+            </p>
           )}
 
-          {/* Looking For */}
-          {profile.lookingFor && profile.lookingFor.length > 0 && (
-            <div>
-              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Looking For</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.lookingFor.map((item) => {
-                  // Convert normalized format (study-partner) to display format (Study Partner)
-                  const displayText = item.split('-').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ');
-                  return (
-                    <Badge key={item} className="bg-[#2E7B9120] text-[#1E4F74] whitespace-nowrap">
-                      {displayText}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Interests */}
+          {/* Interests Pills */}
           {profile.interests && profile.interests.length > 0 && (
-            <div>
-              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Interests</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.interests.map((interest) => (
-                  <Badge key={interest} variant="outline">
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {profile.interests.slice(0, 4).map((interest, index) => (
+                <span 
+                  key={index}
+                  className="px-3 py-1 rounded-full text-sm font-semibold"
+                  style={{
+                    background: 'var(--color-primary-bg)',
+                    color: 'var(--color-primary)',
+                    borderRadius: 'var(--pill-radius)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--font-size-small)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                  }}
+                >
+                  {interest}
+                </span>
+              ))}
             </div>
           )}
 
-          {/* Personality */}
-          {profile.personality && profile.personality.length > 0 && (
-            <div>
-              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Personality</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.personality.map((trait) => (
-                  <Badge key={trait} variant="secondary">
-                    {trait}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Living Habits */}
-          {(profile.sleepSchedule || profile.cleanliness) && (
-            <div>
-              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Living Habits</h3>
-              <div className="space-y-1 text-sm">
-                {profile.sleepSchedule && (
-                  <p>
-                    <span className="text-[#64748b]">Sleep Schedule:</span>{' '}
-                    <span className="capitalize">{profile.sleepSchedule}</span>
-                  </p>
-                )}
-                {profile.cleanliness && (
-                  <p>
-                    <span className="text-[#64748b]">Cleanliness:</span>{' '}
-                    <span className="capitalize">{profile.cleanliness}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Social Media */}
-          {(profile.instagram || profile.snapchat) && (
-            <div>
-              <h3 className="text-sm text-[#64748b] mb-2 font-medium">Social Media</h3>
-              <div className="space-y-2">
-                {profile.instagram && (
-                  <a
-                    href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-[#2E7B91] hover:text-[#25658A] hover:underline"
-                  >
-                    <Instagram className="w-4 h-4" />
-                    {profile.instagram}
-                  </a>
-                )}
-                {profile.snapchat && (
-                  <p className="text-sm">
-                    <span className="text-[#64748b]">Snapchat:</span> {profile.snapchat}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Connect Button - UNIFIED */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!accessToken) {
+                toast.error('Please log in to connect');
+                return;
+              }
+              setShowSoftIntro(true);
+            }}
+            className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 text-white rounded-full text-sm font-medium transition-all"
+            style={{
+              background: 'var(--gradient-accent)',
+              borderRadius: 'var(--radius-full)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--font-size-body-sm)',
+              fontWeight: 'var(--font-weight-bold)',
+              height: 'var(--button-height-sm)',
+              boxShadow: 'var(--shadow-md)',
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Connect
+          </button>
         </div>
-      </div>
-
-      {/* Action Buttons - Fixed at bottom - Always visible - Rendered via Portal for Safari */}
-      {typeof document !== 'undefined' && createPortal(
-        <div
-          data-action-buttons
-          className="bg-white border-t-2 border-[#EAEAEA] px-4 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            paddingTop: '1rem',
-            paddingBottom: `max(1rem, env(safe-area-inset-bottom))`,
-            minHeight: '80px',
-            width: '100vw',
-            maxWidth: '100%',
-            backgroundColor: '#ffffff',
-            zIndex: 99999,
-            boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)',
-            WebkitTransform: 'translateZ(0)',
-            transform: 'translateZ(0)',
-            willChange: 'transform',
-            display: 'block',
-            visibility: 'visible',
-            opacity: 1,
-            WebkitBackfaceVisibility: 'visible',
-            backfaceVisibility: 'visible',
-          }}
-        >
-          <div className="flex gap-3 max-w-2xl mx-auto">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleLike}
-              className={`flex-1 gap-2 font-semibold h-12 text-base rounded-2xl ${
-                liked ? 'bg-red-50 border-2 border-red-400 text-red-600 hover:bg-red-100' : 'border-2 hover:border-gray-400'
-              }`}
-            >
-              <Heart className={`w-5 h-5 ${liked ? 'fill-red-600' : ''}`} />
-              {liked ? 'Liked' : 'Like'}
-            </Button>
-            <button
-              data-soft-intro-button
-              onClick={() => {
-                if (!accessToken) {
-                  toast.error('Please log in to send a soft intro');
-                  return;
-                }
-                setShowSoftIntro(true);
-              }}
-              aria-label={`Send soft intro to ${profile.name}`}
-              className="flex-1 gap-2 font-semibold h-12 shadow-lg text-base rounded-2xl flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#2E7B91]"
-              style={{ 
-                color: '#ffffff',
-                backgroundColor: '#2E7B91',
-                background: 'linear-gradient(to right, #2E7B91, #25658A)',
-                backgroundImage: 'linear-gradient(to right, #2E7B91, #25658A)',
-                border: 'none',
-              }}
-            >
-              <Sparkles className="w-5 h-5" style={{ color: '#ffffff', fill: 'none', stroke: '#ffffff' }} aria-hidden="true" />
-              <span style={{ color: '#ffffff', fontWeight: 600 }}>Soft Intro</span>
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      </motion.div>
 
       {/* Soft Intro Flow */}
       {showSoftIntro && (

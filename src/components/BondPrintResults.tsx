@@ -1,9 +1,7 @@
-import { motion } from 'motion/react';
-import { Heart, Sparkles, Check, ArrowRight, X } from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Heart, Sparkles, Check, ArrowRight } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
 
 interface BondPrintResultsProps {
   bondPrint: any;
@@ -11,251 +9,289 @@ interface BondPrintResultsProps {
 }
 
 export function BondPrintResults({ bondPrint, onContinue }: BondPrintResultsProps) {
-  const getTraitLabel = (trait: string) => {
-    const labels: { [key: string]: { low: string; high: string } } = {
-      socialEnergy: { low: 'Introvert', high: 'Extrovert' },
-      communication: { low: 'Subtle', high: 'Direct' },
-      emotionalStyle: { low: 'Logical', high: 'Emotional' },
-      spontaneity: { low: 'Planned', high: 'Spontaneous' },
-      conflictStyle: { low: 'Harmonious', high: 'Direct' },
-      independence: { low: 'Collaborative', high: 'Independent' },
-      adventurousness: { low: 'Stable', high: 'Adventurous' },
-      empathy: { low: 'Pragmatic', high: 'Empathetic' },
-      competitiveness: { low: 'Cooperative', high: 'Competitive' },
-    };
-    return labels[trait] || { low: 'Low', high: 'High' };
-  };
-
-  const getTraitName = (trait: string) => {
-    const names: { [key: string]: string } = {
-      socialEnergy: 'Social Energy',
-      communication: 'Communication',
-      emotionalStyle: 'Emotional Style',
-      spontaneity: 'Spontaneity',
-      conflictStyle: 'Conflict Resolution',
-      independence: 'Independence',
-      adventurousness: 'Adventurousness',
-      empathy: 'Empathy',
-      competitiveness: 'Competitiveness',
-    };
-    return names[trait] || trait;
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 p-4 pb-24">
-      {/* Top Close Button */}
-      <div className="max-w-3xl mx-auto pt-4 flex justify-end">
-        <Button
-          onClick={onContinue}
-          variant="ghost"
-          size="icon"
-          className="rounded-full"
+    <div 
+      className="min-h-screen p-6 pb-24 overflow-y-auto"
+      style={{
+        background: 'linear-gradient(135deg, #F3F4FF 0%, #FFE5EC 50%, #FFF5E6 100%)',
+        minHeight: '100vh',
+      }}
+    >
+      {/* Success Toast */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md mx-auto mb-6 bg-white rounded-2xl shadow-lg p-3 flex items-center gap-3"
+      >
+        <div 
+          className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: '#10B981' }}
         >
-          <X className="w-5 h-5" />
-        </Button>
-      </div>
+          <Check className="w-4 h-4 text-white" />
+        </div>
+        <span className="font-semibold" style={{ color: '#1A1D2E', fontSize: '14px' }}>
+          Your Bond Print is ready! 🎉
+        </span>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-3xl mx-auto pb-8"
+        transition={{ delay: 0.2 }}
+        className="max-w-md mx-auto"
       >
         {/* Header */}
         <div className="text-center mb-8">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring' }}
-            className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6"
+            transition={{ delay: 0.3, type: 'spring' }}
+            className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{
+              background: 'linear-gradient(135deg, #C084FC 0%, #E879F9 100%)',
+              boxShadow: '0 8px 24px rgba(192, 132, 252, 0.4)',
+            }}
           >
-            <Heart className="w-12 h-12 text-white" />
+            <Heart className="w-12 h-12 text-white fill-white" />
           </motion.div>
-          <h1 className="text-4xl mb-3">Your Bond Print is Ready! 🎉</h1>
-          <p className="text-xl text-gray-600">
-            {bondPrint.summary}
+
+          <h1 
+            className="text-3xl mb-3"
+            style={{
+              fontWeight: '800',
+              color: '#1A1D2E',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Your Bond Print is Ready! 🎉
+          </h1>
+
+          <p 
+            className="text-base px-4"
+            style={{ 
+              color: '#6B6B6B',
+              lineHeight: '1.6',
+            }}
+          >
+            {bondPrint.summary || 'A balanced individual who thrives in mix of both settings'}
           </p>
         </div>
 
-        {/* Personality Card */}
-        <Card className="mb-6 border-2 border-purple-200">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Sparkles className="w-6 h-6 text-purple-600" />
-              <h2 className="text-2xl">Your Personality</h2>
-            </div>
+        {/* Your Personality Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-3xl p-6 shadow-lg mb-4"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-6 h-6" style={{ color: '#C084FC' }} />
+            <h2 
+              className="text-xl"
+              style={{
+                fontWeight: '700',
+                color: '#1A1D2E',
+              }}
+            >
+              Your Personality
+            </h2>
+          </div>
 
-            <div className="flex items-start gap-4 mb-4">
-              <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg px-4 py-1">
-                {bondPrint.personality.primaryType}
-              </Badge>
-            </div>
+          <div 
+            className="inline-block px-4 py-2 rounded-full mb-4"
+            style={{
+              background: 'linear-gradient(135deg, #C084FC 0%, #E879F9 100%)',
+              fontSize: '16px',
+              fontWeight: '700',
+              color: 'white',
+            }}
+          >
+            {bondPrint.personality?.primaryType || 'Balanced Individual'}
+          </div>
 
-            <p className="text-gray-700 mb-4">
-              {bondPrint.personality.description}
-            </p>
+          <p 
+            className="mb-4"
+            style={{ 
+              color: '#6B6B6B',
+              fontSize: '15px',
+              lineHeight: '1.6',
+            }}
+          >
+            {bondPrint.personality?.description || 
+              "You're a balanced individual who values authentic connections and personal growth. You bring a unique perspective to friendships and living situations."}
+          </p>
 
+          {bondPrint.personality?.secondaryTraits && bondPrint.personality.secondaryTraits.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {bondPrint.personality.secondaryTraits.map((trait: string) => (
-                <Badge key={trait} variant="outline" className="border-purple-300">
+                <span 
+                  key={trait}
+                  className="px-3 py-1 rounded-full text-sm font-semibold"
+                  style={{ 
+                    background: 'rgba(192, 132, 252, 0.1)',
+                    color: '#1A1D2E',
+                    border: '1px solid rgba(192, 132, 252, 0.2)'
+                  }}
+                >
                   {trait}
-                </Badge>
+                </span>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </motion.div>
 
-        {/* Communication Style */}
-        <Card className="mb-6 border-2 border-purple-200">
-          <CardContent className="p-6">
-            <h3 className="text-xl mb-4 flex items-center gap-2">
-              💬 Communication Style
-            </h3>
-            <Badge className="bg-purple-100 text-purple-700 mb-3">
-              {bondPrint.communication.style}
-            </Badge>
-            <div className="space-y-2">
-              {bondPrint.communication.preferences.map((pref: string) => (
-                <div key={pref} className="flex items-start gap-2">
-                  <Check className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-gray-700">{pref}</span>
+        {/* Communication Style Card */}
+        {bondPrint.communication && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white rounded-3xl p-6 shadow-lg mb-4"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">💬</span>
+              <h2 
+                className="text-xl"
+                style={{
+                  fontWeight: '700',
+                  color: '#1A1D2E',
+                }}
+              >
+                Communication Style
+              </h2>
+            </div>
+
+            <div 
+              className="inline-block px-4 py-2 rounded-full mb-4"
+              style={{
+                background: 'rgba(192, 132, 252, 0.1)',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#C084FC',
+              }}
+            >
+              {bondPrint.communication.style || 'Balanced Communicator'}
+            </div>
+
+            <div className="space-y-3">
+              {(bondPrint.communication.preferences || [
+                'Prefers thoughtful, considered responses',
+                'Appreciates practical solutions'
+              ]).map((pref: string, index: number) => (
+                <div key={index} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#10B981' }} />
+                  <span 
+                    style={{ 
+                      color: '#6B6B6B',
+                      fontSize: '15px',
+                      lineHeight: '1.6',
+                    }}
+                  >
+                    {pref}
+                  </span>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
+        )}
 
-        {/* Personality Traits */}
-        <Card className="mb-6 border-2 border-purple-200">
-          <CardContent className="p-6">
-            <h3 className="text-xl mb-4 flex items-center gap-2">
-              🎭 Personality Traits
-            </h3>
+        {/* Social Preferences Card */}
+        {bondPrint.social && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white rounded-3xl p-6 shadow-lg mb-6"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">👥</span>
+              <h2 
+                className="text-xl"
+                style={{
+                  fontWeight: '700',
+                  color: '#1A1D2E',
+                }}
+              >
+                Social Preferences
+              </h2>
+            </div>
+
             <div className="space-y-4">
-              {Object.entries(bondPrint.traits).map(([key, value]) => {
-                const score = value as number;
-                const labels = getTraitLabel(key);
-                return (
-                  <div key={key}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">{getTraitName(key)}</span>
-                      <span className="text-xs text-gray-500">
-                        {score < 0.3 ? labels.low : score > 0.7 ? labels.high : 'Balanced'}
-                      </span>
-                    </div>
-                    <div className="relative">
-                      <Progress value={score * 100} className="h-2" />
-                      <div className="flex justify-between mt-1">
-                        <span className="text-xs text-gray-500">{labels.low}</span>
-                        <span className="text-xs text-gray-500">{labels.high}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Social Preferences */}
-        <Card className="mb-6 border-2 border-purple-200">
-          <CardContent className="p-6">
-            <h3 className="text-xl mb-4 flex items-center gap-2">
-              👥 Social Preferences
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <span className="text-sm text-gray-600">Ideal Setting:</span>
-                <p className="font-medium">{bondPrint.social.idealSetting}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Recharge Method:</span>
-                <p className="font-medium">{bondPrint.social.rechargeMethod}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Friendship Style:</span>
-                <p className="font-medium">{bondPrint.social.friendshipStyle}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Core Values */}
-        <Card className="mb-6 border-2 border-purple-200">
-          <CardContent className="p-6">
-            <h3 className="text-xl mb-4 flex items-center gap-2">
-              ⭐ Core Values
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {bondPrint.values.map((value: string) => (
-                <div key={value} className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
-                  <Heart className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                  <span className="text-sm font-medium text-gray-700">{value}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Living Preferences */}
-        <Card className="mb-6 border-2 border-purple-200">
-          <CardContent className="p-6">
-            <h3 className="text-xl mb-4 flex items-center gap-2">
-              🏠 Living Preferences
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm">Cleanliness</span>
-                  <span className="text-xs text-gray-500">
-                    {bondPrint.livingPreferences.cleanliness > 0.7 ? 'Very Clean' : 
-                     bondPrint.livingPreferences.cleanliness > 0.4 ? 'Moderate' : 'Relaxed'}
+              {bondPrint.social.idealSetting && (
+                <div>
+                  <span 
+                    className="text-sm font-semibold block mb-1"
+                    style={{ color: '#6B6B6B' }}
+                  >
+                    Ideal Setting
                   </span>
+                  <p style={{ color: '#1A1D2E', fontSize: '15px', fontWeight: '600' }}>
+                    {bondPrint.social.idealSetting}
+                  </p>
                 </div>
-                <Progress value={bondPrint.livingPreferences.cleanliness * 100} className="h-2" />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm">Noise Level</span>
-                  <span className="text-xs text-gray-500">
-                    {bondPrint.livingPreferences.noiseLevel > 0.7 ? 'Lively' : 
-                     bondPrint.livingPreferences.noiseLevel > 0.4 ? 'Moderate' : 'Quiet'}
+              )}
+              {bondPrint.social.rechargeMethod && (
+                <div>
+                  <span 
+                    className="text-sm font-semibold block mb-1"
+                    style={{ color: '#6B6B6B' }}
+                  >
+                    Recharge Method
                   </span>
+                  <p style={{ color: '#1A1D2E', fontSize: '15px', fontWeight: '600' }}>
+                    {bondPrint.social.rechargeMethod}
+                  </p>
                 </div>
-                <Progress value={bondPrint.livingPreferences.noiseLevel * 100} className="h-2" />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm">Social Space</span>
-                  <span className="text-xs text-gray-500">
-                    {bondPrint.livingPreferences.socialSpace > 0.7 ? 'Very Social' : 
-                     bondPrint.livingPreferences.socialSpace > 0.4 ? 'Balanced' : 'Private'}
+              )}
+              {bondPrint.social.friendshipStyle && (
+                <div>
+                  <span 
+                    className="text-sm font-semibold block mb-1"
+                    style={{ color: '#6B6B6B' }}
+                  >
+                    Friendship Style
                   </span>
+                  <p style={{ color: '#1A1D2E', fontSize: '15px', fontWeight: '600' }}>
+                    {bondPrint.social.friendshipStyle}
+                  </p>
                 </div>
-                <Progress value={bondPrint.livingPreferences.socialSpace * 100} className="h-2" />
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Schedule:</span>
-                <Badge className="ml-2 bg-purple-100 text-purple-700">
-                  {bondPrint.livingPreferences.schedule}
-                </Badge>
-              </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </motion.div>
+        )}
 
         {/* Continue Button */}
-        <Button
-          onClick={onContinue}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 gap-2"
-          size="lg"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
         >
-          Start Finding Connections
-          <ArrowRight className="w-5 h-5" />
-        </Button>
+          <Button
+            onClick={onContinue}
+            className="w-full text-white border-none shadow-lg"
+            size="lg"
+            style={{
+              height: '56px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #C084FC 0%, #E879F9 100%)',
+              fontSize: '17px',
+              fontWeight: '700',
+            }}
+          >
+            Start Finding Connections
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Your Bond Print helps us match you with friends, roommates, and potential dates 💜
-        </p>
+          <p 
+            className="text-center mt-4"
+            style={{ 
+              color: '#6B6B6B',
+              fontSize: '13px',
+            }}
+          >
+            Your Bond Print helps us match you with friends, roommates, and potential dates 💜
+          </p>
+        </motion.div>
       </motion.div>
     </div>
   );

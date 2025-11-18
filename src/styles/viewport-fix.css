@@ -1,0 +1,118 @@
+/* Viewport and Scaling Fixes for Mobile */
+
+/* Ensure proper viewport on all devices */
+html {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Prevent zoom on double tap */
+* {
+  touch-action: manipulation;
+}
+
+/* Fix viewport units on mobile */
+:root {
+  --vh: 1vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --vh: 1dvh;
+  }
+}
+
+/* Responsive typography */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 375px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 320px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Prevent layout shift from scrollbars */
+body {
+  scrollbar-gutter: stable;
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Prevent content from being too wide */
+img,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure cards and containers respect viewport */
+[class*="card"],
+[class*="Card"],
+[class*="container"],
+[class*="Container"] {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Mobile breakpoints */
+@media (max-width: 640px) {
+  /* Ensure full-width mobile layout */
+  .auth-container > * {
+    max-width: 100%;
+  }
+}
+
+/* Prevent horizontal overflow from pseudo-elements */
+* {
+  overflow-wrap: break-word;
+}
+
+/* Fix for PWA standalone mode */
+@media (display-mode: standalone) {
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}
+

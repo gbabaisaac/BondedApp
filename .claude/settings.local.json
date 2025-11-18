@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run build:*)",
+      "Bash(start generate-icons.html)",
+      "Bash(cat:*)",
+      "Bash(NUL)",
+      "Bash(dir)",
+      "Bash(wc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

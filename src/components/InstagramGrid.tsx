@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Sparkles, Filter, ChevronDown, ChevronUp, X, Users, Camera, CheckCircle2, Plus } from 'lucide-react';
+import { Sparkles, Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { ProfileDetailView } from './ProfileDetailView';
 import { projectId } from '../utils/supabase/config';
 import { ProfileGridSkeleton } from './LoadingSkeletons';
@@ -281,25 +281,31 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div 
+      className="min-h-screen"
+      style={{ background: 'linear-gradient(135deg, #F3F4FF 0%, #FFE5EC 50%, #FFF5E6 100%)' }}
+    >
       {/* Stats Bar with Expandable Filters */}
       <div className="mx-4 mt-3 mb-3">
-        <div className="bg-gray-900/80 rounded-2xl px-4 py-3 border border-gray-700/30">
+        <div className="bg-white/95 rounded-2xl px-4 py-3 border border-border shadow-md">
           <div className="flex items-center justify-between">
             {/* Student Counter */}
             <div className="text-center">
-              <p className="font-semibold text-teal-blue">{filteredProfiles.length}</p>
-              <p className="text-xs text-gray-400">Students</p>
+              <p className="font-semibold" style={{ color: '#FF6B6B' }}>{filteredProfiles.length}</p>
+              <p className="text-xs" style={{ color: '#6B6B6B' }}>Students</p>
             </div>
             
             {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                showFilters || activeFilterCount > 0
-                  ? 'bg-teal-blue text-white'
-                  : 'bg-gray-800/50 text-soft-cream/70'
-              }`}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+              style={{
+                background: showFilters || activeFilterCount > 0 
+                  ? 'linear-gradient(135deg, #FF6B6B 0%, #A78BFA 100%)'
+                  : '#FFFFFF',
+                color: showFilters || activeFilterCount > 0 ? '#FFFFFF' : '#6B6B6B',
+                border: showFilters || activeFilterCount > 0 ? 'none' : '2px solid #E8E8F0'
+              }}
             >
               <Filter className="w-4 h-4" />
               <span>Filters</span>
@@ -342,8 +348,8 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
         )}
       </div>
 
-      {/* Grid - Card Style */}
-      <div className="grid grid-cols-2 gap-4 p-4">
+      {/* Grid */}
+      <div className="grid grid-cols-3 gap-3 p-3">
         {filteredProfiles.map((profile, index) => {
           const bondPrintScore = bondPrintScores[profile.id];
           const isHighMatch = bondPrintScore && bondPrintScore >= 70;
@@ -360,78 +366,62 @@ export function InstagramGrid({ onProfileDetailOpen }: InstagramGridProps) {
                 index > 0 ? () => handleProfileClick(index - 1) : undefined
               )}
               aria-label={getProfileCardAriaLabel(profile)}
-              className={`relative overflow-hidden bg-gray-900/90 rounded-2xl border border-gray-700/50 active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-blue transition-all ${
-                isHighMatch 
-                  ? 'ring-2 ring-teal-blue/50' 
-                  : isMediumMatch 
-                  ? 'ring-1 ring-ocean-blue/50'
-                  : ''
-              }`}
+              className="group relative overflow-hidden bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 aspect-[0.85] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
-              {/* Profile Picture - Top Section */}
-              <div className="relative w-full h-48 overflow-hidden">
+              {/* Photo (75% of card) */}
+              <div className="relative h-[75%]" style={{ background: 'linear-gradient(135deg, #FF6B6B 0%, #A78BFA 100%)' }}>
                 <img
                   src={profile.imageUrl}
                   alt={profile.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                {/* Verified Badge - Top Right */}
+                
+                {/* Bond Print Badge */}
                 {bondPrintScore && bondPrintScore >= 70 && (
-                  <div className="absolute top-3 right-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-gray-900">
-                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  <div 
+                    className="absolute top-2 right-2 px-2 py-1 backdrop-blur-sm rounded-lg text-white text-xs font-bold shadow-lg flex items-center gap-1"
+                    style={{ background: 'linear-gradient(135deg, #FF6B6B 0%, #A78BFA 100%)' }}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {bondPrintScore}%
                   </div>
                 )}
               </div>
-
-              {/* Card Content */}
-              <div className="p-4 space-y-3">
-                {/* Name with Verified Badge */}
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-soft-cream truncate">{profile.name}</h3>
-                  {bondPrintScore && bondPrintScore >= 70 && (
-                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  )}
-                </div>
-
-                {/* Bio/Profession */}
-                {profile.bio && (
-                  <p className="text-sm text-soft-cream/70 line-clamp-2 leading-relaxed">
-                    {profile.bio}
-                  </p>
-                )}
-                {!profile.bio && profile.major && (
-                  <p className="text-sm text-soft-cream/70">
-                    {profile.major} {profile.year && `• ${profile.year}`}
-                  </p>
-                )}
-
-                {/* Stats Row */}
-                <div className="flex items-center gap-4 pt-2 border-t border-gray-700/50">
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-soft-cream/60" />
-                    <span className="text-sm font-medium text-soft-cream">
-                      {profile.connectionsCount || 0}
+              
+              {/* Info (25% of card) */}
+              <div className="p-2 h-[25%] flex flex-col justify-center bg-white">
+                <h3 className="text-xs font-bold truncate" style={{ color: '#1A1D2E' }}>
+                  {profile.name}
+                </h3>
+                <p className="text-[10px] truncate" style={{ color: '#6B6B6B' }}>
+                  {profile.major}
+                </p>
+                
+                {/* Compatibility Bar */}
+                {bondPrintScore && bondPrintScore >= 70 && (
+                  <div className="mt-1 flex items-center gap-1">
+                    <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: '#E8E8F0' }}>
+                      <div
+                        className="h-full transition-all duration-500"
+                        style={{ 
+                          width: `${bondPrintScore}%`,
+                          background: 'linear-gradient(135deg, #FF6B6B 0%, #A78BFA 100%)'
+                        }}
+                      />
+                    </div>
+                    <span 
+                      className="text-[10px] font-bold whitespace-nowrap"
+                      style={{ 
+                        background: 'linear-gradient(135deg, #FF6B6B 0%, #A78BFA 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                      }}
+                    >
+                      {bondPrintScore}%
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-soft-cream/60" />
-                    <span className="text-sm font-medium text-soft-cream">
-                      {profile.postsCount || 0}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Follow Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Handle follow action
-                  }}
-                  className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800/70 hover:bg-gray-700/70 text-soft-cream rounded-full text-sm font-medium transition-colors border border-gray-700/50"
-                >
-                  <Plus className="w-4 h-4" />
-                  Connect
-                </button>
+                )}
               </div>
             </button>
           );

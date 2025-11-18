@@ -1,0 +1,127 @@
+/* EMERGENCY SCROLL FIX - Ensures all onboarding screens render and scroll properly */
+
+/* Remove ALL potential scroll blockers */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Lock html and body to prevent outer scroll - ONLY when onboarding is active */
+html:has(.onboarding-container) {
+  height: 100%;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+body:has(.onboarding-container) {
+  height: 100vh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Onboarding container - fixed full viewport */
+.onboarding-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: linear-gradient(135deg, #F3F4FF 0%, #FFE5EC 50%, #FFF5E6 100%) !important;
+}
+
+/* Motion wrapper - full viewport */
+.onboarding-screen-wrapper {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* EXCLUDE Welcome and Success screens - they use natural layout */
+[class*="WelcomeScreen_container"],
+[class*="SuccessScreen_container"] {
+  position: relative !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 100vh !important;
+}
+
+[class*="WelcomeScreen_content"],
+[class*="SuccessScreen_content"] {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* ALL OTHER onboarding screens use absolute positioning for controlled scrolling */
+[class*="InterestsPersonality_container"],
+[class*="Goals_container"],
+[class*="BasicProfile_container"],
+[class*="SchoolSelection_container"],
+[class*="PhotoUpload_container"] {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+[class*="InterestsPersonality_content"],
+[class*="Goals_content"],
+[class*="BasicProfile_content"],
+[class*="SchoolSelection_content"],
+[class*="PhotoUpload_content"] {
+  position: absolute !important;
+  top: 80px !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 120px !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  padding: 24px 20px !important;
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
+}
+
+/* Ensure bottom CTAs are always visible and clickable */
+[class*="bottomCta"],
+[class*="bottom-cta"],
+[class*="BottomCta"] {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  touch-action: auto !important;
+}
+
+/* Ensure screen headers stay at top */
+[class*="ScreenHeader"] {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 100 !important;
+  height: 80px !important;
+}
+

@@ -1,7 +1,7 @@
 import React from 'react';
-import { OnboardingWizard } from './OnboardingWizard';
+import { OnboardingFlowModern } from './onboarding/OnboardingFlowModern';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { useAccessToken } from '../store/useAppStore';
+import { useAppStore } from '../store/useAppStore';
 
 interface ProfileSetupProps {
   onComplete: (profile: any) => void;
@@ -9,18 +9,31 @@ interface ProfileSetupProps {
 }
 
 export function ProfileSetup({ onComplete, existingProfile }: ProfileSetupProps) {
-  const accessToken = useAccessToken();
   const [userInfo, setUserInfo] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const loadUserInfo = async () => {
+      // Get access token from store
+      const token = useAppStore.getState().accessToken;
+      
       // If editing existing profile, use that data
       if (existingProfile) {
         setUserInfo({
           email: existingProfile.email || '',
           name: existingProfile.name || '',
           school: existingProfile.school || '',
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // Skip user info fetch if no token
+      if (!token) {
+        setUserInfo({
+          email: '',
+          name: '',
+          school: '',
         });
         setLoading(false);
         return;
@@ -32,7 +45,7 @@ export function ProfileSetup({ onComplete, existingProfile }: ProfileSetupProps)
           `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/user-info`,
           {
             headers: {
-              'Authorization': `Bearer ${accessToken}`,
+              'Authorization': `Bearer ${token}`,
             },
           }
         );
@@ -65,7 +78,7 @@ export function ProfileSetup({ onComplete, existingProfile }: ProfileSetupProps)
       }
     };
     loadUserInfo();
-  }, [accessToken, existingProfile]);
+  }, [existingProfile]);
 
   if (loading) {
     return (
@@ -75,13 +88,17 @@ export function ProfileSetup({ onComplete, existingProfile }: ProfileSetupProps)
     );
   }
 
+  const handleComplete = (profile: any) => {
+    console.log('🎉 ProfileSetup handleComplete called');
+    console.log('📦 Profile data:', profile);
+    console.log('🔄 Calling parent onComplete...');
+    onComplete(profile);
+  };
+
   return (
-    <OnboardingWizard
-      userEmail={userInfo?.email || existingProfile?.email || ''}
+    <OnboardingFlowModern
       userName={userInfo?.name || existingProfile?.name || ''}
-      userSchool={userInfo?.school || existingProfile?.school || ''}
-      onComplete={onComplete}
-      existingProfile={existingProfile}
+      onComplete={handleComplete}
     />
   );
 }

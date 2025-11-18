@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
-import { GraduationCap, Search } from 'lucide-react';
+import { GraduationCap, Search, Check } from 'lucide-react';
 
 const SCHOOLS = [
   // Ivy League
@@ -112,76 +112,159 @@ export function SchoolSelector({ value, onChange }: SchoolSelectorProps) {
     school.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <Card>
-      <CardContent className="pt-6 space-y-4">
-        <div className="text-center mb-4">
-          <GraduationCap className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-          <h3 className="text-xl mb-1">Select your school</h3>
-          <p className="text-sm text-gray-600">This helps us connect you with your campus community</p>
-        </div>
+  // Group schools alphabetically
+  const groupedSchools = filteredSchools.reduce((acc, school) => {
+    const firstLetter = school.charAt(0).toUpperCase();
+    if (!acc[firstLetter]) {
+      acc[firstLetter] = [];
+    }
+    acc[firstLetter].push(school);
+    return acc;
+  }, {} as Record<string, string[]>);
 
-        <div className="relative">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+  return (
+    <div className="w-full">
+      {/* Title */}
+      <h2 
+        className="text-[26px] font-semibold mb-1"
+        style={{ color: '#F9FAFF' }}
+      >
+        Select your school
+      </h2>
+      
+      {/* Subtitle */}
+      <p 
+        className="text-[15px] font-medium mb-5"
+        style={{ color: '#A7AABB' }}
+      >
+        This helps us connect you with your campus community
+      </p>
+
+      {/* Search Bar */}
+      <div className="relative mb-4">
+        <Search 
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" 
+          style={{ color: '#757A89' }}
+        />
+        <Input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search for your school..."
+          className="w-full pl-12 pr-4 h-[48px] rounded-[12px] border"
+          style={{
+            backgroundColor: '#171B24',
+            color: '#F9FAFF',
+            fontSize: '15px',
+            borderColor: 'rgba(255, 255, 255, 0.08)'
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = '#0A84FF';
+            e.target.style.boxShadow = '0 0 0 3px rgba(10, 132, 255, 0.1)';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+            e.target.style.boxShadow = 'none';
+          }}
+        />
+      </div>
+
+      {/* Selected School Indicator */}
+      {value && value !== 'Other' && (
+        <p 
+          className="text-sm font-medium mb-4"
+          style={{ color: '#0A84FF' }}
+        >
+          Connected to: {value}
+        </p>
+      )}
+
+      {/* School List - iOS Style */}
+      <div 
+        className="rounded-[12px] overflow-hidden"
+        style={{
+          backgroundColor: '#11141C',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          maxHeight: 'calc(100vh - 400px)',
+          overflowY: 'auto'
+        }}
+      >
+        {Object.entries(groupedSchools).map(([letter, schools]) => (
+          <div key={letter}>
+            <div 
+              className="px-4 py-2 text-xs font-semibold uppercase tracking-wider"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                color: '#757A89'
+              }}
+            >
+              {letter}
+            </div>
+            {schools.map((school) => (
+              <button
+                key={school}
+                onClick={() => {
+                  onChange(school);
+                  if (school !== 'Other') {
+                    setCustomSchool('');
+                  }
+                }}
+                className="w-full text-left px-4 h-[56px] flex items-center justify-between border-b last:border-b-0 transition-all active:opacity-70"
+                style={{
+                  backgroundColor: value === school 
+                    ? 'rgba(10, 132, 255, 0.1)' 
+                    : 'transparent',
+                  borderColor: 'rgba(255, 255, 255, 0.08)',
+                  color: value === school ? '#0A84FF' : '#F9FAFF',
+                  fontSize: '15px'
+                }}
+              >
+                <span className="font-medium">{school}</span>
+                {value === school && (
+                  <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#0A84FF' }} />
+                )}
+              </button>
+            ))}
+          </div>
+        ))}
+        {filteredSchools.length === 0 && (
+          <div className="px-4 py-8 text-center" style={{ color: '#757A89' }}>
+            No schools found. Try searching differently or select "Other".
+          </div>
+        )}
+      </div>
+
+      {value === 'Other' && (
+        <div className="mt-4">
           <Input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search for your school..."
-            className="pl-10"
+            id="customSchool"
+            value={customSchool}
+            onChange={(e) => {
+              setCustomSchool(e.target.value);
+              if (e.target.value) {
+                onChange('Other');
+              }
+            }}
+            placeholder="Enter school name"
+            className="w-full h-[48px] rounded-[12px] border px-4"
+            style={{
+              backgroundColor: '#171B24',
+              color: '#F9FAFF',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              fontSize: '15px'
+            }}
           />
         </div>
+      )}
 
-        <div className="max-h-96 overflow-y-auto border rounded-lg">
-          {filteredSchools.map((school) => (
-            <button
-              key={school}
-              onClick={() => {
-                onChange(school);
-                if (school !== 'Other') {
-                  setCustomSchool('');
-                }
-              }}
-              className={`w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors border-b last:border-b-0 ${
-                value === school ? 'bg-purple-100 text-purple-700' : ''
-              }`}
-            >
-              {school}
-            </button>
-          ))}
-          {filteredSchools.length === 0 && (
-            <div className="px-4 py-8 text-center text-gray-500">
-              No schools found. Try searching differently or select "Other".
-            </div>
-          )}
-        </div>
-
-        {value === 'Other' && (
-          <div className="mt-4">
-            <Label htmlFor="customSchool">Enter your school name</Label>
-            <Input
-              id="customSchool"
-              value={customSchool}
-              onChange={(e) => setCustomSchool(e.target.value)}
-              placeholder="Enter school name"
-            />
-          </div>
-        )}
-
-        {value && value !== 'Other' && (
-          <div className="bg-purple-50 rounded-lg p-3 text-sm">
-            <span className="text-gray-600">Selected: </span>
-            <span className="text-purple-700">{value}</span>
-          </div>
-        )}
-
-        {value === 'Other' && customSchool && (
-          <div className="bg-purple-50 rounded-lg p-3 text-sm">
-            <span className="text-gray-600">Selected: </span>
-            <span className="text-purple-700">{customSchool}</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {value === 'Other' && customSchool && (
+        <p 
+          className="text-sm font-medium mt-4"
+          style={{ color: '#0A84FF' }}
+        >
+          Connected to: {customSchool}
+        </p>
+      )}
+    </div>
   );
 }
 

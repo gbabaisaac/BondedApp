@@ -306,14 +306,14 @@ export function MyProfile() {
           >
             <Edit3 className="w-5 h-5" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setCurrentView('settings')}
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => setCurrentView('settings')}
             className="text-soft-cream/80 hover:text-soft-cream"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
         </div>
       </div>
 
@@ -327,15 +327,15 @@ export function MyProfile() {
                 <AvatarImage src={profilePhotos[0]} className="object-cover" />
               ) : null}
               <AvatarFallback className="text-4xl bg-gradient-to-br from-teal-blue to-ocean-blue text-white font-bold">
-                {getInitials(userProfile.name)}
-              </AvatarFallback>
-            </Avatar>
+                    {getInitials(userProfile.name)}
+                  </AvatarFallback>
+                </Avatar>
             <button className="absolute bottom-0 right-0 w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center border-2 border-gray-700 hover:bg-gray-700 transition-colors">
               <Camera className="w-5 h-5 text-soft-cream" />
-            </button>
+                </button>
           </div>
-        </div>
-
+              </div>
+              
         {/* Name and Basic Info */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-soft-cream mb-1">
@@ -345,7 +345,7 @@ export function MyProfile() {
           <div className="flex items-center justify-center gap-2 text-soft-cream/70 text-sm mb-2">
             {userProfile.year && (
               <>
-                <GraduationCap className="w-4 h-4" />
+                    <GraduationCap className="w-4 h-4" />
                 <span>{userProfile.year}</span>
               </>
             )}
@@ -355,21 +355,21 @@ export function MyProfile() {
                 <span>{userProfile.major}</span>
               </>
             )}
-          </div>
+                  </div>
           {userProfile.school && (
             <div className="flex items-center justify-center gap-2 text-soft-cream/60 text-sm">
-              <MapPin className="w-4 h-4" />
-              <span>{userProfile.school}</span>
-            </div>
+                    <MapPin className="w-4 h-4" />
+                    <span>{userProfile.school}</span>
+                  </div>
           )}
-        </div>
+                  </div>
 
         {/* Bio Section */}
         {userProfile.bio && (
           <div className="mb-6">
             <h3 className="text-base font-semibold text-soft-cream mb-2">About</h3>
             <p className="text-soft-cream/80 leading-relaxed text-sm">{userProfile.bio}</p>
-          </div>
+                </div>
         )}
 
         {/* Interests - Tag Style */}
@@ -383,27 +383,27 @@ export function MyProfile() {
                   className="bg-gray-800/70 text-soft-cream border border-gray-700/50 px-3 py-1.5 text-sm rounded-full"
                 >
                   {interest}
-                </Badge>
-              ))}
-            </div>
-          </div>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
         )}
 
         {/* Looking For */}
         {userProfile.lookingFor && userProfile.lookingFor.length > 0 && (
           <div className="mb-6">
             <h3 className="text-base font-semibold text-soft-cream mb-3">Looking For</h3>
-            <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
               {userProfile.lookingFor.map((item, idx) => (
                 <Badge
                   key={idx}
                   className="bg-teal-blue/20 text-teal-blue border border-teal-blue/30 px-3 py-1.5 text-sm rounded-full"
                 >
                   {item}
-                </Badge>
-              ))}
-            </div>
-          </div>
+                  </Badge>
+                ))}
+              </div>
+              </div>
         )}
 
         {/* Bond Print */}
@@ -412,18 +412,18 @@ export function MyProfile() {
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-teal-blue" />
               <h3 className="font-semibold text-soft-cream">Bond Print</h3>
-            </div>
+                    </div>
             {userProfile.bondPrint.personality && (
-              <div>
+                    <div>
                 <Badge className="bg-teal-blue text-white mb-2">
                   {userProfile.bondPrint.personality.primaryType}
                 </Badge>
                 <p className="text-sm text-soft-cream/80">
                   {userProfile.bondPrint.personality.description}
                 </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
         )}
       </div>
     </div>

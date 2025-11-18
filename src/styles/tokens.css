@@ -1,0 +1,118 @@
+:root {
+  /* Primary Colors */
+  --primary-coral: #FF6B6B;
+  --primary-coral-light: #FF8E8E;
+  --primary-coral-dark: #FF4949;
+  --primary-coral-bg: rgba(255, 107, 107, 0.1);
+
+  /* Secondary Colors */
+  --secondary-blue: #4ECDC4;
+  --secondary-blue-light: #72D9D1;
+  --secondary-blue-dark: #3AB5AC;
+
+  /* Accent Colors */
+  --accent-yellow: #FFE66D;
+  --accent-purple: #A78BFA;
+  --accent-green: #6EE7B7;
+  --accent-pink: #FB7185;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+  --gradient-secondary: linear-gradient(135deg, #A78BFA 0%, #4ECDC4 100%);
+  --gradient-background: linear-gradient(180deg, #FAFAFF 0%, #F3F4FF 100%);
+  --gradient-accent: linear-gradient(135deg, #FF6B6B 0%, #A78BFA 100%);
+  --gradient-card: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(167, 139, 250, 0.1));
+
+  /* Neutrals */
+  --bg-primary: #FAFAFF;
+  --bg-secondary: #F3F4FF;
+  --bg-tertiary: #FFFFFF;
+  --text-primary: #2D2D2D;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #9B9B9B;
+  --border-light: #E8E8F0;
+  --border-medium: #D1D1E0;
+
+  /* Semantic Colors */
+  --success: #6EE7B7;
+  --error: #FB7185;
+  --warning: #FFE66D;
+  --info: #4ECDC4;
+
+  /* Typography */
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Font Sizes */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+  --text-5xl: 48px;
+
+  /* Font Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.02em;
+
+  /* Spacing (8px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0px 1px 2px rgba(45, 45, 45, 0.04);
+  --shadow-sm: 0px 2px 4px rgba(45, 45, 45, 0.06), 0px 1px 2px rgba(45, 45, 45, 0.04);
+  --shadow-md: 0px 4px 8px rgba(45, 45, 45, 0.08), 0px 2px 4px rgba(45, 45, 45, 0.04);
+  --shadow-lg: 0px 8px 16px rgba(45, 45, 45, 0.10), 0px 4px 8px rgba(45, 45, 45, 0.06);
+  --shadow-xl: 0px 16px 32px rgba(45, 45, 45, 0.12), 0px 8px 16px rgba(45, 45, 45, 0.08);
+  --shadow-button: 0px 4px 12px rgba(255, 107, 107, 0.25);
+  --shadow-button-hover: 0px 6px 16px rgba(255, 107, 107, 0.35);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Z-index scale */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+}
+
+

@@ -1,0 +1,81 @@
+/* Mobile PWA Scroll Fixes - Cross Browser */
+
+/* Fix for iOS PWA height */
+html {
+  height: 100%;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  height: 100vh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Onboarding container - don't scroll */
+.onboarding-container {
+  height: 100vh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+/* Force scrolling to work on all browsers */
+[class*="content"] {
+  /* Chrome, Safari, Edge */
+  -webkit-overflow-scrolling: touch;
+  /* iOS momentum scrolling */
+  overflow-y: scroll !important;
+  /* Firefox */
+  scrollbar-width: thin;
+  /* Force GPU acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  /* Prevent momentum scroll blocking */
+  overscroll-behavior-y: contain;
+  /* Allow vertical scroll gestures */
+  touch-action: pan-y;
+}
+
+/* Fix for mobile keyboard pushing content */
+@media (max-height: 600px) {
+  .onboarding-container {
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow-y: auto;
+  }
+}
+
+/* Ensure content is always scrollable on small screens */
+@media (max-height: 700px) {
+  [class*="container"] {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  [class*="content"] {
+    overflow-y: visible !important;
+  }
+}
+
+/* Fix for fixed bottom buttons on small screens */
+@media (max-height: 600px) {
+  [class*="bottomCta"] {
+    position: sticky !important;
+    bottom: 0;
+  }
+}
+
+/* Allow body scroll on mobile */
+body.onboarding-active {
+  overflow: visible !important;
+  position: relative !important;
+}
+

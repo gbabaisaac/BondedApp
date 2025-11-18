@@ -1,0 +1,76 @@
+/* Force visible input text across all browsers */
+
+/* Global input text visibility fix */
+input,
+textarea,
+select {
+  color: #1A1D2E !important;
+  -webkit-text-fill-color: #1A1D2E !important;
+  opacity: 1 !important;
+}
+
+/* Ensure placeholder is visible but lighter */
+input::placeholder,
+textarea::placeholder {
+  color: #94A3B8 !important;
+  -webkit-text-fill-color: #94A3B8 !important;
+  opacity: 0.6 !important;
+}
+
+/* Focus state */
+input:focus,
+textarea:focus,
+select:focus {
+  color: #1A1D2E !important;
+  -webkit-text-fill-color: #1A1D2E !important;
+}
+
+/* Autofill fix (Chrome/Safari) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #1A1D2E !important;
+  -webkit-box-shadow: 0 0 0 30px #F8F9FA inset !important;
+  box-shadow: 0 0 0 30px #F8F9FA inset !important;
+  color: #1A1D2E !important;
+}
+
+/* Firefox autofill */
+input:-moz-autofill,
+input:-moz-autofill-preview {
+  color: #1A1D2E !important;
+  background-color: #F8F9FA !important;
+}
+
+/* Disabled state should still be visible */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  color: #64748B !important;
+  -webkit-text-fill-color: #64748B !important;
+  opacity: 0.7 !important;
+}
+
+/* Dark text on light inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+textarea {
+  color: #1A1D2E !important;
+  -webkit-text-fill-color: #1A1D2E !important;
+  background-color: #F8F9FA !important;
+}
+
+/* Ensure high contrast */
+.auth-input-height,
+[class*="Input"] input,
+[class*="input"] {
+  color: #1A1D2E !important;
+  -webkit-text-fill-color: #1A1D2E !important;
+  font-weight: 500 !important;
+}
+

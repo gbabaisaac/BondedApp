@@ -84,23 +84,23 @@ export function InstallAppPrompt() {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-96">
-      <Card className="border-2 border-[#2E7B91] shadow-lg bg-white">
+      <Card className="border-2 border-teal-blue/50 shadow-lg bg-gray-900/95 backdrop-blur-xl">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#2E7B91] to-[#25658A] rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-teal-blue to-ocean-blue rounded-full flex items-center justify-center flex-shrink-0">
               <Smartphone className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
-                  <h3 className="font-semibold text-[#1E4F74] text-sm">Install Bonded</h3>
-                  <p className="text-xs text-[#64748b] mt-0.5">
+                  <h3 className="font-semibold text-soft-cream text-sm">Install Bonded</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
                     Get the full app experience
                   </p>
                 </div>
                 <button
                   onClick={handleDismiss}
-                  className="text-[#64748b] hover:text-[#1E4F74] flex-shrink-0"
+                  className="text-gray-400 hover:text-soft-cream flex-shrink-0 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -108,18 +108,18 @@ export function InstallAppPrompt() {
 
               {isIOS ? (
                 <div className="space-y-2">
-                  <p className="text-xs text-[#475569] mb-2">
+                  <p className="text-xs text-gray-300 mb-2">
                     To install on iPhone/iPad:
                   </p>
-                  <ol className="text-xs text-[#475569] space-y-1 list-decimal list-inside">
-                    <li>Tap the Share button <span className="font-semibold">□↑</span> at the bottom</li>
-                    <li>Scroll down and tap <span className="font-semibold">"Add to Home Screen"</span></li>
-                    <li>Tap <span className="font-semibold">"Add"</span> to confirm</li>
+                  <ol className="text-xs text-gray-300 space-y-1 list-decimal list-inside">
+                    <li>Tap the Share button <span className="font-semibold text-soft-cream">□↑</span> at the bottom</li>
+                    <li>Scroll down and tap <span className="font-semibold text-soft-cream">"Add to Home Screen"</span></li>
+                    <li>Tap <span className="font-semibold text-soft-cream">"Add"</span> to confirm</li>
                   </ol>
                   <Button
                     onClick={handleDismiss}
                     size="sm"
-                    className="w-full mt-2 bg-[#2E7B91] hover:bg-[#25658A] text-white text-xs"
+                    className="w-full mt-2 bg-teal-blue hover:bg-teal-blue/90 text-white text-xs"
                   >
                     Got it!
                   </Button>
@@ -128,7 +128,7 @@ export function InstallAppPrompt() {
                 <Button
                   onClick={handleInstallClick}
                   size="sm"
-                  className="w-full mt-2 bg-gradient-to-r from-[#2E7B91] to-[#25658A] hover:from-[#25658A] hover:to-[#1E4F74] text-white"
+                  className="w-full mt-2 bg-gradient-to-r from-teal-blue to-ocean-blue hover:from-teal-blue/90 hover:to-ocean-blue/90 text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Install App

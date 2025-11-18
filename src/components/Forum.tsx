@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { projectId } from '../utils/supabase/info';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileDetailView } from './ProfileDetailView';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
 
@@ -259,13 +259,28 @@ export function Forum({ onPostComposerChange, openComposer, onComposerOpened }: 
       setSelectedMedia(null);
       setIsAnonymous(true);
       setShowPostComposer(false);
-      loadPosts();
+      // Notify parent and reload with a small delay
+      setTimeout(() => {
+        if (onPostComposerChange) {
+          onPostComposerChange(false);
+        }
+        loadPosts();
+      }, 100);
       } else {
-        throw new Error('Failed to create post');
+        // Try to get error message from response
+        let errorMessage = 'Failed to create post';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create post error:', error);
-      toast.error('Failed to create post');
+      toast.error(error.message || 'Failed to create post');
     } finally {
       setUploadingMedia(false);
     }
@@ -551,21 +566,42 @@ export function Forum({ onPostComposerChange, openComposer, onComposerOpened }: 
       <AnimatePresence>
         {showPostComposer && (
           <div 
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" 
-            onClick={() => setShowPostComposer(false)}
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" 
+            onClick={() => {
+              setShowPostComposer(false);
+              // Notify parent with a small delay to prevent race conditions
+              setTimeout(() => {
+                if (onPostComposerChange) {
+                  onPostComposerChange(false);
+                }
+              }, 0);
+            }}
+            style={{ paddingBottom: '80px' }}
           >
             <motion.div
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-gray-900 rounded-t-3xl sm:rounded-3xl border-t border-gray-700/50 sm:border border-gray-700/50 shadow-2xl max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-lg bg-gray-900 rounded-t-3xl sm:rounded-3xl border-t border-gray-700/50 sm:border border-gray-700/50 shadow-2xl overflow-y-auto"
+              style={{ 
+                maxHeight: 'calc(100vh - 100px)',
+                WebkitOverflowScrolling: 'touch'
+              }}
             >
               <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-soft-cream">Create Post</h2>
                   <button
-                    onClick={() => setShowPostComposer(false)}
+                    onClick={() => {
+                      setShowPostComposer(false);
+                      // Notify parent with a small delay to prevent race conditions
+                      setTimeout(() => {
+                        if (onPostComposerChange) {
+                          onPostComposerChange(false);
+                        }
+                      }, 0);
+                    }}
                     className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-soft-cream transition-colors"
                   >
                     <X className="w-5 h-5" />
