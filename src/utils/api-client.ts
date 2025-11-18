@@ -44,6 +44,15 @@ async function apiCall<T>(
 
     return await response.json();
   } catch (error: any) {
+    // Handle network errors (TypeError: Failed to fetch)
+    if (error.name === 'TypeError' && error.message?.includes('fetch')) {
+      const networkError = new Error('Failed to fetch - Network error. Please check your connection.');
+      networkError.name = 'TypeError';
+      console.error(`API Error [${endpoint}]: Network error`, networkError);
+      throw networkError;
+    }
+    
+    // Re-throw other errors as-is
     console.error(`API Error [${endpoint}]:`, error);
     throw error;
   }
@@ -110,7 +119,15 @@ export async function getAllProfiles(accessToken: string, filters?: {
 }
 
 export async function searchProfiles(query: string, accessToken: string) {
-  return apiCall(`/profiles/search?q=${encodeURIComponent(query)}`, {
+  // Use the new global search endpoint
+  return apiCall(`/search?q=${encodeURIComponent(query)}&type=users`, {
+    method: 'GET',
+  }, accessToken);
+}
+
+// Global search - search users, posts, clubs, classes
+export async function globalSearch(query: string, type: 'all' | 'users' | 'posts' | 'clubs' | 'classes' = 'all', accessToken: string) {
+  return apiCall(`/search?q=${encodeURIComponent(query)}&type=${type}`, {
     method: 'GET',
   }, accessToken);
 }
@@ -217,13 +234,15 @@ export async function reportPost(postId: string, reason: string, accessToken: st
 // ============================================================
 
 export async function getConversations(accessToken: string) {
-  return apiCall('/messages/conversations', {
+  // Backend uses /chats endpoint
+  return apiCall('/chats', {
     method: 'GET',
   }, accessToken);
 }
 
 export async function getMessages(conversationId: string, accessToken: string) {
-  return apiCall(`/messages/conversations/${conversationId}`, {
+  // Backend uses /chat/:chatId/messages endpoint
+  return apiCall(`/chat/${conversationId}/messages`, {
     method: 'GET',
   }, accessToken);
 }

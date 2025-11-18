@@ -23,7 +23,7 @@ interface Profile {
 
 interface YearbookModernProps {
   onProfileDetailOpen?: (isOpen: boolean) => void;
-  onNavigateToProfile?: () => void;
+  onNavigateToProfile?: (userId?: string) => void;
 }
 
 // Image component with error handling
@@ -139,6 +139,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
     if (!accessToken) {
       console.log('No access token, skipping profile load');
       setLoading(false);
+      setProfiles([]);
       return;
     }
 
@@ -184,7 +185,13 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
       }
     } catch (error: any) {
       console.error('Failed to load profiles:', error);
-      toast.error(error.message || 'Failed to load profiles');
+      // Handle 401 errors gracefully
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        console.warn('Authentication error - token may be expired');
+        // Don't show error toast for auth issues, just log it
+      } else {
+        toast.error(error.message || 'Failed to load profiles');
+      }
       
       // Fallback to empty state instead of mock data
       setProfiles([]);
@@ -409,7 +416,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
             {filteredProfiles.map((profile, index) => (
               <button
                 key={profile.id || `profile-${index}`}
-                onClick={() => handleProfileClick(index)}
+                onClick={() => onNavigateToProfile?.(profile.id)}
                 className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all text-left"
                 style={{ 
                   boxShadow: '0 1px 4px rgba(0, 0, 0, 0.08)',
@@ -646,7 +653,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleProfileClick(index);
+                        onNavigateToProfile?.(profile.id);
                       }}
                       className="py-3 px-5 rounded-xl font-semibold transition-all hover:scale-105"
                       style={{ 

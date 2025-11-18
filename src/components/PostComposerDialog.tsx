@@ -27,6 +27,18 @@ export function PostComposerDialog({ isOpen, onClose, onPost }: PostComposerDial
     }
   }, [isOpen]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,18 +109,6 @@ export function PostComposerDialog({ isOpen, onClose, onPost }: PostComposerDial
     setSelectedMedia(null);
     setUploading(false);
   };
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
 
   return (
     <div 

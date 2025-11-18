@@ -90,9 +90,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h1 className={styles.title}>
+          
+          <h2 className={styles.title}>
             Find Your People at Campus
-          </h1>
+          </h2>
           <p className={styles.subtitle}>
             Connect with students, make friends, and discover your college community
           </p>

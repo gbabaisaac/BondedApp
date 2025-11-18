@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { MessageCircle, Search, Send, MoreVertical } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessageCircle, Search, Send, MoreVertical, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useUserProfile } from '../store/useAppStore';
+import { useUserProfile, useAccessToken } from '../store/useAppStore';
+import { getConversations } from '../utils/api-client';
+import { toast } from 'sonner';
 
 interface Chat {
   id: string;
@@ -13,25 +15,67 @@ interface Chat {
   isOnline: boolean;
 }
 
-// Mock data
-const mockChats: Chat[] = Array.from({ length: 10 }, (_, i) => ({
-  id: `chat-${i}`,
-  name: `Friend ${i + 1}`,
-  avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=chat${i}`,
-  lastMessage: 'Hey! How are you doing?',
-  timestamp: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
-  unread: Math.random() > 0.7 ? Math.floor(Math.random() * 5) + 1 : 0,
-  isOnline: Math.random() > 0.6,
-}));
-
 interface MessagesModernProps {
   onNavigateToProfile?: () => void;
 }
 
 export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}) {
   const userProfile = useUserProfile();
-  const [chats] = useState<Chat[]>(mockChats);
+  const accessToken = useAccessToken();
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Load conversations from backend
+  useEffect(() => {
+    const loadConversations = async () => {
+      if (!accessToken) {
+        setLoading(false);
+        setChats([]);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const data = await getConversations(accessToken);
+        
+        // Transform API response to Chat format
+        // Backend returns array of: { chatId, otherUser, lastMessage, unreadCount, lastMessageTimestamp }
+        const conversations = Array.isArray(data) ? data : [];
+        
+        const transformedChats: Chat[] = conversations.map((conv: any) => {
+          const otherUser = conv.otherUser || {};
+          return {
+            id: conv.chatId || conv.id,
+            name: otherUser.name || 'Unknown',
+            avatar_url: otherUser.profilePicture || otherUser.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conv.chatId || conv.id}`,
+            lastMessage: conv.lastMessage || '',
+            timestamp: conv.lastMessageTimestamp || conv.timestamp || new Date().toISOString(),
+            unread: conv.unreadCount || conv.unread || 0,
+            isOnline: false, // TODO: Implement online status
+          };
+        });
+
+        setChats(transformedChats);
+      } catch (error: any) {
+        console.error('Failed to load conversations:', error);
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          console.warn('Authentication error loading conversations');
+          setChats([]);
+        } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+          console.warn('Network error loading conversations');
+          setChats([]);
+        } else {
+          toast.error(error.message || 'Failed to load conversations');
+          setChats([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadConversations();
+  }, [accessToken]);
 
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -169,7 +213,11 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
         </div>
 
         {/* Chat List */}
-        {filteredChats.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#FF6B6B' }} />
+          </div>
+        ) : filteredChats.length === 0 ? (
           <div className="text-center py-12 px-4">
             <div 
               className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
@@ -186,7 +234,7 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
                 fontWeight: 700,
               }}
             >
-              No messages found
+              {searchQuery ? 'No messages found' : 'No conversations yet'}
             </h3>
             <p 
               className="text-sm"
@@ -196,7 +244,7 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
                 fontSize: '15px',
               }}
             >
-              Try searching for something else
+              {searchQuery ? 'Try searching for something else' : 'Start a conversation with someone!'}
             </p>
           </div>
         ) : (

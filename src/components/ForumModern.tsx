@@ -90,6 +90,7 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
   const loadPosts = async () => {
     if (!accessToken) {
       setLoading(false);
+      setPosts([]);
       return;
     }
 
@@ -126,8 +127,19 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
       setPosts(transformedPosts);
     } catch (error: any) {
       console.error('Failed to load posts:', error);
-      toast.error(error.message || 'Failed to load posts');
-      setPosts([]);
+      // Handle different error types
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        console.warn('Authentication error loading posts');
+        setPosts([]);
+        // Don't show error toast for auth issues, just log it
+      } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+        console.warn('Network error loading posts');
+        setPosts([]);
+        // Don't show error toast for network issues on initial load
+      } else {
+        toast.error(error.message || 'Failed to load posts');
+        setPosts([]);
+      }
     } finally {
       setLoading(false);
     }

@@ -13,10 +13,12 @@ import { useAppStore } from '../store/useAppStore';
 import { MessageCircle } from 'lucide-react';
 
 type View = 'discover' | 'matches' | 'messages' | 'forum' | 'scrapbook' | 'profile';
+type ProfileViewState = { view: 'profile'; userId?: string } | null;
 
 export function MainApp() {
   const { userProfile, accessToken, handleLogout } = useAppStore();
   const [currentView, setCurrentView] = useState<View>('discover');
+  const [profileViewState, setProfileViewState] = useState<ProfileViewState>(null);
   const [isProfileDetailOpen, setIsProfileDetailOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -176,7 +178,10 @@ export function MainApp() {
           {currentView === 'discover' && (
             <YearbookModern 
               onProfileDetailOpen={setIsProfileDetailOpen}
-              onNavigateToProfile={() => setCurrentView('profile')}
+              onNavigateToProfile={(userId?: string) => {
+                setProfileViewState({ view: 'profile', userId });
+                setCurrentView('profile');
+              }}
             />
           )}
           {currentView === 'matches' && (
@@ -209,7 +214,13 @@ export function MainApp() {
             />
           )}
           {currentView === 'profile' && (
-            <ProfileModern onBack={() => setCurrentView('discover')} />
+            <ProfileModern 
+              userId={profileViewState?.userId}
+              onBack={() => {
+                setProfileViewState(null);
+                setCurrentView('discover');
+              }} 
+            />
           )}
         </MobileLayout>
       </div>

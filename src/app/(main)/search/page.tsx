@@ -6,6 +6,7 @@ import { Input } from '@/components/shared/Input';
 import { Card } from '@/components/shared/Card';
 import { Search, TrendingUp, Hash, X } from 'lucide-react';
 import { Button } from '@/components/shared/Button';
+import { SearchResults } from '@/components/SearchResults';
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,15 +121,7 @@ export default function SearchPage() {
         )}
         
         {searchQuery && (
-          <Card className="p-8 text-center">
-            <Search className="h-16 w-16 text-[var(--text-tertiary)] mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-              Search Results
-            </h3>
-            <p className="text-[var(--text-secondary)]">
-              Search functionality coming soon!
-            </p>
-          </Card>
+          <SearchResults searchQuery={searchQuery} searchType={searchType} />
         )}
       </main>
     </>

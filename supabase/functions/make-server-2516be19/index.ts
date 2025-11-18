@@ -2873,6 +2873,165 @@ If no genuinely good matches exist, return an empty array: []`;
   }
 });
 
+// ============================================
+// GLOBAL SEARCH ENDPOINT
+// ============================================
+
+// Global search - search users, posts, clubs, classes
+app.get("/search", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { q, type, school_id } = c.req.query();
+    
+    if (!q || q.trim().length === 0) {
+      return c.json({ error: 'Search query is required' }, 400);
+    }
+
+    const query = q.toLowerCase().trim();
+    const searchType = type || 'all'; // 'all', 'users', 'posts', 'clubs', 'classes'
+    
+    // Get user profile for school filtering
+    const userProfile = await kv.get(`user:${userId}`);
+    const userSchool = school_id || userProfile?.school;
+
+    const results: any = {
+      users: [],
+      posts: [],
+      clubs: [],
+      classes: [],
+    };
+
+    // Search Users
+    if (searchType === 'all' || searchType === 'users') {
+      try {
+        // Get all users from same school
+        const schoolKey = `school:${userSchool}:users`;
+        const schoolUserIds = await kv.get(schoolKey) || [];
+        
+        // Batch fetch profiles
+        const profileKeys = schoolUserIds.map((id: string) => `user:${id}`);
+        const profiles = await kv.mget(profileKeys);
+        
+        // Filter profiles by search query
+        const matchingProfiles = profiles
+          .filter((p: any) => p && p.id && p.id !== userId)
+          .filter((profile: any) => {
+            const nameMatch = profile.name?.toLowerCase().includes(query);
+            const majorMatch = profile.major?.toLowerCase().includes(query);
+            const bioMatch = profile.bio?.toLowerCase().includes(query);
+            const interestMatch = profile.interests?.some((i: string) => 
+              i.toLowerCase().includes(query)
+            );
+            return nameMatch || majorMatch || bioMatch || interestMatch;
+          })
+          .slice(0, 20)
+          .map((profile: any) => ({
+            id: profile.id,
+            name: profile.name,
+            major: profile.major,
+            year: profile.year,
+            profilePicture: profile.profilePicture || profile.photos?.[0],
+            bio: profile.bio,
+            school: profile.school,
+          }));
+
+        results.users = matchingProfiles;
+      } catch (error: any) {
+        console.error('User search error:', error);
+      }
+    }
+
+    // Search Posts
+    if (searchType === 'all' || searchType === 'posts') {
+      try {
+        const { data: posts, error } = await supabase
+          .from('forum_posts')
+          .select('*')
+          .or(`content.ilike.%${query}%,tags.cs.{${query}}`)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (!error && posts) {
+          results.posts = posts.map((post: any) => ({
+            id: post.id,
+            content: post.content.substring(0, 200), // Preview
+            authorId: post.author_id,
+            createdAt: post.created_at,
+            likes: post.likes_count || 0,
+            comments: post.comments_count || 0,
+          }));
+        }
+      } catch (error: any) {
+        console.error('Post search error:', error);
+      }
+    }
+
+    // Search Clubs (if clubs table exists)
+    if (searchType === 'all' || searchType === 'clubs') {
+      try {
+        const { data: clubs, error } = await supabase
+          .from('clubs')
+          .select('*')
+          .eq('school_id', userSchool)
+          .or(`name.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
+          .limit(20);
+
+        if (!error && clubs) {
+          results.clubs = clubs.map((club: any) => ({
+            id: club.id,
+            name: club.name,
+            description: club.description,
+            category: club.category,
+            memberCount: club.member_count || 0,
+            logoUrl: club.logo_url,
+          }));
+        }
+      } catch (error: any) {
+        console.error('Club search error:', error);
+      }
+    }
+
+    // Search Classes (if classes table exists)
+    if (searchType === 'all' || searchType === 'classes') {
+      try {
+        const { data: classes, error } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('school_id', userSchool)
+          .or(`code.ilike.%${query}%,name.ilike.%${query}%,professor.ilike.%${query}%`)
+          .limit(20);
+
+        if (!error && classes) {
+          results.classes = classes.map((cls: any) => ({
+            id: cls.id,
+            code: cls.code,
+            name: cls.name,
+            professor: cls.professor,
+            semester: cls.semester,
+            year: cls.year,
+          }));
+        }
+      } catch (error: any) {
+        console.error('Class search error:', error);
+      }
+    }
+
+    return c.json({
+      query,
+      type: searchType,
+      results,
+      totalResults: results.users.length + results.posts.length + results.clubs.length + results.classes.length,
+    });
+  } catch (error: any) {
+    console.error('Global search error:', error);
+    return c.json({ error: error.message || 'Search failed' }, 500);
+  }
+});
+
 // AI Soft Intro Request - AI handles soft intro with confirmation
 app.post("/ai-assistant/soft-intro", async (c) => {
   try {
