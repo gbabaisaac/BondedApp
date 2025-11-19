@@ -5,6 +5,8 @@ import { useUserProfile, useAccessToken } from '../store/useAppStore';
 import { PostComposerDialog } from './PostComposerDialog';
 import { getPosts, likePost, createPost } from '../utils/api-client';
 import { toast } from 'sonner';
+import { logger } from '../utils/logger';
+import { ForumPost, PostsResponse } from '../types/api';
 
 interface Post {
   id: string;
@@ -96,13 +98,13 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
 
     try {
       setLoading(true);
-      const data = await getPosts(accessToken, activeFilter);
+      const data = await getPosts(accessToken, activeFilter) as PostsResponse;
       
-      // Backend returns { posts: [...] }
+      // Backend returns { posts: [...], pagination: {...} }
       const posts = data.posts || [];
       
       // Transform backend data to match interface
-      const transformedPosts = posts.map((p: any) => ({
+      const transformedPosts = posts.map((p: ForumPost) => ({
         id: p.id,
         content: p.content,
         author: {
@@ -125,19 +127,20 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
       }));
       
       setPosts(transformedPosts);
-    } catch (error: any) {
-      console.error('Failed to load posts:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to load posts:', err);
       // Handle different error types
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        console.warn('Authentication error loading posts');
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        logger.warn('Authentication error loading posts');
         setPosts([]);
         // Don't show error toast for auth issues, just log it
-      } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
-        console.warn('Network error loading posts');
+      } else if (err.message?.includes('Failed to fetch') || err.name === 'TypeError') {
+        logger.warn('Network error loading posts');
         setPosts([]);
         // Don't show error toast for network issues on initial load
       } else {
-        toast.error(error.message || 'Failed to load posts');
+        toast.error(err.message || 'Failed to load posts');
         setPosts([]);
       }
     } finally {
@@ -180,9 +183,10 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
     try {
       // The like endpoint toggles - calling it again will unlike
       await likePost(postId, accessToken);
-    } catch (error: any) {
-      console.error('Failed to toggle like:', error);
-      toast.error(error.message || 'Failed to update like');
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to toggle like:', err);
+      toast.error(err.message || 'Failed to update like');
       
       // Revert on error
       setPosts(posts.map(p => {
@@ -216,9 +220,10 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
       setTimeout(async () => {
         await loadPosts();
       }, 100);
-    } catch (error: any) {
-      console.error('Failed to create post:', error);
-      toast.error(error.message || 'Failed to create post');
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to create post:', err);
+      toast.error(err.message || 'Failed to create post');
     }
   };
 
@@ -238,9 +243,10 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
         });
         toast.success('Post shared!');
         setOpenMenuId(null);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // User cancelled or error occurred, fallback to clipboard
-        if (error.name !== 'AbortError') {
+        const err = error as Error;
+        if (err.name !== 'AbortError') {
           await handleCopyToClipboard(postUrl);
         }
       }
@@ -255,8 +261,8 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
       await navigator.clipboard.writeText(text);
       toast.success('Link copied to clipboard!');
       setOpenMenuId(null);
-    } catch (error) {
-      console.error('Failed to copy:', error);
+    } catch (error: unknown) {
+      logger.error('Failed to copy:', error);
       toast.error('Failed to copy link');
     }
   };

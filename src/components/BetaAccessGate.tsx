@@ -208,7 +208,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
                   margin: 0,
                 }}
               >
-                Social networking for college students 🎓
+                The First AI Social network for college students 
               </p>
             </motion.div>
 
@@ -296,7 +296,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
                     gap: '6px',
                   }}
                 >
-                  <Mail className="w-4 h-4" style={{ color: '#FF6B6B' }} />
+                  <div className="w-4 h-4" style={{ color: '#FF6B6B' }} />
                   University Email
                 </label>
                 <Input
@@ -406,7 +406,7 @@ export function BetaAccessGate({ onAccessGranted, children }: BetaAccessGateProp
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
         >
-          Built with ❤️ for college communities
+          Built with ❤️ for college students by college students
         </motion.p>
       </motion.div>
     </div>

@@ -4,6 +4,8 @@ import { ProfileDetailView } from './ProfileDetailView';
 import { getAllProfiles } from '../utils/api-client';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
 import { toast } from 'sonner';
+import { logger } from '../utils/logger';
+import { UserProfile, ProfileFilters, PaginationResponse } from '../types/api';
 
 interface Profile {
   id: string;
@@ -137,7 +139,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
 
   const loadProfiles = async () => {
     if (!accessToken) {
-      console.log('No access token, skipping profile load');
+      logger.debug('No access token, skipping profile load');
       setLoading(false);
       setProfiles([]);
       return;
@@ -150,7 +152,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
       setLoading(true);
       
       // Build filters based on active filter - always include school
-      const filters: any = {
+      const filters: ProfileFilters = {
         school: school,
       };
       
@@ -158,10 +160,9 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
         filters.year = activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1);
       }
       
-      const data = await getAllProfiles(accessToken, filters) as any[];
-      
-      // Transform backend data to match component interface
-      const transformedProfiles = data.map((p: any) => ({
+      const response = await getAllProfiles(accessToken, filters) as { profiles: UserProfile[]; pagination?: PaginationResponse };
+      const data = response.profiles || [];
+      const transformedProfiles = data.map((p: UserProfile) => ({
         id: p.id || p.user_id,
         name: p.name,
         age: p.age || 21,
@@ -183,14 +184,15 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
       if (transformedProfiles.length === 0) {
         toast.info('No students found matching your filters');
       }
-    } catch (error: any) {
-      console.error('Failed to load profiles:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to load profiles:', err);
       // Handle 401 errors gracefully
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        console.warn('Authentication error - token may be expired');
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        logger.warn('Authentication error - token may be expired');
         // Don't show error toast for auth issues, just log it
       } else {
-        toast.error(error.message || 'Failed to load profiles');
+        toast.error(err.message || 'Failed to load profiles');
       }
       
       // Fallback to empty state instead of mock data
@@ -525,7 +527,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
                         >
                           {profile.name || 'Student'}
                         </h2>
-                        {(profile as any).is_verified && (
+                        {profile.is_verified && (
                           <div 
                             className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-white text-[11px] flex-shrink-0"
                             style={{ 

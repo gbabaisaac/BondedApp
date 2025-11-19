@@ -3,6 +3,8 @@ import { Users, Check, X, Heart, Loader2 } from 'lucide-react';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
 import { getFriends, getFriendRequests, acceptFriendRequest, rejectFriendRequest } from '../utils/api-client';
 import { toast } from 'sonner';
+import { logger } from '../utils/logger';
+import { FriendshipsResponse } from '../types/api';
 
 interface Friend {
   id: string;
@@ -63,8 +65,8 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
         // Backend returns { friendships: [...] }
         const friendships = data.friendships || [];
         const transformedFriends = friendships
-          .filter((f: any) => f.friend) // Only include friendships with profile data
-          .map((f: any) => ({
+          .filter((f) => f.friend_id) // Only include valid friendships
+          .map((f) => ({
             id: f.friend.id,
             name: f.friend.name,
             avatar_url: f.friend.profilePicture || f.friend.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${f.friend.id}`,
@@ -74,12 +76,12 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
           }));
         setFriends(transformedFriends);
       } else {
-        const data = await getFriendRequests(accessToken);
+        const data = await getFriendRequests(accessToken) as FriendshipsResponse;
         // Backend returns { friendships: [...] } with status=pending
         const friendships = data.friendships || [];
         const transformedRequests = friendships
-          .filter((r: any) => r.friend) // Only include requests with profile data
-          .map((r: any) => ({
+          .filter((r) => r.friend_id) // Only include valid requests
+          .map((r) => ({
             id: r.friend.id,
             requestId: r.id, // Friendship ID for accept/reject
             name: r.friend.name,
@@ -89,9 +91,10 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
           }));
         setRequests(transformedRequests);
       }
-    } catch (error: any) {
-      console.error('Failed to load data:', error);
-      toast.error(error.message || 'Failed to load data');
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to load data:', err);
+      toast.error(err.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -112,9 +115,10 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
       
       // Reload to get fresh data
       await loadData();
-    } catch (error: any) {
-      console.error('Failed to accept request:', error);
-      toast.error(error.message || 'Failed to accept request');
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to accept request:', err);
+      toast.error(err.message || 'Failed to accept request');
     } finally {
       setActionLoading(null);
     }
@@ -129,9 +133,10 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
       await rejectFriendRequest(request.requestId || id, accessToken);
       toast.success('Request rejected');
       setRequests(requests.filter(r => r.id !== id));
-    } catch (error: any) {
-      console.error('Failed to reject request:', error);
-      toast.error(error.message || 'Failed to reject request');
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to reject request:', err);
+      toast.error(err.message || 'Failed to reject request');
     } finally {
       setActionLoading(null);
     }
@@ -180,7 +185,7 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'friends' | 'requests' | 'suggestions')}
               className="flex-1 py-4 text-center text-sm font-semibold transition-all relative"
               style={{
                 color: activeTab === tab.id ? '#FF6B6B' : '#6B6B6B',

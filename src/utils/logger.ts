@@ -1,68 +1,78 @@
 /**
- * Centralized logging utility
- * In production, logs are suppressed or sent to error tracking service (Sentry)
+ * Logger Utility
+ * Centralized logging with environment-aware levels
  */
 
-import { Sentry, addSentryBreadcrumb } from '../config/sentry';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-const isDevelopment = import.meta.env.DEV;
+const isDevelopment = import.meta.env.DEV || import.meta.env.VITE_ENV === 'development';
+const isProduction = import.meta.env.PROD || import.meta.env.VITE_ENV === 'production';
 
-export const logger = {
-  log: (...args: any[]) => {
-    if (isDevelopment) {
-      console.log(...args);
+class Logger {
+  private shouldLog(level: LogLevel): boolean {
+    if (isProduction) {
+      // In production, only log warnings and errors
+      return level === 'warn' || level === 'error';
     }
-    // Add breadcrumb for debugging in Sentry
-    addSentryBreadcrumb(args.join(' '), 'log', 'info');
-  },
+    // In development, log everything
+    return true;
+  }
 
-  error: (...args: any[]) => {
-    // Always log errors
-    if (isDevelopment) {
-      console.error(...args);
+  debug(...args: unknown[]): void {
+    if (this.shouldLog('debug')) {
+      console.debug('[DEBUG]', ...args);
     }
+  }
 
-    // Send to Sentry in all environments
-    const errorMessage = args.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
-
-    // If the first argument is an Error object, capture it properly
-    if (args[0] instanceof Error) {
-      Sentry.captureException(args[0], {
-        extra: {
-          additionalInfo: args.slice(1),
-        },
-      });
-    } else {
-      Sentry.captureMessage(errorMessage, 'error');
+  info(...args: unknown[]): void {
+    if (this.shouldLog('info')) {
+      console.info('[INFO]', ...args);
     }
+  }
 
-    addSentryBreadcrumb(errorMessage, 'error', 'error');
-  },
-
-  warn: (...args: any[]) => {
-    if (isDevelopment) {
-      console.warn(...args);
+  warn(...args: unknown[]): void {
+    if (this.shouldLog('warn')) {
+      console.warn('[WARN]', ...args);
     }
+  }
 
-    // Send warnings to Sentry as well
-    const warningMessage = args.join(' ');
-    Sentry.captureMessage(warningMessage, 'warning');
-    addSentryBreadcrumb(warningMessage, 'warning', 'warning');
-  },
-
-  info: (...args: any[]) => {
-    if (isDevelopment) {
-      console.info(...args);
+  error(...args: unknown[]): void {
+    if (this.shouldLog('error')) {
+      console.error('[ERROR]', ...args);
     }
-    addSentryBreadcrumb(args.join(' '), 'info', 'info');
-  },
+    
+    // In production, send errors to Sentry
+    if (isProduction && typeof window !== 'undefined' && (window as any).Sentry) {
+      try {
+        (window as any).Sentry.captureException(new Error(String(args[0])));
+      } catch (e) {
+        // Silently fail if Sentry is not available
+      }
+    }
+  }
+
+  // Group related logs
+  group(label: string): void {
+    if (!isProduction) {
+      console.group(label);
+    }
+  }
+
+  groupEnd(): void {
+    if (!isProduction) {
+      console.groupEnd();
+    }
+  }
+}
+
+export const logger = new Logger();
+
+// Export convenience functions
+export const log = {
+  debug: (...args: unknown[]) => logger.debug(...args),
+  info: (...args: unknown[]) => logger.info(...args),
+  warn: (...args: unknown[]) => logger.warn(...args),
+  error: (...args: unknown[]) => logger.error(...args),
+  group: (label: string) => logger.group(label),
+  groupEnd: () => logger.groupEnd(),
 };
-
-
-
-
-
-
-

@@ -4,6 +4,8 @@ import { globalSearch } from '../utils/api-client';
 import { useAccessToken } from '../store/useAppStore';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { logger } from '../utils/logger';
+import { SearchResponse } from '../types/api';
 
 interface SearchResultsProps {
   searchQuery: string;
@@ -75,14 +77,15 @@ export function SearchResults({ searchQuery, searchType }: SearchResultsProps) {
           clubs: data.results?.clubs || [],
           classes: data.results?.classes || [],
         });
-      } catch (error: any) {
-        console.error('Search error:', error);
-        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-          console.warn('Authentication error during search');
-        } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
-          console.warn('Network error during search');
+      } catch (error: unknown) {
+        const err = error as Error;
+        logger.error('Search error:', err);
+        if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+          logger.warn('Authentication error during search');
+        } else if (err.message?.includes('Failed to fetch') || err.name === 'TypeError') {
+          logger.warn('Network error during search');
         } else {
-          toast.error(error.message || 'Search failed');
+          toast.error(err.message || 'Search failed');
         }
         setResults({ users: [], posts: [], clubs: [], classes: [] });
       } finally {

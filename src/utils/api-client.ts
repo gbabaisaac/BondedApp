@@ -240,9 +240,9 @@ export async function getConversations(accessToken: string) {
   }, accessToken);
 }
 
-export async function getMessages(conversationId: string, accessToken: string) {
+export async function getMessages(conversationId: string, accessToken: string, page: number = 1, limit: number = 50) {
   // Backend uses /chat/:chatId/messages endpoint
-  return apiCall(`/chat/${conversationId}/messages`, {
+  return apiCall(`/chat/${conversationId}/messages?page=${page}&limit=${limit}`, {
     method: 'GET',
   }, accessToken);
 }
@@ -340,6 +340,29 @@ export async function uploadMedia(file: File, accessToken: string): Promise<{ ur
   }
 
   return await response.json();
+}
+
+// ============================================================
+// NOTIFICATIONS APIs
+// ============================================================
+
+export async function getNotifications(accessToken: string, unreadOnly: boolean = false) {
+  const endpoint = unreadOnly ? '/notifications?unread=true' : '/notifications';
+  return apiCall(endpoint, {
+    method: 'GET',
+  }, accessToken);
+}
+
+export async function markNotificationAsRead(notificationId: string, accessToken: string) {
+  return apiCall(`/notifications/${notificationId}/read`, {
+    method: 'POST',
+  }, accessToken);
+}
+
+export async function markAllNotificationsAsRead(accessToken: string) {
+  return apiCall('/notifications/read-all', {
+    method: 'POST',
+  }, accessToken);
 }
 
 // ============================================================

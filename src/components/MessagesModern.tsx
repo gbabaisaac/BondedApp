@@ -4,6 +4,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
 import { getConversations } from '../utils/api-client';
 import { toast } from 'sonner';
+import { logger } from '../utils/logger';
+import { Chat, ChatsResponse } from '../types/api';
 
 interface Chat {
   id: string;
@@ -37,13 +39,13 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
 
       try {
         setLoading(true);
-        const data = await getConversations(accessToken);
+                const response = await getConversations(accessToken) as ChatsResponse;
+                
+                // Transform API response to Chat format
+                // Backend returns { chats: [...], pagination: {...} }
+                const conversations = response.chats || [];
         
-        // Transform API response to Chat format
-        // Backend returns array of: { chatId, otherUser, lastMessage, unreadCount, lastMessageTimestamp }
-        const conversations = Array.isArray(data) ? data : [];
-        
-        const transformedChats: Chat[] = conversations.map((conv: any) => {
+        const transformedChats: Chat[] = conversations.map((conv: Chat) => {
           const otherUser = conv.otherUser || {};
           return {
             id: conv.chatId || conv.id,
@@ -57,16 +59,17 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
         });
 
         setChats(transformedChats);
-      } catch (error: any) {
-        console.error('Failed to load conversations:', error);
-        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-          console.warn('Authentication error loading conversations');
+      } catch (error: unknown) {
+        const err = error as Error;
+        logger.error('Failed to load conversations:', err);
+        if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+          logger.warn('Authentication error loading conversations');
           setChats([]);
-        } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
-          console.warn('Network error loading conversations');
+        } else if (err.message?.includes('Failed to fetch') || err.name === 'TypeError') {
+          logger.warn('Network error loading conversations');
           setChats([]);
         } else {
-          toast.error(error.message || 'Failed to load conversations');
+          toast.error(err.message || 'Failed to load conversations');
           setChats([]);
         }
       } finally {

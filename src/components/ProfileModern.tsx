@@ -3,6 +3,8 @@ import { ArrowLeft, MoreVertical, MapPin, GraduationCap, Calendar, Users, Grid3x
 import { useAppStore } from '../store/useAppStore';
 import { getProfile, getFriends, getPosts, updateProfile } from '../utils/api-client';
 import { toast } from 'sonner';
+import { logger } from '../utils/logger';
+import { UserProfile, ForumPost, PostsResponse, Connection, FriendshipsResponse } from '../types/api';
 
 // Share Menu Component
 function ShareMenuButton({ profileId, profileName }: { profileId: string; profileName: string }) {
@@ -36,8 +38,9 @@ function ShareMenuButton({ profileId, profileName }: { profileId: string; profil
           url: profileUrl,
         });
         setShowMenu(false);
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
+      } catch (error: unknown) {
+        const err = error as Error;
+        if (err.name !== 'AbortError') {
           // Fallback to clipboard
           handleCopyLink();
         }
@@ -172,8 +175,8 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
   const [tempBio, setTempBio] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [newInterest, setNewInterest] = useState('');
-  const [posts, setPosts] = useState<any[]>([]);
-  const [connections, setConnections] = useState<any[]>([]);
+  const [posts, setPosts] = useState<Array<{ id: string; gradient: string; likes: number; comments: number; timestamp: string }>>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
@@ -226,7 +229,7 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
           setInterests(userProfile.interests || []);
         }
       } else {
-        toast.error(error.message || 'Failed to load profile');
+        toast.error(err.message || 'Failed to load profile');
       }
     } finally {
       setLoading(false);
@@ -241,9 +244,10 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
       const targetUserId = userId || userProfile?.id;
       // Get all posts and filter by user
       const data = await getPosts(accessToken);
-      const allPosts = (data as any)?.posts || [];
+      const response = data as PostsResponse;
+      const allPosts = response.posts || [];
       const userPosts = targetUserId 
-        ? allPosts.filter((post: any) => post.author?.id === targetUserId || post.user_id === targetUserId)
+        ? allPosts.filter((post: ForumPost) => post.authorId === targetUserId)
         : allPosts;
       
       // Transform to match UI format with gradients
@@ -256,7 +260,7 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
         'linear-gradient(to bottom right, #ec4899, #f97316)',
       ];
       
-      const transformedPosts = userPosts.slice(0, 9).map((post: any, i: number) => ({
+      const transformedPosts = userPosts.slice(0, 9).map((post: ForumPost, i: number) => ({
         id: post.id,
         gradient: gradients[i % gradients.length],
         likes: post.like_count || post.likes || 0,
@@ -267,17 +271,18 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
       }));
       
       setPosts(transformedPosts);
-    } catch (error: any) {
-      console.error('Failed to load posts:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to load posts:', err);
       // Handle different error types
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        console.warn('Authentication error loading posts');
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        logger.warn('Authentication error loading posts');
         setPosts([]);
-      } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
-        console.warn('Network error loading posts');
+      } else if (err.message?.includes('Failed to fetch') || err.name === 'TypeError') {
+        logger.warn('Network error loading posts');
         setPosts([]);
       } else {
-        toast.error(error.message || 'Failed to load posts');
+        toast.error(err.message || 'Failed to load posts');
         setPosts([]);
       }
     } finally {
@@ -324,15 +329,16 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
       // Reload profile to get updated data
       await loadProfile();
       toast.success('Bio updated');
-    } catch (error: any) {
-      console.error('Failed to update bio:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to update bio:', err);
       // Handle different error types
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
         toast.error('Please log in again to update your bio');
-      } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      } else if (err.message?.includes('Failed to fetch') || err.name === 'TypeError') {
         toast.error('Network error. Please check your connection and try again.');
       } else {
-        toast.error(error.message || 'Failed to update bio');
+        toast.error(err.message || 'Failed to update bio');
       }
     }
   };
@@ -358,19 +364,20 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
       // Reload profile to get updated data
       await loadProfile();
       toast.success('Interest added');
-    } catch (error: any) {
-      console.error('Failed to add interest:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to add interest:', err);
       // Revert the optimistic update
       setInterests(originalInterests);
       setNewInterest(newInterest.trim());
       
       // Handle different error types
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
         toast.error('Please log in again to add interests');
-      } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      } else if (err.message?.includes('Failed to fetch') || err.name === 'TypeError') {
         toast.error('Network error. Please check your connection and try again.');
       } else {
-        toast.error(error.message || 'Failed to add interest');
+        toast.error(err.message || 'Failed to add interest');
       }
     }
   };
@@ -390,18 +397,19 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
       // Reload profile to get updated data
       await loadProfile();
       toast.success('Interest removed');
-    } catch (error: any) {
-      console.error('Failed to remove interest:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Failed to remove interest:', err);
       // Revert the optimistic update
       setInterests(originalInterests);
       
       // Handle different error types
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
         toast.error('Please log in again to remove interests');
-      } else if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      } else if (err.message?.includes('Failed to fetch') || err.name === 'TypeError') {
         toast.error('Network error. Please check your connection and try again.');
       } else {
-        toast.error(error.message || 'Failed to remove interest');
+        toast.error(err.message || 'Failed to remove interest');
       }
     }
   };
@@ -856,7 +864,7 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
                 <p>No connections yet</p>
               </div>
             ) : (
-              connections.map((connection: any) => (
+              connections.map((connection: Connection) => (
                 <div
                   key={connection.id}
                   style={{

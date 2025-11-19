@@ -724,23 +724,38 @@ app.get("/profiles", async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const school = c.req.query('school');
+    const { school, page = '1', limit = '20' } = c.req.query();
     if (!school) {
       return c.json({ error: 'School parameter required' }, 400);
     }
 
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const offset = (pageNum - 1) * limitNum;
+
     const schoolKey = `school:${school}:users`;
     const userIds = await kv.get(schoolKey) || [];
 
+    // Apply pagination
+    const paginatedUserIds = userIds.slice(offset, offset + limitNum);
+
     const profiles = [];
-    for (const id of userIds) {
+    for (const id of paginatedUserIds) {
       const profile = await kv.get(`user:${id}`);
       if (profile) {
         profiles.push(profile);
       }
     }
 
-    return c.json(profiles);
+    return c.json({
+      profiles,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: userIds.length,
+        totalPages: Math.ceil(userIds.length / limitNum),
+      },
+    });
   } catch (error: any) {
     console.error('Profiles fetch error:', error);
     return c.json({ error: error.message }, 500);
@@ -1724,7 +1739,15 @@ app.get("/chats", async (c) => {
       });
     }
 
-    return c.json(chats);
+    return c.json({
+      chats,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: chatIds.length,
+        totalPages: Math.ceil(chatIds.length / limitNum),
+      },
+    });
   } catch (error: any) {
     console.error('Chats fetch error:', error);
     return c.json({ error: error.message }, 500);
@@ -1763,11 +1786,21 @@ app.get("/chat/:chatId/messages", async (c) => {
     });
     
     if (updated) {
-      await kv.set(`chat:${chatId}:messages`, updatedMessages);
-      return c.json(updatedMessages);
+      await kv.set(`chat:${chatId}:messages`, allMessages.map((msg: any, idx: number) => {
+        const originalIdx = allMessages.length - messages.length + idx;
+        return updatedMessages.find((um: any) => um.id === msg.id) || msg;
+      }));
     }
     
-    return c.json(messages);
+    return c.json({
+      messages: updated ? updatedMessages : messages,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalMessages,
+        totalPages: Math.ceil(totalMessages / limitNum),
+      },
+    });
   } catch (error: any) {
     console.error('Messages fetch error:', error);
     return c.json({ error: error.message }, 500);
@@ -4462,11 +4495,24 @@ app.get("/forum/posts", async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const { data: posts, error } = await supabase
+    const { page = '1', limit = '20', filter } = c.req.query();
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const offset = (pageNum - 1) * limitNum;
+
+    let query = supabase
       .from('forum_posts')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(50);
+      .range(offset, offset + limitNum - 1);
+
+    // Apply filters if provided
+    if (filter === 'trending') {
+      // Trending: posts with most likes in last 24 hours
+      query = query.gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+    }
+
+    const { data: posts, error, count } = await query;
 
     if (error) {
       console.error('Get forum posts error:', error);
@@ -4513,7 +4559,15 @@ app.get("/forum/posts", async (c) => {
       };
     }));
 
-    return c.json({ posts: transformedPosts });
+    return c.json({
+      posts: transformedPosts,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limitNum),
+      },
+    });
   } catch (error: any) {
     console.error('Get forum posts error:', error);
     return c.json({ error: error.message }, 500);
@@ -4709,6 +4763,32 @@ app.post("/forum/posts/:postId/like", async (c) => {
           user_id: userId,
           is_like: true,
         });
+
+      // Create notification for post author (if not anonymous and not liking own post)
+      const { data: post } = await supabase
+        .from('forum_posts')
+        .select('author_id, is_anonymous')
+        .eq('id', postId)
+        .single();
+
+      if (post && !post.is_anonymous && post.author_id !== userId) {
+        const authorProfile = await kv.get(`user:${post.author_id}`);
+        const likerProfile = await kv.get(`user:${userId}`);
+        
+        await createNotification(
+          post.author_id,
+          'post_like',
+          'New like on your post',
+          `${likerProfile?.name || 'Someone'} liked your post`,
+          {
+            postId,
+            userId,
+            userName: likerProfile?.name,
+            avatarUrl: likerProfile?.profilePicture || likerProfile?.photos?.[0],
+            actionUrl: `/forum/post/${postId}`,
+          }
+        );
+      }
     }
 
     return c.json({ success: true });
@@ -4861,6 +4941,33 @@ app.post("/forum/posts/:postId/comments", async (c) => {
     if (error) {
       console.error('Create comment error:', error);
       return c.json({ error: 'Failed to create comment' }, 500);
+    }
+
+    // Create notification for post author (if not anonymous and not commenting on own post)
+    const { data: post } = await supabase
+      .from('forum_posts')
+      .select('author_id, is_anonymous')
+      .eq('id', postId)
+      .single();
+
+    if (post && !post.is_anonymous && post.author_id !== userId && !isAnonymous) {
+      const authorProfile = await kv.get(`user:${post.author_id}`);
+      const commenterProfile = await kv.get(`user:${userId}`);
+      
+      await createNotification(
+        post.author_id,
+        'post_comment',
+        'New comment on your post',
+        `${commenterProfile?.name || 'Someone'} commented on your post`,
+        {
+          postId,
+          commentId: comment.id,
+          userId,
+          userName: commenterProfile?.name,
+          avatarUrl: commenterProfile?.profilePicture || commenterProfile?.photos?.[0],
+          actionUrl: `/forum/post/${postId}`,
+        }
+      );
     }
 
     return c.json({ success: true, comment });
@@ -5642,15 +5749,19 @@ app.post("/friendships/request", async (c) => {
     }
 
     // Create notification
-    await supabase
-      .from('notifications')
-      .insert({
-        user_id: friendId,
-        type: 'friend_request',
-        title: 'New friend request',
-        body: 'You have a new friend request',
-        action_url: '/friends',
-      });
+    const requesterProfile = await kv.get(`user:${userId}`);
+    await createNotification(
+      friendId,
+      'friend_request',
+      'New friend request',
+      `${requesterProfile?.name || 'Someone'} wants to connect with you`,
+      {
+        userId,
+        userName: requesterProfile?.name,
+        avatarUrl: requesterProfile?.profilePicture || requesterProfile?.photos?.[0],
+        actionUrl: '/friends',
+      }
+    );
 
     return c.json({ friendship });
   } catch (error: any) {
@@ -5698,15 +5809,19 @@ app.post("/friendships/:friendshipId/accept", async (c) => {
     }
 
     // Create notification for requester
-    await supabase
-      .from('notifications')
-      .insert({
-        user_id: friendship.user_id,
-        type: 'friend_request',
-        title: 'Friend request accepted',
-        body: 'Your friend request was accepted',
-        action_url: '/friends',
-      });
+    const accepterProfile = await kv.get(`user:${userId}`);
+    await createNotification(
+      friendship.user_id,
+      'friend_request',
+      'Friend request accepted',
+      `${accepterProfile?.name || 'Someone'} accepted your friend request`,
+      {
+        userId,
+        userName: accepterProfile?.name,
+        avatarUrl: accepterProfile?.profilePicture || accepterProfile?.photos?.[0],
+        actionUrl: '/friends',
+      }
+    );
 
     return c.json({ friendship: updated });
   } catch (error: any) {
@@ -5828,6 +5943,100 @@ app.all("*", (c) => {
 });
 
 // Export handler for Supabase Edge Functions
+// ============================================
+// NOTIFICATIONS ENDPOINTS
+// ============================================
+
+// Get user notifications
+app.get("/notifications", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { unread } = c.req.query();
+    const unreadOnly = unread === 'true';
+
+    let query = supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (unreadOnly) {
+      query = query.eq('read', false);
+    }
+
+    const { data: notifications, error } = await query;
+
+    if (error) {
+      console.error('Get notifications error:', error);
+      return c.json({ error: 'Failed to load notifications' }, 500);
+    }
+
+    return c.json({ notifications: notifications || [] });
+  } catch (error: any) {
+    console.error('Notifications fetch error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Mark notification as read
+app.post("/notifications/:notificationId/read", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const notificationId = c.req.param('notificationId');
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', notificationId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Mark notification read error:', error);
+      return c.json({ error: 'Failed to mark notification as read' }, 500);
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Mark notification read error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Mark all notifications as read
+app.post("/notifications/read-all", async (c) => {
+  try {
+    const userId = await getUserId(c.req.header('Authorization'));
+    if (!userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', userId)
+      .eq('read', false);
+
+    if (error) {
+      console.error('Mark all notifications read error:', error);
+      return c.json({ error: 'Failed to mark all notifications as read' }, 500);
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Mark all notifications read error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 Deno.serve(async (req: Request) => {
   try {
     const url = new URL(req.url);

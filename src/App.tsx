@@ -6,6 +6,7 @@ import { AuthCallback } from './components/AuthCallback';
 import { useAppStore } from './store/useAppStore';
 import { projectId } from './utils/supabase/info';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { QueryProvider } from './providers/QueryProvider';
 
 // Initialize Sentry for error tracking
 initSentry();
@@ -199,8 +200,9 @@ export default function App() {
     }
 
   return (
-    <ThemeProvider>
-      <ErrorBoundary>
+    <QueryProvider>
+      <ThemeProvider>
+        <ErrorBoundary>
         <div className="min-h-screen overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #F3F4FF 0%, #FFE5EC 50%, #FFF5E6 100%)' }}>
           <Suspense fallback={<LoadingScreen />}>
             <BetaAccessGate key={appKey} onAccessGranted={() => console.log('Beta access granted')}>
@@ -240,7 +242,8 @@ export default function App() {
           </Suspense>
           <Toaster />
         </div>
-      </ErrorBoundary>
-    </ThemeProvider>
+        </ErrorBoundary>
+      </ThemeProvider>
+    </QueryProvider>
   );
 }

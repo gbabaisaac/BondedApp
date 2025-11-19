@@ -3,6 +3,7 @@ import { X, Image as ImageIcon, Smile, Send, XCircle } from 'lucide-react';
 import { useAccessToken } from '../store/useAppStore';
 import { uploadMedia } from '../utils/api-client';
 import { toast } from 'sonner';
+import imageCompression from 'browser-image-compression';
 
 interface PostComposerDialogProps {
   isOpen: boolean;
@@ -54,23 +55,43 @@ export function PostComposerDialog({ isOpen, onClose, onPost }: PostComposerDial
       return;
     }
 
-    // Validate file size
+    // Validate file size (before compression)
     const maxSize = isImage ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB images, 50MB videos
     if (file.size > maxSize) {
       toast.error(`File is too large. Max size: ${isImage ? '10MB' : '50MB'}`);
       return;
     }
 
+    let processedFile = file;
+
+    // Compress images before upload
+    if (isImage) {
+      try {
+        const options = {
+          maxSizeMB: 2, // Compress to max 2MB
+          maxWidthOrHeight: 1920, // Max dimension
+          useWebWorker: true,
+          fileType: file.type,
+        };
+        processedFile = await imageCompression(file, options);
+        toast.success(`Image compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      } catch (error) {
+        logger.error('Image compression error:', error);
+        toast.warning('Could not compress image, uploading original');
+        processedFile = file;
+      }
+    }
+
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setSelectedMedia({
-        file,
+        file: processedFile,
         preview: reader.result as string,
         type: isImage ? 'image' : 'video',
       });
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(processedFile);
   };
 
   const handleRemoveMedia = () => {
@@ -94,9 +115,10 @@ export function PostComposerDialog({ isOpen, onClose, onPost }: PostComposerDial
         setUploading(true);
         const result = await uploadMedia(selectedMedia.file, accessToken);
         mediaUrls = [result.url];
-      } catch (error: any) {
-        console.error('Failed to upload media:', error);
-        toast.error(error.message || 'Failed to upload media');
+      } catch (error: unknown) {
+        const err = error as Error;
+        logger.error('Failed to upload media:', err);
+        toast.error(err.message || 'Failed to upload media');
         setUploading(false);
         return;
       }
