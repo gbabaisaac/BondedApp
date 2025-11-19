@@ -183,8 +183,12 @@ export async function removeFriend(friendId: string, accessToken: string) {
 // FORUM / POSTS APIs
 // ============================================================
 
-export async function getPosts(accessToken: string, filter?: string) {
-  const endpoint = filter ? `/forum/posts?filter=${filter}` : '/forum/posts';
+export async function getPosts(accessToken: string, filter?: string, page: number = 1, limit: number = 20) {
+  const params = new URLSearchParams();
+  if (filter) params.append('filter', filter);
+  params.append('page', page.toString());
+  params.append('limit', limit.toString());
+  const endpoint = `/forum/posts?${params.toString()}`;
   return apiCall(endpoint, {
     method: 'GET',
   }, accessToken);

@@ -1,243 +1,252 @@
-# Backend Setup Guide
+# 🔧 Backend Setup Guide
 
-This guide will help you set up the backend for the new features: Forum, Social Media Connections, and Progressive Feature Unlocking.
+Complete guide to connect your frontend to the Supabase backend.
 
-## 📋 Prerequisites
+---
 
-- Supabase project with Edge Functions enabled
-- Database access to run migrations
-- OAuth app credentials for LinkedIn, Spotify (optional)
-- Instagram OAuth is currently disabled (requires business verification)
+## ✅ **CURRENT STATUS**
 
-## 🗄️ Step 1: Run Database Migration
+Your app is configured to connect to:
+- **Backend URL:** `https://[your-project-id].supabase.co/functions/v1/make-server-2516be19`
+- **Project ID:** Extracted from `VITE_SUPABASE_URL` environment variable
 
-1. **Open Supabase Dashboard**
-   - Go to your Supabase project dashboard
-   - Navigate to SQL Editor
+---
 
-2. **Run the Migration**
-   - Copy the contents of `supabase/migrations/20250101000000_forum_and_social.sql`
-   - Paste into SQL Editor
-   - Click "Run" to execute
+## 📋 **STEP 1: Set Up Environment Variables**
 
-3. **Verify Tables Created**
-   - Go to Database → Tables
-   - Verify these tables exist:
-     - `forum_posts`
-     - `forum_post_likes`
-     - `forum_comments`
-
-## 🔐 Step 2: Set Up OAuth Apps
-
-### LinkedIn OAuth Setup
-
-1. **Create LinkedIn App**
-   - Go to https://www.linkedin.com/developers/apps
-   - Click "Create app"
-   - Fill in app details
-   - Add redirect URL: `https://your-domain.com/auth/linkedin/callback`
-
-2. **Get Credentials**
-   - Copy Client ID and Client Secret
-   - Add to Supabase Edge Function secrets
-
-### Instagram OAuth Setup (Currently Disabled)
-
-⚠️ **Note:** Instagram OAuth is currently disabled in the codebase because it requires business verification. The endpoints are commented out and can be re-enabled once verification is complete.
-
-1. **Create Instagram App** (when ready)
-   - Go to https://developers.facebook.com/apps
-   - Create new app → Select "Consumer" type
-   - Add Instagram Basic Display product
-   - Add redirect URL: `https://your-domain.com/auth/instagram/callback`
-   - Complete business verification process
-
-2. **Get Credentials**
-   - Copy App ID and App Secret
-   - Add to Supabase Edge Function secrets
-   - Uncomment Instagram endpoints in `supabase/functions/make-server-2516be19/index.ts`
-
-### Spotify OAuth Setup
-
-1. **Create Spotify App**
-   - Go to https://developer.spotify.com/dashboard
-   - Click "Create app"
-   - Add redirect URL: `https://your-domain.com/auth/spotify/callback`
-
-2. **Get Credentials**
-   - Copy Client ID and Client Secret
-   - Add to Supabase Edge Function secrets
-
-### Apple Music Setup (Currently Disabled)
-
-⚠️ **Note:** Apple Music integration is currently disabled in the codebase. The endpoints are commented out and can be re-enabled when ready.
-
-- Requires Apple Developer account
-- Uses MusicKit JS on frontend
-- No OAuth flow needed (handled client-side)
-- Uncomment endpoints in `supabase/functions/make-server-2516be19/index.ts` when ready
-
-## 🔧 Step 3: Configure Environment Variables
-
-Add these to your Supabase Edge Function secrets:
+### **Create `.env` file** (in project root)
 
 ```bash
-# In Supabase Dashboard → Edge Functions → Settings → Secrets
+# Required
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
-LINKEDIN_CLIENT_ID=your_linkedin_client_id
-LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
-
-# Instagram (disabled - uncomment when business verification is complete)
-# INSTAGRAM_CLIENT_ID=your_instagram_app_id
-# INSTAGRAM_CLIENT_SECRET=your_instagram_app_secret
-
-SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-
-APP_URL=https://your-domain.com
-# Or for local: http://localhost:5173
+# Optional
+VITE_ENV=development
+VITE_SENTRY_DSN=your-sentry-dsn  # Optional
+VITE_GEMINI_API_KEY=your-gemini-key  # Optional for AI features
 ```
 
-## 🚀 Step 4: Deploy Edge Function
+### **Where to Find These Values:**
 
-The endpoints are already added to `supabase/functions/make-server-2516be19/index.ts`. 
+1. **Go to Supabase Dashboard:** https://supabase.com/dashboard
+2. **Select your project** (or create a new one)
+3. **Go to Settings → API:**
+   - **Project URL** = `VITE_SUPABASE_URL`
+   - **anon public** key = `VITE_SUPABASE_ANON_KEY`
 
-1. **Deploy the function:**
+---
+
+## 🚀 **STEP 2: Deploy the Edge Function**
+
+The backend code is in `supabase/functions/make-server-2516be19/index.ts`
+
+### **Option A: Using Supabase CLI (Recommended)**
+
+```bash
+# Install Supabase CLI
+npm install -g supabase
+
+# Login to Supabase
+supabase login
+
+# Link to your project
+supabase link --project-ref your-project-ref
+
+# Deploy the function
+supabase functions deploy make-server-2516be19
+```
+
+### **Option B: Using Supabase Dashboard**
+
+1. Go to **Supabase Dashboard → Edge Functions**
+2. Click **"Create a new function"**
+3. Name it: `make-server-2516be19`
+4. Copy the contents of `supabase/functions/make-server-2516be19/index.ts`
+5. Paste into the function editor
+6. Click **Deploy**
+
+---
+
+## 🔐 **STEP 3: Set Edge Function Secrets**
+
+The Edge Function needs these secrets to work:
+
+```bash
+# Using Supabase CLI
+supabase secrets set SUPABASE_URL=https://your-project-id.supabase.co
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+supabase secrets set ENVIRONMENT=development  # or 'production'
+supabase secrets set GEMINI_API_KEY=your-gemini-key  # Optional
+```
+
+### **Where to Find Service Role Key:**
+
+1. Go to **Supabase Dashboard → Settings → API**
+2. Copy the **service_role** key (⚠️ Keep this secret!)
+
+---
+
+## 🗄️ **STEP 4: Run Database Migrations**
+
+The database tables need to be created:
+
+```bash
+# Using Supabase CLI
+supabase db push
+
+# Or manually in Supabase Dashboard:
+# Go to SQL Editor → Run the migration file:
+# supabase/migrations/20250104000000_forums_classes_clubs.sql
+```
+
+### **Manual Migration:**
+
+1. Go to **Supabase Dashboard → SQL Editor**
+2. Open `supabase/migrations/20250104000000_forums_classes_clubs.sql`
+3. Copy and paste the SQL
+4. Click **Run**
+
+---
+
+## 🪣 **STEP 5: Set Up Storage Buckets**
+
+The app needs storage buckets for media uploads:
+
+1. Go to **Supabase Dashboard → Storage**
+2. Create bucket: `make-2516be19-profile-photos`
+   - Set to **Private**
+   - Max file size: 5MB
+3. Create bucket: `make-2516be19-forum-media` (if needed)
+   - Set to **Private**
+   - Max file size: 50MB
+
+---
+
+## ✅ **STEP 6: Verify Connection**
+
+### **Test the Backend:**
+
+1. **Start your dev server:**
    ```bash
-   supabase functions deploy make-server-2516be19
+   npm run dev
    ```
 
-   Or use the Supabase Dashboard:
-   - Go to Edge Functions
-   - Click "Deploy" or "Update" for `make-server-2516be19`
+2. **Check browser console** for any connection errors
 
-## ✅ Step 5: Test the Endpoints
+3. **Test an API call:**
+   - Try logging in
+   - Try creating a profile
+   - Check Network tab in DevTools for API calls
 
-### Test Forum Endpoints
+### **Common Issues:**
+
+#### **"Failed to fetch" Error**
+- ✅ Check `VITE_SUPABASE_URL` is correct
+- ✅ Check Edge Function is deployed
+- ✅ Check CORS settings (should be handled automatically)
+
+#### **"401 Unauthorized" Error**
+- ✅ Check `VITE_SUPABASE_ANON_KEY` is correct
+- ✅ Check user is logged in
+- ✅ Check token is being sent in requests
+
+#### **"Function not found" Error**
+- ✅ Verify Edge Function is deployed
+- ✅ Check function name matches: `make-server-2516be19`
+- ✅ Check function URL in Network tab
+
+---
+
+## 🔍 **VERIFICATION CHECKLIST**
+
+- [ ] `.env` file created with correct values
+- [ ] Edge Function deployed to Supabase
+- [ ] Edge Function secrets set (SUPABASE_URL, SERVICE_ROLE_KEY)
+- [ ] Database migrations run
+- [ ] Storage buckets created
+- [ ] App can connect to backend (no "Failed to fetch" errors)
+- [ ] Can log in and create profile
+- [ ] Can create posts
+- [ ] Can upload media
+
+---
+
+## 📝 **QUICK START COMMANDS**
 
 ```bash
-# Get posts
-curl -X GET "https://your-project.supabase.co/functions/v1/make-server-2516be19/forum/posts" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+# 1. Create .env file
+cp .env.example .env
+# Edit .env with your values
 
-# Create post
-curl -X POST "https://your-project.supabase.co/functions/v1/make-server-2516be19/forum/posts" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"content": "Test post", "isAnonymous": true}'
+# 2. Install Supabase CLI
+npm install -g supabase
 
-# Like a post
-curl -X POST "https://your-project.supabase.co/functions/v1/make-server-2516be19/forum/posts/POST_ID/like" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+# 3. Login and link
+supabase login
+supabase link --project-ref your-project-ref
+
+# 4. Deploy function
+supabase functions deploy make-server-2516be19
+
+# 5. Set secrets
+supabase secrets set SUPABASE_URL=https://your-project-id.supabase.co
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# 6. Run migrations
+supabase db push
+
+# 7. Start app
+npm run dev
 ```
 
-### Test Social Media Endpoints
+---
 
-```bash
-# Initiate LinkedIn connection
-curl -X POST "https://your-project.supabase.co/functions/v1/make-server-2516be19/social/linkedin/connect" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+## 🆘 **TROUBLESHOOTING**
 
-# Disconnect LinkedIn
-curl -X POST "https://your-project.supabase.co/functions/v1/make-server-2516be19/social/linkedin/disconnect" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
+### **Backend Not Responding**
 
-## 📝 Step 6: Frontend OAuth Callback Handlers
+1. **Check Edge Function logs:**
+   ```bash
+   supabase functions logs make-server-2516be19
+   ```
 
-You'll need to create callback pages for OAuth redirects. Create these files:
+2. **Check function is deployed:**
+   - Go to Supabase Dashboard → Edge Functions
+   - Verify `make-server-2516be19` exists and is active
 
-### `src/pages/AuthCallback.tsx` (or add to your routing)
+3. **Test function directly:**
+   ```bash
+   curl https://your-project-id.supabase.co/functions/v1/make-server-2516be19/health
+   ```
 
-```typescript
-import { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { projectId } from '../utils/supabase/info';
+### **CORS Errors**
 
-export function AuthCallback() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const code = searchParams.get('code');
-  const state = searchParams.get('state');
-  const provider = window.location.pathname.split('/')[2]; // linkedin, instagram, spotify
+The Edge Function should handle CORS automatically. If you see CORS errors:
 
-  useEffect(() => {
-    if (code && state) {
-      // Get access token from your app context
-      const accessToken = localStorage.getItem('accessToken');
-      
-      fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/social/${provider}/callback`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ code, state }),
-        }
-      )
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            navigate('/profile');
-          }
-        });
-    }
-  }, [code, state, provider, navigate]);
+1. Check `ENVIRONMENT` secret is set correctly
+2. Verify your domain is in allowed origins (for production)
+3. Check Edge Function CORS configuration
 
-  return <div>Connecting...</div>;
-}
-```
+### **Database Errors**
 
-## 🔒 Security Notes
+1. **Check migrations ran:**
+   - Go to Supabase Dashboard → Database → Migrations
+   - Verify migration is applied
 
-1. **Encrypt OAuth Tokens**: In production, encrypt access tokens before storing in database
-2. **Rate Limiting**: Already implemented via `rate-limiter.ts`
-3. **Content Moderation**: Forum posts and comments are moderated via `content-moderator.ts`
-4. **RLS Policies**: Database tables have Row Level Security enabled
+2. **Check RLS policies:**
+   - Go to Supabase Dashboard → Authentication → Policies
+   - Verify policies are enabled
 
-## 🐛 Troubleshooting
+---
 
-### Forum posts not showing
-- Check if migration ran successfully
-- Verify RLS policies allow SELECT
-- Check Edge Function logs for errors
+## 📞 **NEED HELP?**
 
-### OAuth not working
-- Verify redirect URLs match exactly in OAuth app settings
-- Check environment variables are set correctly
-- Review Edge Function logs for OAuth errors
+1. Check **TROUBLESHOOTING_GUIDE.md** for common issues
+2. Check **Supabase Dashboard → Edge Functions → Logs** for errors
+3. Check browser **Network tab** for failed requests
+4. Verify all environment variables are set correctly
 
-### Social connections not saving
-- Verify user profile exists in KV store
-- Check Edge Function logs
-- Ensure `socialConnections` object is initialized
+---
 
-## 📚 API Documentation
-
-### Forum Endpoints
-
-- `GET /forum/posts` - Get all posts
-- `POST /forum/posts` - Create a post
-- `POST /forum/posts/:id/like` - Like a post
-- `POST /forum/posts/:id/dislike` - Dislike a post
-- `GET /forum/posts/:id/comments` - Get comments
-- `POST /forum/posts/:id/comments` - Add a comment
-
-### Social Media Endpoints
-
-- `POST /social/linkedin/connect` - Initiate LinkedIn OAuth
-- `POST /social/linkedin/callback` - Handle LinkedIn callback
-- `POST /social/linkedin/disconnect` - Disconnect LinkedIn
-- `POST /social/instagram/connect` - Initiate Instagram OAuth (currently disabled)
-- `POST /social/instagram/callback` - Handle Instagram callback (currently disabled)
-- `POST /social/instagram/disconnect` - Disconnect Instagram (currently disabled)
-- `POST /social/spotify/connect` - Initiate Spotify OAuth
-- `POST /social/spotify/callback` - Handle Spotify callback
-- `POST /social/spotify/disconnect` - Disconnect Spotify
-- `POST /social/appleMusic/connect` - Connect Apple Music (currently disabled)
-- `POST /social/appleMusic/disconnect` - Disconnect Apple Music (currently disabled)
-
-All endpoints require authentication via `Authorization: Bearer <token>` header.
-
+**Once these steps are complete, your backend should be fully connected! 🚀**
