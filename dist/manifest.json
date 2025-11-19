@@ -1,38 +1,26 @@
 {
-  "name": "Bonded - Social Network for College Students",
+  "name": "Bonded - College Social Network",
   "short_name": "Bonded",
-  "description": "Find friends, roommates, and connections at your university",
+  "description": "Connect with students at your university",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2E7B91",
-  "orientation": "portrait-primary",
-  "scope": "/",
-  "prefer_related_applications": false,
+  "background_color": "#FFFFFF",
+  "theme_color": "#FF6B6B",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "/Bonded_transparent_icon.png",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "categories": ["social", "education"],
-  "screenshots": [
-    {
-      "src": "/screenshot1.png",
-      "sizes": "540x720",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "My Profile",
-      "short_name": "Profile",
-      "description": "View and edit your profile",
-      "url": "/profile",
-      "icons": [{ "src": "/bonded-icon.png", "sizes": "512x512" }]
-    }
-  ]
+  "screenshots": []
 }

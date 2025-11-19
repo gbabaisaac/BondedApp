@@ -157,7 +157,6 @@ export function BondPrintQuiz({ onComplete, onSkip, userProfile, accessToken: pr
         className="fixed inset-0 flex items-center justify-center p-6"
         style={{
           background: 'linear-gradient(135deg, #F3F4FF 0%, #FFE5EC 50%, #FFF5E6 100%)',
-          minHeight: '100vh',
           minHeight: '-webkit-fill-available',
         }}
       >

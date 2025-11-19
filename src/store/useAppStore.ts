@@ -67,8 +67,8 @@ interface AppStore {
 
   // Async Actions
   checkSession: () => Promise<void>;
-  loadUserProfile: (userId: string) => Promise<void>;
-  handleAuthSuccess: (token: string, userId: string) => Promise<void>;
+  loadUserProfile: (userId: string, isNewUser?: boolean) => Promise<void>;
+  handleAuthSuccess: (token: string, userId: string, isNewUser?: boolean) => Promise<void>;
   handleLogout: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
 }

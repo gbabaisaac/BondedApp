@@ -177,7 +177,10 @@ export const PhotoUploadScreen: React.FC<PhotoUploadScreenProps> = ({
             {/* Empty Slots */}
             {photos.length < MAX_PHOTOS && (
               <motion.div
-                {...getRootProps()}
+                {...(() => {
+                  const { onAnimationStart, onDragStart, onDrag, onDragEnd, ...rest } = getRootProps();
+                  return rest;
+                })()}
                 className={`${styles.uploadSlot} ${isDragActive ? styles.uploadSlotActive : ''}`}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}

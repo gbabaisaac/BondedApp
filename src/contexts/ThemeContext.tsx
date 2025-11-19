@@ -137,7 +137,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       let schoolDomain = 'default';
       const schoolName = typeof userProfile.school === 'string' 
         ? userProfile.school 
-        : (userProfile.school as any)?.name || userProfile.school;
+        : (userProfile.school as any)?.name || userProfile.school || '';
       
       // Map school names to domains
       const nameToDomainnMap: Record<string, string> = {
@@ -156,9 +156,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         'Duke': 'duke.edu',
       };
       
-      if (typeof userProfile.school === 'object' && userProfile.school.domain) {
-        schoolDomain = userProfile.school.domain;
-      } else if (nameToDomainnMap[schoolName]) {
+      const schoolObj = userProfile.school;
+      if (schoolObj && typeof schoolObj === 'object') {
+        const schoolWithDomain = schoolObj as { domain?: string };
+        if (schoolWithDomain.domain) {
+          schoolDomain = schoolWithDomain.domain;
+        }
+      }
+      if (schoolDomain === 'default' && nameToDomainnMap[schoolName]) {
         schoolDomain = nameToDomainnMap[schoolName];
       }
       

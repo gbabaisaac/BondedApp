@@ -1,1 +1,0 @@
-function d(){return navigator.onLine}function o(e){const n=()=>e();return window.addEventListener("online",n),()=>window.removeEventListener("online",n)}function r(e){const n=()=>e();return window.addEventListener("offline",n),()=>window.removeEventListener("offline",n)}function a(e,n){const i=o(e),t=r(n);return()=>{i(),t()}}export{a,d as i};

@@ -144,9 +144,6 @@ export const SchoolSelectionScreen: React.FC<SchoolSelectionScreenProps> = ({
     onSchoolSelect({
       id: schoolName.toLowerCase().replace(/\s+/g, '-'),
       name: schoolName,
-      location: '',
-      logo: '',
-      studentCount: 0,
     });
   };
 
@@ -155,9 +152,6 @@ export const SchoolSelectionScreen: React.FC<SchoolSelectionScreenProps> = ({
       onSchoolSelect({
         id: customSchool.toLowerCase().replace(/\s+/g, '-'),
         name: customSchool,
-        location: '',
-        logo: '',
-        studentCount: 0,
       });
       setShowCustomInput(false);
     }

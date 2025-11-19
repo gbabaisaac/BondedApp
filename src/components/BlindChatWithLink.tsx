@@ -3,7 +3,11 @@ import { Card } from './ui/card';
 
 interface BlindChatWithLinkProps {
   relationshipId?: string;
+  relationship?: any;
+  userProfile?: any;
+  accessToken?: string;
   onBack?: () => void;
+  onRevealRequested?: () => Promise<void>;
 }
 
 export function BlindChatWithLink({ relationshipId, onBack }: BlindChatWithLinkProps) {

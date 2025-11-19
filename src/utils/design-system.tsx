@@ -158,7 +158,7 @@ export const interestIcons: Record<string, LucideIcon> = {
   'Tech': Code,
   'Sustainability': Sprout,
   'Yoga': PersonStanding,
-  'Events': Tickets,
+  'Events': Ticket,
   'Writing': PenTool,
   'Playing Music': Guitar,
   'Outdoors': Trees,
@@ -225,7 +225,6 @@ export const gradients = {
   
   // Soft backgrounds
   primarySoft: 'from-[#2E7B9150] to-[#25658A50]',
-  loveSoft: 'from-[#FFB3C650] to-[#B69CFF50]',
   background: 'from-[#F9F6F3] to-[#EAEAEA]',
 };
 

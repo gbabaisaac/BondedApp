@@ -158,7 +158,6 @@ export function AuthFlowModern({ onAuthSuccess }: AuthFlowModernProps) {
       style={{
         background: 'linear-gradient(135deg, #F3F4FF 0%, #FFE5EC 50%, #FFF5E6 100%)',
         padding: '24px 16px',
-        minHeight: '100vh',
         minHeight: '-webkit-fill-available',
       }}
     >

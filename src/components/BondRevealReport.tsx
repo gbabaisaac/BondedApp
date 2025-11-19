@@ -3,7 +3,12 @@ import { Card } from './ui/card';
 
 interface BondRevealReportProps {
   relationshipId?: string;
+  relationship?: any;
+  userProfile?: any;
+  partnerProfile?: any;
+  accessToken?: string;
   onBack?: () => void;
+  onContinueChat?: () => void;
 }
 
 export function BondRevealReport({ relationshipId, onBack }: BondRevealReportProps) {

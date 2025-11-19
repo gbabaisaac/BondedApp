@@ -96,6 +96,6 @@ export function AuthCallback() {
     handleCallback();
   }, [code, state, error, errorDescription, provider]);
 
-  return <LoadingScreen message={`Connecting ${provider}...`} />;
+  return <LoadingScreen />;
 }
 

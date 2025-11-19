@@ -29,12 +29,14 @@ export const Button: React.FC<ButtonProps> = ({
     className,
   ].filter(Boolean).join(' ');
 
+  const { onAnimationStart, onDragStart, onDrag, onDragEnd, ...restProps } = props;
+  
   return (
     <motion.button
       className={buttonClasses}
       disabled={disabled || loading}
       whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
-      {...props}
+      {...restProps}
     >
       {loading && (
         <span className={styles.spinner}>

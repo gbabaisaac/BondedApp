@@ -69,7 +69,7 @@ export function SearchResults({ searchQuery, searchType }: SearchResultsProps) {
         setLoading(true);
         // Map searchType to API type
         const apiType = searchType === 'students' ? 'users' : searchType === 'posts' ? 'posts' : 'all';
-        const data = await globalSearch(searchQuery, apiType, accessToken);
+        const data = await globalSearch(searchQuery, apiType, accessToken) as SearchResponse;
         
         setResults({
           users: data.results?.users || [],

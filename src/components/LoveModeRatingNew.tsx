@@ -3,6 +3,9 @@ import { Card } from './ui/card';
 
 interface LoveModeRatingNewProps {
   onComplete?: () => void;
+  onRatingComplete?: () => void;
+  userProfile?: any;
+  accessToken?: string;
 }
 
 export function LoveModeRatingNew({ onComplete }: LoveModeRatingNewProps) {
