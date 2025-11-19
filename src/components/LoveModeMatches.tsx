@@ -6,7 +6,7 @@ import { DailyLoveQuestion } from './DailyLoveQuestion';
 import { Heart, Sparkles, MessageCircle, RefreshCw, Lock, Star, ArrowRight, Mic, Eye } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { loveStageIcons } from '../utils/design-system';
 
 interface LoveModeMatchesProps {

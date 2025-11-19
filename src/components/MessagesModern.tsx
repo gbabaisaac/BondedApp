@@ -7,16 +7,6 @@ import { toast } from 'sonner';
 import { logger } from '../utils/logger';
 import { Chat, ChatsResponse } from '../types/api';
 
-interface Chat {
-  id: string;
-  name: string;
-  avatar_url: string;
-  lastMessage: string;
-  timestamp: string;
-  unread: number;
-  isOnline: boolean;
-}
-
 interface MessagesModernProps {
   onNavigateToProfile?: () => void;
 }

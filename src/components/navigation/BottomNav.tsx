@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+// Navigation handled by MobileLayout
 import { motion } from 'framer-motion';
 import { Home, MessageCircle, Users, Heart, User } from 'lucide-react';
 import { cn } from '@/lib/utils';

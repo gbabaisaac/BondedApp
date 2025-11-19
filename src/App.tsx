@@ -18,9 +18,9 @@ import { BetaAccessGate } from './components/BetaAccessGate';
 import { Toaster } from './components/ui/sonner';
 
 // Lazy load only optional components - use .then() for named exports
-const MainApp = lazy(() => import('./components/MainApp').then(m => ({ default: m.MainApp || m.default })));
-const BondPrintQuiz = lazy(() => import('./components/BondPrintQuiz').then(m => ({ default: m.BondPrintQuiz || m.default })));
-const BondPrintResults = lazy(() => import('./components/BondPrintResults').then(m => ({ default: m.BondPrintResults || m.default })));
+const MainApp = lazy(() => import('./components/MainApp').then(m => ({ default: m.MainApp })));
+const BondPrintQuiz = lazy(() => import('./components/BondPrintQuiz').then(m => ({ default: m.BondPrintQuiz })));
+const BondPrintResults = lazy(() => import('./components/BondPrintResults').then(m => ({ default: m.BondPrintResults })));
 
 export default function App() {
   const {

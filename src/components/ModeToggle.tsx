@@ -1,5 +1,5 @@
 import { Users, Heart } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { theme } from '../utils/theme';
 
 interface ModeToggleProps {

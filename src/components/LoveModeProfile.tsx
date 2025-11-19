@@ -13,7 +13,7 @@ import {
   Eye
 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 interface LoveModeProfileProps {
   userProfile: any;

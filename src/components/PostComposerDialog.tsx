@@ -4,6 +4,7 @@ import { useAccessToken } from '../store/useAppStore';
 import { uploadMedia } from '../utils/api-client';
 import { toast } from 'sonner';
 import imageCompression from 'browser-image-compression';
+import { logger } from '../utils/logger';
 
 interface PostComposerDialogProps {
   isOpen: boolean;

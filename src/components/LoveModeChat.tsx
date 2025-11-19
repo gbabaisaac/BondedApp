@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoveModeChatProps {
   relationship: any;
