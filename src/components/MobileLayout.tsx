@@ -114,6 +114,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
+          paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))', // Space for bottom nav
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
@@ -138,7 +139,7 @@ export function MobileLayout({ children, activeTab, onTabChange, hideNavigation 
                     boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.08)',
                   }}
                 >
-          <div className="flex items-center justify-around px-2 py-3">
+          <div className="flex items-center justify-around px-2 py-2" style={{ minHeight: '56px' }}>
             {/* All tabs - no plus button in middle for 5 tabs */}
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;

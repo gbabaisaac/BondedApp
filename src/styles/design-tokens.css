@@ -138,7 +138,7 @@
   --header-height: 64px;
   
   /* Bottom Navigation */
-  --bottom-nav-height: 80px;
+  --bottom-nav-height: 64px;
   
   /* Card */
   --card-padding: var(--space-6);

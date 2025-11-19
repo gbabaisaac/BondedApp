@@ -151,7 +151,7 @@ export function MainApp() {
       </div>
       )}
 
-      <div className="flex-1 overflow-hidden" style={{ paddingTop: '0' }}>
+      <div className="flex-1 overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <MobileLayout 
           activeTab={currentView} 
           onTabChange={setCurrentView} 

@@ -247,8 +247,9 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
     >
       {/* Header - Matching Design */}
       <div 
-        className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b"
+        className="sticky z-50 bg-white/90 backdrop-blur-lg border-b"
         style={{ 
+          top: 'env(safe-area-inset-top)',
           borderColor: '#E8E8F0',
           padding: '16px 20px',
         }}
@@ -307,7 +308,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
       <div 
         className="sticky bg-white border-b"
         style={{ 
-          top: '73px',
+          top: `calc(73px + env(safe-area-inset-top))`,
           borderColor: '#E8E8F0',
           zIndex: 40,
           padding: '12px 20px',
