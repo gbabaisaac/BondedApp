@@ -157,7 +157,17 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
       };
       
       if (activeFilter !== 'all') {
-        filters.year = activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1);
+        if (activeFilter === 'cs') {
+          filters.major = 'Computer Science';
+        } else if (activeFilter === 'athletes') {
+          filters.interests = ['Sports', 'Fitness'];
+        } else if (activeFilter === 'creatives') {
+          filters.interests = ['Art', 'Music', 'Design', 'Photography'];
+        } else if (activeFilter === 'musicians') {
+          filters.interests = ['Music'];
+        } else {
+          filters.year = activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1);
+        }
       }
       
       const response = await getAllProfiles(accessToken, filters) as { profiles: UserProfile[]; pagination?: PaginationResponse };
@@ -204,6 +214,39 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
 
   const filteredProfiles = profiles.filter(profile => {
     if (activeFilter === 'all') return true;
+    if (activeFilter === 'cs') {
+      return profile.major?.toLowerCase().includes('computer') || 
+             profile.major?.toLowerCase().includes('cs') ||
+             profile.major?.toLowerCase().includes('software') ||
+             profile.major?.toLowerCase().includes('engineering');
+    }
+    if (activeFilter === 'athletes') {
+      return profile.interests?.some(interest => 
+        interest.toLowerCase().includes('sport') ||
+        interest.toLowerCase().includes('athlet') ||
+        interest.toLowerCase().includes('fitness')
+      ) || false;
+    }
+    if (activeFilter === 'creatives') {
+      return profile.interests?.some(interest => 
+        interest.toLowerCase().includes('art') ||
+        interest.toLowerCase().includes('music') ||
+        interest.toLowerCase().includes('design') ||
+        interest.toLowerCase().includes('photography')
+      ) || false;
+    }
+    if (activeFilter === 'musicians') {
+      return profile.interests?.some(interest => 
+        interest.toLowerCase().includes('music') ||
+        interest.toLowerCase().includes('guitar') ||
+        interest.toLowerCase().includes('piano')
+      ) || false;
+    }
+    if (activeFilter === 'new') {
+      // Filter for recently joined users (within last 30 days)
+      // This would need a createdAt field in the profile
+      return true; // For now, show all
+    }
     return profile.year.toLowerCase() === activeFilter.toLowerCase();
   });
 
@@ -271,6 +314,9 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
           </h1>
           <div className="flex items-center gap-2">
             <button 
+              onClick={() => {
+                toast.info('Search feature coming soon!');
+              }}
               className="w-10 h-10 rounded-full flex items-center justify-center border transition-all hover:border-pink-500 hover:scale-105"
               style={{ 
                 background: 'white',
@@ -641,10 +687,21 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        // Handle connect
-                        toast.info('Connect feature coming soon!');
+                        if (!accessToken) {
+                          toast.error('Please log in to connect');
+                          return;
+                        }
+                        try {
+                          const { sendFriendRequest } = await import('../utils/api-client');
+                          await sendFriendRequest(profile.id, accessToken);
+                          toast.success(`Connection request sent to ${profile.name}!`);
+                        } catch (error: unknown) {
+                          const err = error as Error;
+                          logger.error('Failed to send connection request:', err);
+                          toast.error(err.message || 'Failed to send connection request');
+                        }
                       }}
                       className="py-3 px-5 rounded-xl text-white font-semibold transition-all hover:scale-105"
                       style={{ 

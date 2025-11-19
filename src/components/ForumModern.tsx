@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Heart, MessageCircle, Share2, MoreHorizontal, Ghost, Check, TrendingUp, Image as ImageIcon, Video, Loader2, Search, Copy } from 'lucide-react';
+import { Plus, Heart, MessageCircle, Share2, MoreHorizontal, Ghost, Check, TrendingUp, Image as ImageIcon, Video, Loader2, Search, Copy, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useUserProfile, useAccessToken } from '../store/useAppStore';
 import { PostComposerDialog } from './PostComposerDialog';
@@ -472,9 +472,25 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm truncate" style={{ color: '#2D2D2D', fontSize: '15px' }}>
-                      {post.is_anonymous ? 'Anonymous' : post.author.name}
-                    </span>
+                    {post.is_anonymous ? (
+                      <span className="font-bold text-sm truncate" style={{ color: '#2D2D2D', fontSize: '15px' }}>
+                        Anonymous
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (onNavigateToProfile && post.author.id) {
+                            onNavigateToProfile();
+                            // Navigate to profile view
+                            window.location.href = `/profile/${post.author.id}`;
+                          }
+                        }}
+                        className="font-bold text-sm truncate hover:underline cursor-pointer"
+                        style={{ color: '#2D2D2D', fontSize: '15px' }}
+                      >
+                        {post.author.name}
+                      </button>
+                    )}
                     {post.is_anonymous && (
                       <span 
                         className="px-2 py-0.5 text-xs font-bold rounded-md"
@@ -561,6 +577,48 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
                           <Copy className="w-4 h-4" style={{ color: '#6B6B6B' }} />
                           <span>Copy Link</span>
                         </button>
+                        {post.author.id === userProfile?.id && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm('Are you sure you want to delete this post?')) return;
+                              try {
+                                setActionLoading(post.id);
+                                const { projectId } = await import('../utils/supabase/info');
+                                const response = await fetch(
+                                  `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/forum/posts/${post.id}`,
+                                  {
+                                    method: 'DELETE',
+                                    headers: {
+                                      'Authorization': `Bearer ${accessToken}`,
+                                    },
+                                  }
+                                );
+                                if (!response.ok) throw new Error('Failed to delete post');
+                                toast.success('Post deleted');
+                                setOpenMenuId(null);
+                                await loadPosts();
+                              } catch (error: unknown) {
+                                const err = error as Error;
+                                logger.error('Failed to delete post:', err);
+                                toast.error(err.message || 'Failed to delete post');
+                              } finally {
+                                setActionLoading(null);
+                              }
+                            }}
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-50 transition-colors text-left border-t"
+                            style={{
+                              color: '#EF4444',
+                              fontFamily: "'Inter', sans-serif",
+                              fontSize: '14px',
+                              fontWeight: 500,
+                              borderColor: '#F3F4FF',
+                            }}
+                          >
+                            <X className="w-4 h-4" style={{ color: '#EF4444' }} />
+                            <span>Delete Post</span>
+                          </button>
+                        )}
                       </div>
                     </>
                   )}
@@ -626,12 +684,23 @@ export function ForumModern({ onPostComposerChange, openComposer, onComposerOpen
                   <span>{post.like_count}</span>
                 </button>
                 
-                <button className="flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105" style={{ color: '#6B6B6B' }}>
+                <button 
+                  onClick={() => {
+                    toast.info('Comment feature coming soon! Click to view post details.');
+                    // TODO: Open comment modal or navigate to post detail page
+                  }}
+                  className="flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105" 
+                  style={{ color: '#6B6B6B' }}
+                >
                   <span className="text-xl">💬</span>
                   <span>{post.comment_count}</span>
                 </button>
                 
-                <button className="flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105" style={{ color: '#6B6B6B' }}>
+                <button 
+                  onClick={() => handleSharePost(post)}
+                  className="flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105" 
+                  style={{ color: '#6B6B6B' }}
+                >
                   <span className="text-xl">🔗</span>
                   <span>{post.share_count}</span>
                 </button>

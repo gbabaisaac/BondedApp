@@ -81,8 +81,9 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
     >
       {/* Header - Matching Design */}
       <div 
-        className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b"
+        className="sticky z-50 bg-white/90 backdrop-blur-lg border-b"
         style={{ 
+          top: 'env(safe-area-inset-top)',
           borderColor: '#E8E8F0',
           padding: '16px 20px',
         }}
@@ -160,12 +161,17 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
         }}
       >
         {/* AI Assistant Banner */}
-        <div 
+        <button
+          onClick={() => {
+            toast.info('AI Assistant feature coming soon!');
+          }}
           className="mx-5 mt-4 mb-4 p-4 rounded-2xl flex items-center gap-3 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
           style={{ 
             background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(78, 205, 196, 0.1))',
             border: '2px solid rgba(167, 139, 250, 0.3)',
             borderRadius: '16px',
+            width: 'calc(100% - 40px)',
+            textAlign: 'left',
           }}
         >
           <div 
@@ -203,7 +209,7 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M9 5l7 7-7 7" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round"/>
           </svg>
-        </div>
+        </button>
 
         {/* Chat List */}
         {loading ? (

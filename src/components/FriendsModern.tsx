@@ -552,6 +552,9 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
                   People You May Know
                 </h2>
                 <button 
+                  onClick={() => {
+                    toast.info('See all suggestions feature coming soon!');
+                  }}
                   className="text-sm font-semibold"
                   style={{ color: '#FF6B6B', fontSize: '14px', fontWeight: 600 }}
                 >
@@ -623,6 +626,36 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
                       </div>
                     </div>
                     <button 
+                      onClick={async () => {
+                        if (!accessToken) {
+                          toast.error('Please log in to connect');
+                          return;
+                        }
+                        try {
+                          // Use AI assistant soft intro endpoint for better matching
+                          const { projectId } = await import('../utils/supabase/info');
+                          const response = await fetch(
+                            `https://${projectId}.supabase.co/functions/v1/make-server-2516be19/ai-assistant/soft-intro`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${accessToken}`,
+                              },
+                              body: JSON.stringify({
+                                targetUserId: suggestion.id || `user-${i}`,
+                                reason: `I think we could be a great connection!`,
+                                context: 'Sent from Friends suggestions'
+                              }),
+                            }
+                          );
+                          if (!response.ok) throw new Error('Failed to send request');
+                          toast.success(`Connection request sent to ${suggestion.name}!`);
+                        } catch (error: unknown) {
+                          const err = error as Error;
+                          toast.error(err.message || 'Failed to send connection request');
+                        }
+                      }}
                       className="px-4 py-2 rounded-xl text-white font-semibold whitespace-nowrap transition-all hover:scale-105"
                       style={{
                         background: 'linear-gradient(135deg, #FF6B6B, #FF8E8E)',
