@@ -309,6 +309,7 @@ export interface Connection {
   year?: string;
   major?: string;
   mutual?: number;
+  mutualFriends?: number;
   emoji?: string;
   profilePicture?: string;
 }

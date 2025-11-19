@@ -210,7 +210,7 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
         return;
       }
 
-      const data = await getProfile(targetUserId, accessToken);
+      const data = await getProfile(targetUserId, accessToken) as UserProfile;
       setProfile(data);
       setBio(data.bio || '');
       setTempBio(data.bio || '');
@@ -229,7 +229,7 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
           setInterests(userProfile.interests || []);
         }
       } else {
-        toast.error(err.message || 'Failed to load profile');
+        toast.error((error as Error).message || 'Failed to load profile');
       }
     } finally {
       setLoading(false);
@@ -263,10 +263,10 @@ export function ProfileModern({ onBack, userId }: ProfileModernProps) {
       const transformedPosts = userPosts.slice(0, 9).map((post: ForumPost, i: number) => ({
         id: post.id,
         gradient: gradients[i % gradients.length],
-        likes: post.like_count || post.likes || 0,
-        comments: post.comment_count || post.comments || 0,
-        timestamp: post.created_at 
-          ? new Date(post.created_at).toLocaleDateString()
+        likes: (post as any).like_count || post.likes || 0,
+        comments: (post as any).comment_count || post.comments || 0,
+        timestamp: (post as any).created_at 
+          ? new Date((post as any).created_at).toLocaleDateString()
           : 'Recently',
       }));
       

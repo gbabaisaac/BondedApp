@@ -30,7 +30,7 @@ import {
   Code,
   Sprout,
   PersonStanding,
-  Tickets,
+  Ticket,
   PenTool,
   Guitar,
   Trees,

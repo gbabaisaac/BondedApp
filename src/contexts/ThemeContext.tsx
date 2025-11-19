@@ -137,7 +137,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       let schoolDomain = 'default';
       const schoolName = typeof userProfile.school === 'string' 
         ? userProfile.school 
-        : userProfile.school.name || userProfile.school;
+        : (userProfile.school as any)?.name || userProfile.school;
       
       // Map school names to domains
       const nameToDomainnMap: Record<string, string> = {

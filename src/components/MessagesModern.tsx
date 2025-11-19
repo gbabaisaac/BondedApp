@@ -36,11 +36,11 @@ export function MessagesModern({ onNavigateToProfile }: MessagesModernProps = {}
                 const conversations = response.chats || [];
         
         const transformedChats: Chat[] = conversations.map((conv: Chat) => {
-          const otherUser = conv.otherUser || {};
+          const otherUser = conv.otherUser as { name?: string; profilePicture?: string; photos?: string[] } | undefined;
           return {
             id: conv.chatId || conv.id,
-            name: otherUser.name || 'Unknown',
-            avatar_url: otherUser.profilePicture || otherUser.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conv.chatId || conv.id}`,
+            name: otherUser?.name || 'Unknown',
+            avatar_url: otherUser?.profilePicture || otherUser?.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conv.chatId || conv.id}`,
             lastMessage: conv.lastMessage || '',
             timestamp: conv.lastMessageTimestamp || conv.timestamp || new Date().toISOString(),
             unread: conv.unreadCount || conv.unread || 0,

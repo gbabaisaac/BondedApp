@@ -1,9 +1,5 @@
-'use client';
-
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { Search, SlidersHorizontal, Bell, ArrowLeft, MoreVertical } from 'lucide-react';
-import { Button } from '@/components/shared/Button';
 
 interface TopBarProps {
   title?: string;
@@ -26,14 +22,13 @@ export const TopBar: React.FC<TopBarProps> = ({
   onBack,
   rightAction,
 }) => {
-  const router = useRouter();
   const [unreadCount] = React.useState(3); // TODO: Connect to real notifications
 
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      window.history.back();
     }
   };
 
@@ -43,9 +38,9 @@ export const TopBar: React.FC<TopBarProps> = ({
         {/* Left Section */}
         <div className="flex items-center gap-3">
           {showBack ? (
-            <Button variant="ghost" size="icon" onClick={handleBack}>
+            <button className="p-2 hover:bg-gray-100 rounded-lg" onClick={handleBack}>
               <ArrowLeft className="h-5 w-5" />
-            </Button>
+            </button>
           ) : (
             <>
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
@@ -63,29 +58,25 @@ export const TopBar: React.FC<TopBarProps> = ({
           {rightAction || (
             <>
               {showSearch && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => router.push('/search')}
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  onClick={() => {/* TODO: Navigate to search */}}
                 >
                   <Search className="h-5 w-5" />
-                </Button>
+                </button>
               )}
               {showFilters && (
-                <Button 
-                  variant="ghost" 
-                  size="icon"
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-lg"
                   onClick={() => {/* TODO: Open filters */}}
                 >
                   <SlidersHorizontal className="h-5 w-5" />
-                </Button>
+                </button>
               )}
               {showNotifications && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => router.push('/notifications')}
-                  className="relative"
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-lg relative"
+                  onClick={() => {/* TODO: Navigate to notifications */}}
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
@@ -93,12 +84,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                       {unreadCount}
                     </span>
                   )}
-                </Button>
+                </button>
               )}
               {showMenu && (
-                <Button variant="ghost" size="icon">
+                <button className="p-2 hover:bg-gray-100 rounded-lg">
                   <MoreVertical className="h-5 w-5" />
-                </Button>
+                </button>
               )}
             </>
           )}

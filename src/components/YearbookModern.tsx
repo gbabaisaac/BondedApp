@@ -163,7 +163,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
       const response = await getAllProfiles(accessToken, filters) as { profiles: UserProfile[]; pagination?: PaginationResponse };
       const data = response.profiles || [];
       const transformedProfiles = data.map((p: UserProfile) => ({
-        id: p.id || p.user_id,
+        id: p.id || (p as any).user_id,
         name: p.name,
         age: p.age || 21,
         school: p.school || 'University of Illinois',
@@ -223,6 +223,10 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
         profile={filteredProfiles[selectedProfileIndex]}
         onClose={handleCloseProfileDetail}
         accessToken={accessToken || undefined}
+        onNext={() => {}}
+        onPrev={() => {}}
+        hasNext={false}
+        hasPrev={false}
       />
     );
   }
@@ -527,7 +531,7 @@ export function YearbookModern({ onProfileDetailOpen, onNavigateToProfile }: Yea
                         >
                           {profile.name || 'Student'}
                         </h2>
-                        {profile.is_verified && (
+                        {(profile as any).is_verified && (
                           <div 
                             className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-white text-[11px] flex-shrink-0"
                             style={{ 

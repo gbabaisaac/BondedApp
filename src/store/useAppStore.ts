@@ -183,7 +183,7 @@ export const useAppStore = create<AppStore>()(
       // Handle successful authentication
       handleAuthSuccess: async (token: string, userId: string, isNewUser = false) => {
         console.log('Auth success, loading profile for user:', userId, 'isNewUser:', isNewUser);
-        set({ accessToken: token, userId });
+        set({ accessToken: token });
         await get().loadUserProfile(userId, isNewUser);
       },
 

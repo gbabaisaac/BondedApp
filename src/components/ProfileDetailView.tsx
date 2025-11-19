@@ -222,7 +222,7 @@ export function ProfileDetailView({ profile, onClose, onNext, onPrev, hasNext, h
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -direction * 50 }}
             transition={{ duration: 0.3 }}
-            src={profile.profilePicture || profile.photos?.[0] || profile.imageUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80'}
+            src={(profile as any).profilePicture || (profile as any).photos?.[0] || profile.imageUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80'}
             alt={profile.name}
             className="w-full h-full object-cover"
           />

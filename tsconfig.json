@@ -25,7 +25,13 @@
     "supabase/functions/**/*",
     "src/functions/**/*",
     "src/supabase/functions/**/*",
-    "src/app/**/*"
+    "src/app/**/*",
+    "src/components/ui/**/*",
+    "src/components/InstagramGrid.tsx",
+    "src/components/LoveMode*.tsx",
+    "src/components/PushNotificationsSetup.tsx",
+    "src/components/onboarding/INTEGRATION_EXAMPLE.tsx",
+    "src/middleware.ts"
   ]
 }
 

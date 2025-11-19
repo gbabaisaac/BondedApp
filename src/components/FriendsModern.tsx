@@ -61,34 +61,40 @@ export function FriendsModern({ onNavigateToProfile }: FriendsModernProps = {}) 
       setLoading(true);
       
       if (activeTab === 'friends') {
-        const data = await getFriends(accessToken);
-        // Backend returns { friendships: [...] }
-        const friendships = data.friendships || [];
+        const data = await getFriends(accessToken) as unknown as FriendshipsResponse;
+        // Backend returns { friendships: [...] } with friend property
+        const friendships = (data as FriendshipsResponse).friendships || [];
         const transformedFriends = friendships
-          .filter((f) => f.friend_id) // Only include valid friendships
-          .map((f) => ({
-            id: f.friend.id,
-            name: f.friend.name,
-            avatar_url: f.friend.profilePicture || f.friend.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${f.friend.id}`,
-            major: f.friend.major || 'Student',
-            mutualFriends: 0, // TODO: Calculate mutual friends
-            compatibility: f.friend.bondPrint ? Math.floor(Math.random() * 30 + 70) : undefined,
-          }));
+          .filter((f) => (f as any).friend_id && (f as any).friend) // Only include valid friendships with friend data
+          .map((f) => {
+            const friendData = (f as any).friend || {};
+            return {
+              id: friendData.id || (f as any).friend_id,
+              name: friendData.name || 'Unknown',
+              avatar_url: friendData.profilePicture || friendData.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friendData.id || (f as any).friend_id}`,
+              major: friendData.major || 'Student',
+              mutualFriends: 0, // TODO: Calculate mutual friends
+              compatibility: friendData.bondPrint ? Math.floor(Math.random() * 30 + 70) : undefined,
+            };
+          });
         setFriends(transformedFriends);
       } else {
-        const data = await getFriendRequests(accessToken) as FriendshipsResponse;
+        const data = await getFriendRequests(accessToken) as unknown as FriendshipsResponse;
         // Backend returns { friendships: [...] } with status=pending
-        const friendships = data.friendships || [];
+        const friendships = (data as FriendshipsResponse).friendships || [];
         const transformedRequests = friendships
-          .filter((r) => r.friend_id) // Only include valid requests
-          .map((r) => ({
-            id: r.friend.id,
-            requestId: r.id, // Friendship ID for accept/reject
-            name: r.friend.name,
-            avatar_url: r.friend.profilePicture || r.friend.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${r.friend.id}`,
-            major: r.friend.major || 'Student',
-            mutualFriends: 0, // TODO: Calculate mutual friends
-          }));
+          .filter((r) => (r as any).friend_id && (r as any).friend) // Only include valid requests with friend data
+          .map((r) => {
+            const friendData = (r as any).friend || {};
+            return {
+              id: friendData.id || (r as any).friend_id,
+              requestId: r.id, // Friendship ID for accept/reject
+              name: friendData.name || 'Unknown',
+              avatar_url: friendData.profilePicture || friendData.photos?.[0] || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friendData.id || (r as any).friend_id}`,
+              major: friendData.major || 'Student',
+              mutualFriends: 0, // TODO: Calculate mutual friends
+            };
+          });
         setRequests(transformedRequests);
       }
     } catch (error: unknown) {
